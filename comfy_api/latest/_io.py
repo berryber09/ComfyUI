@@ -1203,6 +1203,25 @@ class Color(ComfyTypeIO):
       def as_dict(self):
           return super().as_dict()
 
+@comfytype(io_type="BOUNDING_BOX")
+class BoundingBox(ComfyTypeIO):
+    Type = dict
+
+    class Input(WidgetInput):
+        def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
+                     socketless: bool=True, default: dict=None, component: str=None):
+            super().__init__(id, display_name, optional, tooltip, None, default, socketless)
+            self.component = component
+            if default is None:
+                self.default = {"x": 0, "y": 0, "width": 512, "height": 512}
+
+        def as_dict(self):
+            d = super().as_dict()
+            if self.component:
+                d["component"] = self.component
+            return d
+
+
 DYNAMIC_INPUT_LOOKUP: dict[str, Callable[[dict[str, Any], dict[str, Any], tuple[str, dict[str, Any]], str, list[str] | None], None]] = {}
 def register_dynamic_input_func(io_type: str, func: Callable[[dict[str, Any], dict[str, Any], tuple[str, dict[str, Any]], str, list[str] | None], None]):
     DYNAMIC_INPUT_LOOKUP[io_type] = func
@@ -2121,4 +2140,5 @@ __all__ = [
     "ImageCompare",
     "PriceBadgeDepends",
     "PriceBadge",
+    "BoundingBox",
 ]
