@@ -10,6 +10,7 @@ from ._input_impl import VideoFromFile, VideoFromComponents
 from ._util import VideoCodec, VideoContainer, VideoComponents, MESH, VOXEL, File3D
 from . import _io_public as io
 from . import _ui_public as ui
+from . import _node_replace_public as node_replace
 from comfy_execution.utils import get_executing_context
 from comfy_execution.progress import get_progress_state, PreviewImageTuple
 from PIL import Image
@@ -131,4 +132,5 @@ __all__ = [
     "IO",
     "ui",
     "UI",
+    "node_replace",
 ]
