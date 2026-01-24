@@ -3,7 +3,7 @@ from av.container import InputContainer
 from av.subtitles.stream import SubtitleStream
 from fractions import Fraction
 from typing import Optional
-from .._input import AudioInput, VideoInput
+from .._input import AudioInput, VideoInput, VideoOp
 import av
 import io
 import json
@@ -63,6 +63,8 @@ class VideoFromFile(VideoInput):
         containing the file contents.
         """
         self.__file = file
+        self._operations: list[VideoOp] = []
+        self.__materialized: Optional[VideoFromComponents] = None
 
     def get_stream_source(self) -> str | io.BytesIO:
         """
@@ -161,6 +163,10 @@ class VideoFromFile(VideoInput):
 
             if frame_count == 0:
                 raise ValueError(f"Could not determine frame count for file '{self.__file}'")
+
+            # Apply operations to get final frame count
+            for op in self._operations:
+                frame_count = op.compute_frame_count(frame_count)
             return frame_count
 
     def get_frame_rate(self) -> Fraction:
@@ -239,10 +245,18 @@ class VideoFromFile(VideoInput):
         return VideoComponents(images=images, audio=audio, frame_rate=frame_rate, metadata=metadata)
 
     def get_components(self) -> VideoComponents:
+        if self.__materialized is not None:
+            return self.__materialized.get_components()
+
         if isinstance(self.__file, io.BytesIO):
             self.__file.seek(0)  # Reset the BytesIO object to the beginning
         with av.open(self.__file, mode='r') as container:
-            return self.get_components_internal(container)
+            components = self.get_components_internal(container)
+            for op in self._operations:
+                components = op.apply(components)
+            self.__materialized = VideoFromComponents(components)
+            self._operations = []
+            return components
         raise ValueError(f"No video stream found in file '{self.__file}'")
 
     def save_to(
@@ -317,13 +331,26 @@ class VideoFromComponents(VideoInput):
 
     def __init__(self, components: VideoComponents):
         self.__components = components
+        self._operations: list[VideoOp] = []
 
     def get_components(self) -> VideoComponents:
+        if self._operations:
+            components = self.__components
+            for op in self._operations:
+                components = op.apply(components)
+            self.__components = components
+            self._operations = []
         return VideoComponents(
             images=self.__components.images,
             audio=self.__components.audio,
             frame_rate=self.__components.frame_rate
         )
+
+    def get_frame_count(self) -> int:
+        count = int(self.__components.images.shape[0])
+        for op in self._operations:
+            count = op.compute_frame_count(count)
+        return count
 
     def save_to(
         self,
@@ -332,6 +359,9 @@ class VideoFromComponents(VideoInput):
         codec: VideoCodec = VideoCodec.AUTO,
         metadata: Optional[dict] = None
     ):
+        # Materialize ops before saving
+        components = self.get_components()
+
         if format != VideoContainer.AUTO and format != VideoContainer.MP4:
             raise ValueError("Only MP4 format is supported for now")
         if codec != VideoCodec.AUTO and codec != VideoCodec.H264:
@@ -345,22 +375,22 @@ class VideoFromComponents(VideoInput):
                 for key, value in metadata.items():
                     output.metadata[key] = json.dumps(value)
 
-            frame_rate = Fraction(round(self.__components.frame_rate * 1000), 1000)
+            frame_rate = Fraction(round(components.frame_rate * 1000), 1000)
             # Create a video stream
             video_stream = output.add_stream('h264', rate=frame_rate)
-            video_stream.width = self.__components.images.shape[2]
-            video_stream.height = self.__components.images.shape[1]
+            video_stream.width = components.images.shape[2]
+            video_stream.height = components.images.shape[1]
             video_stream.pix_fmt = 'yuv420p'
 
             # Create an audio stream
             audio_sample_rate = 1
             audio_stream: Optional[av.AudioStream] = None
-            if self.__components.audio:
-                audio_sample_rate = int(self.__components.audio['sample_rate'])
+            if components.audio:
+                audio_sample_rate = int(components.audio['sample_rate'])
                 audio_stream = output.add_stream('aac', rate=audio_sample_rate)
 
             # Encode video
-            for i, frame in enumerate(self.__components.images):
+            for i, frame in enumerate(components.images):
                 img = (frame * 255).clamp(0, 255).byte().cpu().numpy() # shape: (H, W, 3)
                 frame = av.VideoFrame.from_ndarray(img, format='rgb24')
                 frame = frame.reformat(format='yuv420p')  # Convert to YUV420P as required by h264
@@ -371,9 +401,9 @@ class VideoFromComponents(VideoInput):
             packet = video_stream.encode(None)
             output.mux(packet)
 
-            if audio_stream and self.__components.audio:
-                waveform = self.__components.audio['waveform']
-                waveform = waveform[:, :, :math.ceil((audio_sample_rate / frame_rate) * self.__components.images.shape[0])]
+            if audio_stream and components.audio:
+                waveform = components.audio['waveform']
+                waveform = waveform[:, :, :math.ceil((audio_sample_rate / frame_rate) * components.images.shape[0])]
                 frame = av.AudioFrame.from_ndarray(waveform.movedim(2, 1).reshape(1, -1).float().cpu().numpy(), format='flt', layout='mono' if waveform.shape[1] == 1 else 'stereo')
                 frame.sample_rate = audio_sample_rate
                 frame.pts = 0

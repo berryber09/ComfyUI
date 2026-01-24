@@ -159,6 +159,29 @@ class GetVideoComponents(io.ComfyNode):
         return io.NodeOutput(components.images, components.audio, float(components.frame_rate))
 
 
+class VideoSlice(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="VideoSlice",
+            display_name="Video Slice",
+            category="image/video",
+            description="Extract a range of frames from a video.",
+            inputs=[
+                io.Video.Input("video", tooltip="The video to slice."),
+                io.Int.Input("start_frame", default=0, min=0, tooltip="The frame index to start from (0-indexed)."),
+                io.Int.Input("frame_count", default=1, min=1, tooltip="Number of frames to extract."),
+            ],
+            outputs=[
+                io.Video.Output(tooltip="The sliced video."),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, video: Input.Video, start_frame: int, frame_count: int) -> io.NodeOutput:
+        return io.NodeOutput(video.sliced(start_frame, frame_count))
+
+
 class LoadVideo(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -206,6 +229,7 @@ class VideoExtension(ComfyExtension):
             SaveVideo,
             CreateVideo,
             GetVideoComponents,
+            VideoSlice,
             LoadVideo,
         ]
 

@@ -1,10 +1,47 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from fractions import Fraction
 from typing import Optional, Union, IO
+import copy
 import io
 import av
 from .._util import VideoContainer, VideoCodec, VideoComponents
+
+
+class VideoOp(ABC):
+    """Base class for lazy video operations."""
+
+    @abstractmethod
+    def apply(self, components: VideoComponents) -> VideoComponents:
+        pass
+
+    @abstractmethod
+    def compute_frame_count(self, input_frame_count: int) -> int:
+        pass
+
+
+@dataclass(frozen=True)
+class SliceOp(VideoOp):
+    """Extract a range of frames from the video."""
+    start_frame: int
+    frame_count: int
+
+    def apply(self, components: VideoComponents) -> VideoComponents:
+        total = components.images.shape[0]
+        start = max(0, min(self.start_frame, total))
+        end = min(start + self.frame_count, total)
+        return VideoComponents(
+            images=components.images[start:end],
+            audio=components.audio,
+            frame_rate=components.frame_rate,
+            metadata=getattr(components, 'metadata', None),
+        )
+
+    def compute_frame_count(self, input_frame_count: int) -> int:
+        start = max(0, min(self.start_frame, input_frame_count))
+        return min(self.frame_count, input_frame_count - start)
+
 
 class VideoInput(ABC):
     """
@@ -20,6 +57,12 @@ class VideoInput(ABC):
             VideoComponents containing images, audio, and frame rate
         """
         pass
+
+    def sliced(self, start_frame: int, frame_count: int) -> "VideoInput":
+        """Return a copy of this video with a slice operation appended."""
+        new = copy.copy(self)
+        new._operations = getattr(self, '_operations', []) + [SliceOp(start_frame, frame_count)]
+        return new
 
     @abstractmethod
     def save_to(
