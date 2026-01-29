@@ -101,143 +101,30 @@ def seed_assets(roots: tuple[RootType, ...], enable_logging: bool = False) -> No
             )
 
 
-def _get_all_configured_prefixes(roots: tuple[RootType, ...]) -> list[str]:
-    """Collect all configured prefixes from the given roots."""
-    all_prefixes: list[str] = []
-    for r in roots:
-        all_prefixes.extend(prefixes_for_root(r))
-    return [os.path.abspath(p) for p in all_prefixes]
-
-
 def _prune_orphaned_assets(roots: tuple[RootType, ...]) -> int:
-    """Prune assets whose file paths don't match any currently-configured prefix.
-
-    Returns the number of orphaned assets deleted.
-    """
-    all_prefixes = _get_all_configured_prefixes(roots)
+    """Prune cache states outside configured prefixes, then delete orphaned seed assets."""
+    all_prefixes = [os.path.abspath(p) for r in roots for p in prefixes_for_root(r)]
     if not all_prefixes:
         return 0
 
-    prefix_conds = []
-    for p in all_prefixes:
-        base = p if p.endswith(os.sep) else p + os.sep
-        escaped, esc = escape_like_prefix(base)
-        prefix_conds.append(AssetCacheState.file_path.like(escaped + "%", escape=esc))
+    prefix_conds = [
+        AssetCacheState.file_path.like(escaped + "%", escape=esc)
+        for p in all_prefixes
+        for escaped, esc in [escape_like_prefix(p if p.endswith(os.sep) else p + os.sep)]
+    ]
+
+    orphan_subq = (
+        sqlalchemy.select(Asset.id)
+        .outerjoin(AssetCacheState, AssetCacheState.asset_id == Asset.id)
+        .where(Asset.hash.is_(None), AssetCacheState.id.is_(None))
+    ).scalar_subquery()
 
     with create_session() as sess:
-        rows = sess.execute(
-            sqlalchemy.select(
-                AssetCacheState.id,
-                AssetCacheState.file_path,
-                AssetCacheState.asset_id,
-                Asset.hash,
-            )
-            .join(Asset, Asset.id == AssetCacheState.asset_id)
-            .where(sqlalchemy.not_(sqlalchemy.or_(*prefix_conds)))
-        ).all()
-
-        if not rows:
-            return _prune_assets_without_cache_states()
-
-        logging.debug(
-            "_prune_orphaned_assets: found %d orphaned AssetCacheState rows", len(rows)
-        )
-
-        by_asset: dict[str, dict] = {}
-        for sid, fp, aid, a_hash in rows:
-            acc = by_asset.get(aid)
-            if acc is None:
-                acc = {"hash": a_hash, "states": []}
-                by_asset[aid] = acc
-
-            exists = False
-            try:
-                os.stat(fp, follow_symlinks=True)
-                exists = True
-            except OSError:
-                pass
-
-            acc["states"].append({"sid": sid, "fp": fp, "exists": exists})
-
-        stale_state_ids: list[int] = []
-        assets_to_delete: list[str] = []
-
-        for aid, acc in by_asset.items():
-            a_hash = acc["hash"]
-            states = acc["states"]
-            all_missing = all(not s["exists"] for s in states)
-
-            if a_hash is None:
-                if all_missing:
-                    assets_to_delete.append(aid)
-                for s in states:
-                    stale_state_ids.append(s["sid"])
-            else:
-                for s in states:
-                    if not s["exists"]:
-                        stale_state_ids.append(s["sid"])
-                if all_missing:
-                    with contextlib.suppress(Exception):
-                        add_missing_tag_for_asset_id(
-                            sess, asset_id=aid, origin="automatic"
-                        )
-
-        if stale_state_ids:
-            sess.execute(
-                sqlalchemy.delete(AssetCacheState).where(
-                    AssetCacheState.id.in_(stale_state_ids)
-                )
-            )
-
-        deleted_count = 0
-        for aid in assets_to_delete:
-            sess.execute(sqlalchemy.delete(AssetInfo).where(AssetInfo.asset_id == aid))
-            asset = sess.get(Asset, aid)
-            if asset:
-                sess.delete(asset)
-                deleted_count += 1
-
+        sess.execute(sqlalchemy.delete(AssetCacheState).where(sqlalchemy.not_(sqlalchemy.or_(*prefix_conds))))
+        sess.execute(sqlalchemy.delete(AssetInfo).where(AssetInfo.asset_id.in_(orphan_subq)))
+        result = sess.execute(sqlalchemy.delete(Asset).where(Asset.id.in_(orphan_subq)))
         sess.commit()
-
-    # Also prune Assets that have no AssetCacheState entries at all
-    orphan_assets_count = _prune_assets_without_cache_states()
-
-    return deleted_count + orphan_assets_count
-
-
-def _prune_assets_without_cache_states() -> int:
-    """Delete seed Assets (hash=NULL) that have no AssetCacheState entries."""
-    with create_session() as sess:
-        orphan_assets = (
-            sess.execute(
-                sqlalchemy.select(Asset.id)
-                .outerjoin(AssetCacheState, AssetCacheState.asset_id == Asset.id)
-                .where(Asset.hash.is_(None))
-                .where(AssetCacheState.id.is_(None))
-            )
-            .scalars()
-            .all()
-        )
-
-        if not orphan_assets:
-            return 0
-
-        logging.info(
-            "_prune_assets_without_cache_states: found %d assets with no cache states",
-            len(orphan_assets),
-        )
-
-        deleted_count = 0
-        for aid in orphan_assets:
-            logging.debug("_prune_assets_without_cache_states: deleting asset %s", aid)
-            sess.execute(sqlalchemy.delete(AssetInfo).where(AssetInfo.asset_id == aid))
-            asset = sess.get(Asset, aid)
-            if asset:
-                sess.delete(asset)
-                deleted_count += 1
-
-        sess.commit()
-        return deleted_count
+        return result.rowcount
 
 
 def _fast_db_consistency_pass(
