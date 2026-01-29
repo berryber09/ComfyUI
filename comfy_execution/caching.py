@@ -238,7 +238,7 @@ class BasicCache:
             return
         if not has_cache_providers():
             return
-        if not self._is_cacheable_value(value):
+        if not self._is_external_cacheable_value(value):
             return
         if contains_nan(cache_key):
             return
@@ -302,8 +302,8 @@ class BasicCache:
 
         return None
 
-    def _is_cacheable_value(self, value):
-        """Check if value is a CacheEntry (not objects cache)."""
+    def _is_external_cacheable_value(self, value):
+        """Check if value is a CacheEntry suitable for external caching (not objects cache)."""
         return hasattr(value, 'outputs') and hasattr(value, 'ui')
 
     def _get_class_type(self, node_id):
