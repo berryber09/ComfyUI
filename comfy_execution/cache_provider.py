@@ -122,8 +122,8 @@ class CacheProvider(ABC):
         Return False to skip external caching for this node.
 
         Common filters:
-            - By class_type: Only expensive nodes (KSampler, VAEDecode)
-            - By size: Skip large values to reduce network overhead
+            - By class_type: Only cache expensive nodes (KSampler, VAEDecode)
+            - By cost/benefit: Skip if download time > compute time
 
         Default: Returns True (cache everything).
         """
