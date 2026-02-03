@@ -1,6 +1,4 @@
 """Tests for metadata filtering logic in asset_info queries."""
-import pytest
-from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetInfo, AssetInfoMeta

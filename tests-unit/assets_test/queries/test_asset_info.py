@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
+from app.assets.database.models import Asset, AssetInfo
 from app.assets.database.queries import (
     asset_info_exists_for_asset_id,
     get_asset_info_by_id,
@@ -116,7 +116,7 @@ class TestListAssetInfosPage:
     def test_include_tags_filter(self, session: Session):
         asset = _make_asset(session, "hash1")
         info1 = _make_asset_info(session, asset, name="tagged")
-        info2 = _make_asset_info(session, asset, name="untagged")
+        _make_asset_info(session, asset, name="untagged")
         ensure_tags_exist(session, ["wanted"])
         add_tags_to_asset_info(session, asset_info_id=info1.id, tags=["wanted"])
         session.commit()
@@ -127,10 +127,10 @@ class TestListAssetInfosPage:
 
     def test_exclude_tags_filter(self, session: Session):
         asset = _make_asset(session, "hash1")
-        info1 = _make_asset_info(session, asset, name="keep")
-        info2 = _make_asset_info(session, asset, name="exclude")
+        _make_asset_info(session, asset, name="keep")
+        info_exclude = _make_asset_info(session, asset, name="exclude")
         ensure_tags_exist(session, ["bad"])
-        add_tags_to_asset_info(session, asset_info_id=info2.id, tags=["bad"])
+        add_tags_to_asset_info(session, asset_info_id=info_exclude.id, tags=["bad"])
         session.commit()
 
         infos, _, total = list_asset_infos_page(session, exclude_tags=["bad"])

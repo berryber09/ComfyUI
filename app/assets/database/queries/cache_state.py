@@ -39,12 +39,12 @@ def pick_best_live_path(states: Sequence[AssetCacheState]) -> str:
 
 def prune_orphaned_assets(session: Session, roots: tuple[str, ...], prefixes_for_root_fn) -> int:
     """Prune cache states outside configured prefixes, then delete orphaned seed assets.
-    
+
     Args:
         session: Database session
         roots: Tuple of root types to prune
         prefixes_for_root_fn: Function to get prefixes for a root type
-        
+
     Returns:
         Number of orphaned assets deleted
     """
@@ -91,7 +91,7 @@ def fast_db_consistency_pass(
       - Optionally return surviving absolute paths
     """
     import contextlib
-    
+
     prefixes = prefixes_for_root_fn(root)
     if not prefixes:
         return set() if collect_existing_paths else None
