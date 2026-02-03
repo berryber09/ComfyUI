@@ -12,3 +12,9 @@ def session():
     Base.metadata.create_all(engine)
     with Session(engine) as sess:
         yield sess
+
+
+@pytest.fixture(autouse=True)
+def autoclean_unit_test_assets():
+    """Override parent autouse fixture - query tests don't need server cleanup."""
+    yield

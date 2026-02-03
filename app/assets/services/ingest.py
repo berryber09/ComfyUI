@@ -13,7 +13,7 @@ from sqlalchemy import select
 
 from app.assets.database.models import Asset, Tag
 from app.database.db import create_session
-from app.assets.helpers import normalize_tags, pick_best_live_path, utcnow
+from app.assets.helpers import normalize_tags, pick_best_live_path
 from app.assets.services.path_utils import compute_relative_filename
 from app.assets.database.queries import (
     get_asset_by_hash,
@@ -26,7 +26,6 @@ from app.assets.database.queries import (
     upsert_asset,
     upsert_cache_state,
     add_tags_to_asset_info,
-    ensure_tags_exist,
     get_asset_tags,
 )
 
@@ -147,7 +146,7 @@ def register_existing_asset(
 ) -> dict:
     """
     Create or return existing AssetInfo for an asset that already exists by hash.
-    
+
     Returns dict with asset and info details, or raises ValueError if hash not found.
     """
     with create_session() as session:

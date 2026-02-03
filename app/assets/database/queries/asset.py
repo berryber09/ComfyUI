@@ -1,4 +1,3 @@
-from typing import Iterable
 
 import sqlalchemy as sa
 from sqlalchemy import select

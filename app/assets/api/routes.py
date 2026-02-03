@@ -2,7 +2,6 @@ import logging
 import uuid
 import urllib.parse
 import os
-import contextlib
 from aiohttp import web
 
 from pydantic import ValidationError
@@ -20,7 +19,6 @@ from app.assets.api.upload import parse_multipart_upload
 from app.assets.services.scanner import seed_assets
 from typing import Any
 
-import folder_paths
 
 ROUTES = web.RouteTableDef()
 USER_MANAGER: user_manager.UserManager | None = None

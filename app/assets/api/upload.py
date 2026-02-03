@@ -16,7 +16,7 @@ from app.assets.api.schemas_in import ParsedUpload, UploadError
 def validate_hash_format(s: str) -> str:
     """
     Validate and normalize a hash string.
-    
+
     Returns canonical 'blake3:<hex>' or raises UploadError.
     """
     s = s.strip().lower()

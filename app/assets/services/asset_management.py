@@ -18,7 +18,6 @@ from app.assets.services.path_utils import compute_relative_filename
 from app.assets.database.queries import (
     asset_info_exists_for_asset_id,
     delete_asset_info_by_id,
-    fetch_asset_info_and_asset,
     fetch_asset_info_asset_and_tags,
     get_asset_info_by_id,
     list_cache_states_by_asset_id,

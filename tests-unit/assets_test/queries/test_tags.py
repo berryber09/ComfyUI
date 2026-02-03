@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo, AssetInfoTag, Tag
+from app.assets.database.models import Asset, AssetInfo, AssetInfoTag, AssetInfoMeta, Tag
 from app.assets.database.queries import (
     ensure_tags_exist,
     get_asset_tags,
@@ -11,6 +11,7 @@ from app.assets.database.queries import (
     add_missing_tag_for_asset_id,
     remove_missing_tag_for_asset_id,
     list_tags_with_usage,
+    bulk_insert_tags_and_meta,
 )
 from app.assets.helpers import utcnow
 
@@ -295,3 +296,71 @@ class TestListTagsWithUsage:
         tag_dict = {name: count for name, _, count in rows}
         assert tag_dict.get("shared-tag", 0) == 1
         assert tag_dict.get("owner-tag", 0) == 1
+
+
+class TestBulkInsertTagsAndMeta:
+    def test_inserts_tags(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        ensure_tags_exist(session, ["bulk-tag1", "bulk-tag2"])
+        session.commit()
+
+        now = utcnow()
+        tag_rows = [
+            {"asset_info_id": info.id, "tag_name": "bulk-tag1", "origin": "manual", "added_at": now},
+            {"asset_info_id": info.id, "tag_name": "bulk-tag2", "origin": "manual", "added_at": now},
+        ]
+        bulk_insert_tags_and_meta(session, tag_rows=tag_rows, meta_rows=[])
+        session.commit()
+
+        tags = get_asset_tags(session, asset_info_id=info.id)
+        assert set(tags) == {"bulk-tag1", "bulk-tag2"}
+
+    def test_inserts_meta(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        session.commit()
+
+        meta_rows = [
+            {
+                "asset_info_id": info.id,
+                "key": "meta-key",
+                "ordinal": 0,
+                "val_str": "meta-value",
+                "val_num": None,
+                "val_bool": None,
+                "val_json": None,
+            },
+        ]
+        bulk_insert_tags_and_meta(session, tag_rows=[], meta_rows=meta_rows)
+        session.commit()
+
+        meta = session.query(AssetInfoMeta).filter_by(asset_info_id=info.id).all()
+        assert len(meta) == 1
+        assert meta[0].key == "meta-key"
+        assert meta[0].val_str == "meta-value"
+
+    def test_ignores_conflicts(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        ensure_tags_exist(session, ["existing-tag"])
+        add_tags_to_asset_info(session, asset_info_id=info.id, tags=["existing-tag"])
+        session.commit()
+
+        now = utcnow()
+        tag_rows = [
+            {"asset_info_id": info.id, "tag_name": "existing-tag", "origin": "duplicate", "added_at": now},
+        ]
+        bulk_insert_tags_and_meta(session, tag_rows=tag_rows, meta_rows=[])
+        session.commit()
+
+        # Should still have only one tag link
+        links = session.query(AssetInfoTag).filter_by(asset_info_id=info.id, tag_name="existing-tag").all()
+        assert len(links) == 1
+        # Origin should be original, not overwritten
+        assert links[0].origin == "manual"
+
+    def test_empty_lists_is_noop(self, session: Session):
+        bulk_insert_tags_and_meta(session, tag_rows=[], meta_rows=[])
+        assert session.query(AssetInfoTag).count() == 0
+        assert session.query(AssetInfoMeta).count() == 0

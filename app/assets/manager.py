@@ -28,9 +28,7 @@ from app.assets.api.upload import _cleanup_temp
 from app.assets.database.queries import (
     asset_exists_by_hash,
     fetch_asset_info_and_asset,
-    fetch_asset_info_asset_and_tags,
     get_asset_by_hash,
-    get_asset_info_by_id,
     get_asset_tags,
     list_asset_infos_page,
     list_cache_states_by_asset_id,
@@ -417,7 +415,7 @@ def set_asset_preview(
         owner_id=owner_id,
     )
     info = result["info"]
-    asset = result["asset"]T
+    asset = result["asset"]
     tags = result["tags"]
 
     return schemas_out.AssetDetail(

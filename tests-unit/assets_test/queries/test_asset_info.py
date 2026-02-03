@@ -1,16 +1,24 @@
+import time
+import uuid
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo
+from app.assets.database.models import Asset, AssetInfo, AssetInfoMeta
 from app.assets.database.queries import (
     asset_info_exists_for_asset_id,
     get_asset_info_by_id,
+    insert_asset_info,
+    get_or_create_asset_info,
+    update_asset_info_timestamps,
     list_asset_infos_page,
     fetch_asset_info_asset_and_tags,
     fetch_asset_info_and_asset,
     touch_asset_info_by_id,
+    replace_asset_info_metadata_projection,
     delete_asset_info_by_id,
     set_asset_info_preview,
+    bulk_insert_asset_infos_ignore_conflicts,
+    get_asset_info_ids_by_ids,
     ensure_tags_exist,
     add_tags_to_asset_info,
 )
@@ -266,3 +274,238 @@ class TestSetAssetInfoPreview:
 
         with pytest.raises(ValueError, match="Preview Asset"):
             set_asset_info_preview(session, asset_info_id=info.id, preview_asset_id="nonexistent")
+
+
+class TestInsertAssetInfo:
+    def test_creates_new_info(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = insert_asset_info(
+            session, asset_id=asset.id, owner_id="user1", name="test.bin"
+        )
+        session.commit()
+
+        assert info is not None
+        assert info.name == "test.bin"
+        assert info.owner_id == "user1"
+
+    def test_returns_none_on_conflict(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        insert_asset_info(session, asset_id=asset.id, owner_id="user1", name="dup.bin")
+        session.commit()
+
+        # Attempt duplicate with same (asset_id, owner_id, name)
+        result = insert_asset_info(
+            session, asset_id=asset.id, owner_id="user1", name="dup.bin"
+        )
+        assert result is None
+
+
+class TestGetOrCreateAssetInfo:
+    def test_creates_new_info(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info, created = get_or_create_asset_info(
+            session, asset_id=asset.id, owner_id="user1", name="new.bin"
+        )
+        session.commit()
+
+        assert created is True
+        assert info.name == "new.bin"
+
+    def test_returns_existing_info(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info1, created1 = get_or_create_asset_info(
+            session, asset_id=asset.id, owner_id="user1", name="existing.bin"
+        )
+        session.commit()
+
+        info2, created2 = get_or_create_asset_info(
+            session, asset_id=asset.id, owner_id="user1", name="existing.bin"
+        )
+        session.commit()
+
+        assert created1 is True
+        assert created2 is False
+        assert info1.id == info2.id
+
+
+class TestUpdateAssetInfoTimestamps:
+    def test_updates_timestamps(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        original_updated_at = info.updated_at
+        session.commit()
+
+        time.sleep(0.01)
+        update_asset_info_timestamps(session, info)
+        session.commit()
+
+        session.refresh(info)
+        assert info.updated_at > original_updated_at
+
+    def test_updates_preview_id(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        preview_asset = _make_asset(session, "preview_hash")
+        info = _make_asset_info(session, asset)
+        session.commit()
+
+        update_asset_info_timestamps(session, info, preview_id=preview_asset.id)
+        session.commit()
+
+        session.refresh(info)
+        assert info.preview_id == preview_asset.id
+
+
+class TestReplaceAssetInfoMetadataProjection:
+    def test_sets_metadata(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        session.commit()
+
+        replace_asset_info_metadata_projection(
+            session, asset_info_id=info.id, user_metadata={"key": "value"}
+        )
+        session.commit()
+
+        session.refresh(info)
+        assert info.user_metadata == {"key": "value"}
+        # Check metadata table
+        meta = session.query(AssetInfoMeta).filter_by(asset_info_id=info.id).all()
+        assert len(meta) == 1
+        assert meta[0].key == "key"
+        assert meta[0].val_str == "value"
+
+    def test_replaces_existing_metadata(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        session.commit()
+
+        replace_asset_info_metadata_projection(
+            session, asset_info_id=info.id, user_metadata={"old": "data"}
+        )
+        session.commit()
+
+        replace_asset_info_metadata_projection(
+            session, asset_info_id=info.id, user_metadata={"new": "data"}
+        )
+        session.commit()
+
+        meta = session.query(AssetInfoMeta).filter_by(asset_info_id=info.id).all()
+        assert len(meta) == 1
+        assert meta[0].key == "new"
+
+    def test_clears_metadata_with_empty_dict(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info = _make_asset_info(session, asset)
+        session.commit()
+
+        replace_asset_info_metadata_projection(
+            session, asset_info_id=info.id, user_metadata={"key": "value"}
+        )
+        session.commit()
+
+        replace_asset_info_metadata_projection(
+            session, asset_info_id=info.id, user_metadata={}
+        )
+        session.commit()
+
+        session.refresh(info)
+        assert info.user_metadata == {}
+        meta = session.query(AssetInfoMeta).filter_by(asset_info_id=info.id).all()
+        assert len(meta) == 0
+
+    def test_raises_for_nonexistent(self, session: Session):
+        with pytest.raises(ValueError, match="not found"):
+            replace_asset_info_metadata_projection(
+                session, asset_info_id="nonexistent", user_metadata={"key": "value"}
+            )
+
+
+class TestBulkInsertAssetInfosIgnoreConflicts:
+    def test_inserts_multiple_infos(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        now = utcnow()
+        rows = [
+            {
+                "id": str(uuid.uuid4()),
+                "owner_id": "",
+                "name": "bulk1.bin",
+                "asset_id": asset.id,
+                "preview_id": None,
+                "user_metadata": {},
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "owner_id": "",
+                "name": "bulk2.bin",
+                "asset_id": asset.id,
+                "preview_id": None,
+                "user_metadata": {},
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
+        ]
+        bulk_insert_asset_infos_ignore_conflicts(session, rows)
+        session.commit()
+
+        infos = session.query(AssetInfo).all()
+        assert len(infos) == 2
+
+    def test_ignores_conflicts(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        _make_asset_info(session, asset, name="existing.bin", owner_id="")
+        session.commit()
+
+        now = utcnow()
+        rows = [
+            {
+                "id": str(uuid.uuid4()),
+                "owner_id": "",
+                "name": "existing.bin",
+                "asset_id": asset.id,
+                "preview_id": None,
+                "user_metadata": {},
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "owner_id": "",
+                "name": "new.bin",
+                "asset_id": asset.id,
+                "preview_id": None,
+                "user_metadata": {},
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
+        ]
+        bulk_insert_asset_infos_ignore_conflicts(session, rows)
+        session.commit()
+
+        infos = session.query(AssetInfo).all()
+        assert len(infos) == 2  # existing + new, not 3
+
+    def test_empty_list_is_noop(self, session: Session):
+        bulk_insert_asset_infos_ignore_conflicts(session, [])
+        assert session.query(AssetInfo).count() == 0
+
+
+class TestGetAssetInfoIdsByIds:
+    def test_returns_existing_ids(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        info1 = _make_asset_info(session, asset, name="a.bin")
+        info2 = _make_asset_info(session, asset, name="b.bin")
+        session.commit()
+
+        found = get_asset_info_ids_by_ids(session, [info1.id, info2.id, "nonexistent"])
+
+        assert found == {info1.id, info2.id}
+
+    def test_empty_list_returns_empty(self, session: Session):
+        found = get_asset_info_ids_by_ids(session, [])
+        assert found == set()

@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetInfo, AssetInfoMeta
 from app.assets.database.queries import list_asset_infos_page
-from app.assets.helpers import utcnow, project_kv
+from app.assets.database.queries.asset_info import project_kv
+from app.assets.helpers import utcnow
 
 
 def _make_asset(session: Session, hash_val: str) -> Asset:

@@ -1,7 +1,7 @@
 """
 Pure atomic database queries for AssetInfo operations.
 
-This module contains only atomic DB operations - no business logic, 
+This module contains only atomic DB operations - no business logic,
 no filesystem operations, no orchestration across multiple tables.
 """
 from collections import defaultdict
@@ -246,7 +246,7 @@ def get_or_create_asset_info(
     )
     if info:
         return info, True
-    
+
     existing = session.execute(
         select(AssetInfo)
         .where(
