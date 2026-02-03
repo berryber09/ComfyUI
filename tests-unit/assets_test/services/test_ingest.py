@@ -1,12 +1,11 @@
 """Tests for ingest services."""
-import os
 from pathlib import Path
 
 import pytest
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetCacheState, AssetInfo, Tag
-from app.assets.database.queries import ensure_tags_exist, get_asset_tags
+from app.assets.database.queries import get_asset_tags
 from app.assets.services import ingest_file_from_path, register_existing_asset
 
 

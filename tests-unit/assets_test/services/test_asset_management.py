@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo, Tag
+from app.assets.database.models import Asset, AssetInfo
 from app.assets.database.queries import ensure_tags_exist, add_tags_to_asset_info
 from app.assets.helpers import utcnow
 from app.assets.services import (
@@ -179,7 +179,7 @@ class TestDeleteAssetReference:
     def test_keeps_asset_if_other_infos_exist(self, mock_create_session, session: Session):
         asset = _make_asset(session)
         info1 = _make_asset_info(session, asset, name="info1")
-        info2 = _make_asset_info(session, asset, name="info2")
+        _make_asset_info(session, asset, name="info2")  # Second info keeps asset alive
         asset_id = asset.id
         session.commit()
 

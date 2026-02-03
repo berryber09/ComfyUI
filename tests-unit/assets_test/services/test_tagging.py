@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo, Tag
+from app.assets.database.models import Asset, AssetInfo
 from app.assets.database.queries import ensure_tags_exist, add_tags_to_asset_info
 from app.assets.helpers import utcnow
 from app.assets.services import apply_tags, remove_tags, list_tags
