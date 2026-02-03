@@ -31,7 +31,7 @@ def escape_like_prefix(s: str, escape: str = "!") -> tuple[str, str]:
     return s, escape
 
 
-def utcnow() -> datetime:
+def get_utc_now() -> datetime:
     """Naive UTC timestamp (no tzinfo). We always treat DB datetimes as UTC."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
 

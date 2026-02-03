@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetInfo
 from app.assets.database.queries import ensure_tags_exist, add_tags_to_asset_info
-from app.assets.helpers import utcnow
+from app.assets.helpers import get_utc_now
 from app.assets.services import (
     get_asset_detail,
     update_asset_metadata,
@@ -26,7 +26,7 @@ def _make_asset_info(
     name: str = "test",
     owner_id: str = "",
 ) -> AssetInfo:
-    now = utcnow()
+    now = get_utc_now()
     info = AssetInfo(
         owner_id=owner_id,
         name=name,

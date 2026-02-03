@@ -18,10 +18,10 @@ from sqlalchemy.orm import Session, contains_eager, noload
 from app.assets.database.models import (
     Asset, AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
 )
-from app.assets.helpers import escape_like_prefix, normalize_tags, utcnow
+from app.assets.helpers import escape_like_prefix, normalize_tags, get_utc_now
 
 
-def is_scalar(v):
+def check_is_scalar(v):
     if v is None:
         return True
     if isinstance(v, bool):
@@ -31,7 +31,7 @@ def is_scalar(v):
     return False
 
 
-def project_kv(key: str, value):
+def expand_metadata_to_rows(key: str, value):
     """
     Turn a metadata key/value into typed projection rows.
     Returns list[dict] with keys:
@@ -49,7 +49,7 @@ def project_kv(key: str, value):
         rows.append(_null_row(0))
         return rows
 
-    if is_scalar(value):
+    if check_is_scalar(value):
         if isinstance(value, bool):
             rows.append({"key": key, "ordinal": 0, "val_bool": bool(value)})
         elif isinstance(value, (int, float, Decimal)):
@@ -62,7 +62,7 @@ def project_kv(key: str, value):
         return rows
 
     if isinstance(value, list):
-        if all(is_scalar(x) for x in value):
+        if all(check_is_scalar(x) for x in value):
             for i, x in enumerate(value):
                 if x is None:
                     rows.append(_null_row(i))
@@ -95,7 +95,7 @@ def _iter_chunks(seq, n: int):
         yield seq[i : i + n]
 
 
-def _visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
+def _build_visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
     """Build owner visibility predicate for reads. Owner-less rows are visible to everyone."""
     owner_id = (owner_id or "").strip()
     if owner_id == "":
@@ -210,7 +210,7 @@ def insert_asset_info(
     preview_id: str | None = None,
 ) -> AssetInfo | None:
     """Insert a new AssetInfo. Returns None if unique constraint violated."""
-    now = utcnow()
+    now = get_utc_now()
     try:
         with session.begin_nested():
             info = AssetInfo(
@@ -267,7 +267,7 @@ def update_asset_info_timestamps(
     preview_id: str | None = None,
 ) -> None:
     """Update timestamps and optionally preview_id on existing AssetInfo."""
-    now = utcnow()
+    now = get_utc_now()
     if preview_id and asset_info.preview_id != preview_id:
         asset_info.preview_id = preview_id
     asset_info.updated_at = now
@@ -292,7 +292,7 @@ def list_asset_infos_page(
         select(AssetInfo)
         .join(Asset, Asset.id == AssetInfo.asset_id)
         .options(contains_eager(AssetInfo.asset), noload(AssetInfo.tags))
-        .where(_visible_owner_clause(owner_id))
+        .where(_build_visible_owner_clause(owner_id))
     )
 
     if name_contains:
@@ -320,7 +320,7 @@ def list_asset_infos_page(
         select(sa.func.count())
         .select_from(AssetInfo)
         .join(Asset, Asset.id == AssetInfo.asset_id)
-        .where(_visible_owner_clause(owner_id))
+        .where(_build_visible_owner_clause(owner_id))
     )
     if name_contains:
         escaped, esc = escape_like_prefix(name_contains)
@@ -359,7 +359,7 @@ def fetch_asset_info_asset_and_tags(
         .join(Tag, Tag.name == AssetInfoTag.tag_name, isouter=True)
         .where(
             AssetInfo.id == asset_info_id,
-            _visible_owner_clause(owner_id),
+            _build_visible_owner_clause(owner_id),
         )
         .options(noload(AssetInfo.tags))
         .order_by(Tag.name.asc())
@@ -389,7 +389,7 @@ def fetch_asset_info_and_asset(
         .join(Asset, Asset.id == AssetInfo.asset_id)
         .where(
             AssetInfo.id == asset_info_id,
-            _visible_owner_clause(owner_id),
+            _build_visible_owner_clause(owner_id),
         )
         .limit(1)
         .options(noload(AssetInfo.tags))
@@ -407,7 +407,7 @@ def touch_asset_info_by_id(
     ts: datetime | None = None,
     only_if_newer: bool = True,
 ) -> None:
-    ts = ts or utcnow()
+    ts = ts or get_utc_now()
     stmt = sa.update(AssetInfo).where(AssetInfo.id == asset_info_id)
     if only_if_newer:
         stmt = stmt.where(
@@ -426,7 +426,7 @@ def replace_asset_info_metadata_projection(
         raise ValueError(f"AssetInfo {asset_info_id} not found")
 
     info.user_metadata = user_metadata or {}
-    info.updated_at = utcnow()
+    info.updated_at = get_utc_now()
     session.flush()
 
     session.execute(delete(AssetInfoMeta).where(AssetInfoMeta.asset_info_id == asset_info_id))
@@ -437,7 +437,7 @@ def replace_asset_info_metadata_projection(
 
     rows: list[AssetInfoMeta] = []
     for k, v in user_metadata.items():
-        for r in project_kv(k, v):
+        for r in expand_metadata_to_rows(k, v):
             rows.append(
                 AssetInfoMeta(
                     asset_info_id=asset_info_id,
@@ -461,7 +461,7 @@ def delete_asset_info_by_id(
 ) -> bool:
     stmt = sa.delete(AssetInfo).where(
         AssetInfo.id == asset_info_id,
-        _visible_owner_clause(owner_id),
+        _build_visible_owner_clause(owner_id),
     )
     return int((session.execute(stmt)).rowcount or 0) > 0
 
@@ -483,7 +483,7 @@ def set_asset_info_preview(
             raise ValueError(f"Preview Asset {preview_asset_id} not found")
         info.preview_id = preview_asset_id
 
-    info.updated_at = utcnow()
+    info.updated_at = get_utc_now()
     session.flush()
 
 

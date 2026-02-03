@@ -16,7 +16,7 @@ from app.assets.api.schemas_in import (
     UploadError,
 )
 from app.assets.api.upload import parse_multipart_upload
-from app.assets.services.scanner import seed_assets
+from app.assets.services.scanner import seed_assets as scanner_seed_assets
 from typing import Any
 
 
@@ -46,22 +46,22 @@ def register_assets_system(app: web.Application, user_manager_instance: user_man
     USER_MANAGER = user_manager_instance
     app.add_routes(ROUTES)
 
-def _error_response(status: int, code: str, message: str, details: dict | None = None) -> web.Response:
+def _build_error_response(status: int, code: str, message: str, details: dict | None = None) -> web.Response:
     return web.json_response({"error": {"code": code, "message": message, "details": details or {}}}, status=status)
 
 
-def _validation_error_response(code: str, ve: ValidationError) -> web.Response:
-    return _error_response(400, code, "Validation failed.", {"errors": ve.json()})
+def _build_validation_error_response(code: str, ve: ValidationError) -> web.Response:
+    return _build_error_response(400, code, "Validation failed.", {"errors": ve.json()})
 
 
 @ROUTES.head("/api/assets/hash/{hash}")
 async def head_asset_by_hash(request: web.Request) -> web.Response:
     hash_str = request.match_info.get("hash", "").strip().lower()
     if not hash_str or ":" not in hash_str:
-        return _error_response(400, "INVALID_HASH", "hash must be like 'blake3:<hex>'")
+        return _build_error_response(400, "INVALID_HASH", "hash must be like 'blake3:<hex>'")
     algo, digest = hash_str.split(":", 1)
     if algo != "blake3" or not digest or any(c for c in digest if c not in "0123456789abcdef"):
-        return _error_response(400, "INVALID_HASH", "hash must be like 'blake3:<hex>'")
+        return _build_error_response(400, "INVALID_HASH", "hash must be like 'blake3:<hex>'")
     exists = manager.asset_exists(asset_hash=hash_str)
     return web.Response(status=200 if exists else 404)
 
@@ -75,7 +75,7 @@ async def list_assets(request: web.Request) -> web.Response:
     try:
         q = schemas_in.ListAssetsQuery.model_validate(query_dict)
     except ValidationError as ve:
-        return _validation_error_response("INVALID_QUERY", ve)
+        return _build_validation_error_response("INVALID_QUERY", ve)
 
     payload = manager.list_assets(
         include_tags=q.include_tags,
@@ -103,14 +103,14 @@ async def get_asset(request: web.Request) -> web.Response:
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
     except ValueError as e:
-        return _error_response(404, "ASSET_NOT_FOUND", str(e), {"id": asset_info_id})
+        return _build_error_response(404, "ASSET_NOT_FOUND", str(e), {"id": asset_info_id})
     except Exception:
         logging.exception(
             "get_asset failed for asset_info_id=%s, owner_id=%s",
             asset_info_id,
             USER_MANAGER.get_request_user_id(request),
         )
-        return _error_response(500, "INTERNAL", "Unexpected server error.")
+        return _build_error_response(500, "INTERNAL", "Unexpected server error.")
     return web.json_response(result.model_dump(mode="json"), status=200)
 
 
@@ -127,11 +127,11 @@ async def download_asset_content(request: web.Request) -> web.Response:
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
     except ValueError as ve:
-        return _error_response(404, "ASSET_NOT_FOUND", str(ve))
+        return _build_error_response(404, "ASSET_NOT_FOUND", str(ve))
     except NotImplementedError as nie:
-        return _error_response(501, "BACKEND_UNSUPPORTED", str(nie))
+        return _build_error_response(501, "BACKEND_UNSUPPORTED", str(nie))
     except FileNotFoundError:
-        return _error_response(404, "FILE_NOT_FOUND", "Underlying file not found on disk.")
+        return _build_error_response(404, "FILE_NOT_FOUND", "Underlying file not found on disk.")
 
     quoted = (filename or "").replace("\r", "").replace("\n", "").replace('"', "'")
     cd = f'{disposition}; filename="{quoted}"; filename*=UTF-8\'\'{urllib.parse.quote(filename)}'
@@ -146,7 +146,7 @@ async def download_asset_content(request: web.Request) -> web.Response:
         filename,
     )
 
-    async def file_sender():
+    async def stream_file_chunks():
         chunk_size = 64 * 1024
         with open(abs_path, "rb") as f:
             while True:
@@ -156,7 +156,7 @@ async def download_asset_content(request: web.Request) -> web.Response:
                 yield chunk
 
     return web.Response(
-        body=file_sender(),
+        body=stream_file_chunks(),
         content_type=content_type,
         headers={
             "Content-Disposition": cd,
@@ -171,9 +171,9 @@ async def create_asset_from_hash(request: web.Request) -> web.Response:
         payload = await request.json()
         body = schemas_in.CreateFromHashBody.model_validate(payload)
     except ValidationError as ve:
-        return _validation_error_response("INVALID_BODY", ve)
+        return _build_validation_error_response("INVALID_BODY", ve)
     except Exception:
-        return _error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
+        return _build_error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
 
     result = manager.create_asset_from_hash(
         hash_str=body.hash,
@@ -183,7 +183,7 @@ async def create_asset_from_hash(request: web.Request) -> web.Response:
         owner_id=USER_MANAGER.get_request_user_id(request),
     )
     if result is None:
-        return _error_response(404, "ASSET_NOT_FOUND", f"Asset content {body.hash} does not exist")
+        return _build_error_response(404, "ASSET_NOT_FOUND", f"Asset content {body.hash} does not exist")
     return web.json_response(result.model_dump(mode="json"), status=201)
 
 
@@ -193,21 +193,21 @@ async def upload_asset(request: web.Request) -> web.Response:
     try:
         parsed = await parse_multipart_upload(request, check_hash_exists=manager.asset_exists)
     except UploadError as e:
-        return _error_response(e.status, e.code, e.message)
+        return _build_error_response(e.status, e.code, e.message)
 
     owner_id = USER_MANAGER.get_request_user_id(request)
 
     try:
         result = manager.process_upload(parsed=parsed, owner_id=owner_id)
     except AssetValidationError as e:
-        return _error_response(400, e.code, str(e))
+        return _build_error_response(400, e.code, str(e))
     except AssetNotFoundError as e:
-        return _error_response(404, "ASSET_NOT_FOUND", str(e))
+        return _build_error_response(404, "ASSET_NOT_FOUND", str(e))
     except HashMismatchError as e:
-        return _error_response(400, "HASH_MISMATCH", str(e))
+        return _build_error_response(400, "HASH_MISMATCH", str(e))
     except Exception:
         logging.exception("process_upload failed for owner_id=%s", owner_id)
-        return _error_response(500, "INTERNAL", "Unexpected server error.")
+        return _build_error_response(500, "INTERNAL", "Unexpected server error.")
 
     status = 201 if result.created_new else 200
     return web.json_response(result.model_dump(mode="json"), status=status)
@@ -219,9 +219,9 @@ async def update_asset(request: web.Request) -> web.Response:
     try:
         body = schemas_in.UpdateAssetBody.model_validate(await request.json())
     except ValidationError as ve:
-        return _validation_error_response("INVALID_BODY", ve)
+        return _build_validation_error_response("INVALID_BODY", ve)
     except Exception:
-        return _error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
+        return _build_error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
 
     try:
         result = manager.update_asset(
@@ -231,14 +231,14 @@ async def update_asset(request: web.Request) -> web.Response:
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
     except (ValueError, PermissionError) as ve:
-        return _error_response(404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id})
+        return _build_error_response(404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id})
     except Exception:
         logging.exception(
             "update_asset failed for asset_info_id=%s, owner_id=%s",
             asset_info_id,
             USER_MANAGER.get_request_user_id(request),
         )
-        return _error_response(500, "INTERNAL", "Unexpected server error.")
+        return _build_error_response(500, "INTERNAL", "Unexpected server error.")
     return web.json_response(result.model_dump(mode="json"), status=200)
 
 
@@ -260,10 +260,10 @@ async def delete_asset(request: web.Request) -> web.Response:
             asset_info_id,
             USER_MANAGER.get_request_user_id(request),
         )
-        return _error_response(500, "INTERNAL", "Unexpected server error.")
+        return _build_error_response(500, "INTERNAL", "Unexpected server error.")
 
     if not deleted:
-        return _error_response(404, "ASSET_NOT_FOUND", f"AssetInfo {asset_info_id} not found.")
+        return _build_error_response(404, "ASSET_NOT_FOUND", f"AssetInfo {asset_info_id} not found.")
     return web.Response(status=204)
 
 
@@ -300,9 +300,9 @@ async def add_asset_tags(request: web.Request) -> web.Response:
         payload = await request.json()
         data = schemas_in.TagsAdd.model_validate(payload)
     except ValidationError as ve:
-        return _error_response(400, "INVALID_BODY", "Invalid JSON body for tags add.", {"errors": ve.errors()})
+        return _build_error_response(400, "INVALID_BODY", "Invalid JSON body for tags add.", {"errors": ve.errors()})
     except Exception:
-        return _error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
+        return _build_error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
 
     try:
         result = manager.add_tags_to_asset(
@@ -312,14 +312,14 @@ async def add_asset_tags(request: web.Request) -> web.Response:
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
     except (ValueError, PermissionError) as ve:
-        return _error_response(404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id})
+        return _build_error_response(404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id})
     except Exception:
         logging.exception(
             "add_tags_to_asset failed for asset_info_id=%s, owner_id=%s",
             asset_info_id,
             USER_MANAGER.get_request_user_id(request),
         )
-        return _error_response(500, "INTERNAL", "Unexpected server error.")
+        return _build_error_response(500, "INTERNAL", "Unexpected server error.")
 
     return web.json_response(result.model_dump(mode="json"), status=200)
 
@@ -331,9 +331,9 @@ async def delete_asset_tags(request: web.Request) -> web.Response:
         payload = await request.json()
         data = schemas_in.TagsRemove.model_validate(payload)
     except ValidationError as ve:
-        return _error_response(400, "INVALID_BODY", "Invalid JSON body for tags remove.", {"errors": ve.errors()})
+        return _build_error_response(400, "INVALID_BODY", "Invalid JSON body for tags remove.", {"errors": ve.errors()})
     except Exception:
-        return _error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
+        return _build_error_response(400, "INVALID_JSON", "Request body must be valid JSON.")
 
     try:
         result = manager.remove_tags_from_asset(
@@ -342,20 +342,20 @@ async def delete_asset_tags(request: web.Request) -> web.Response:
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
     except ValueError as ve:
-        return _error_response(404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id})
+        return _build_error_response(404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id})
     except Exception:
         logging.exception(
             "remove_tags_from_asset failed for asset_info_id=%s, owner_id=%s",
             asset_info_id,
             USER_MANAGER.get_request_user_id(request),
         )
-        return _error_response(500, "INTERNAL", "Unexpected server error.")
+        return _build_error_response(500, "INTERNAL", "Unexpected server error.")
 
     return web.json_response(result.model_dump(mode="json"), status=200)
 
 
 @ROUTES.post("/api/assets/seed")
-async def seed_assets_endpoint(request: web.Request) -> web.Response:
+async def seed_assets(request: web.Request) -> web.Response:
     """Trigger asset seeding for specified roots (models, input, output)."""
     try:
         payload = await request.json()
@@ -365,12 +365,12 @@ async def seed_assets_endpoint(request: web.Request) -> web.Response:
 
     valid_roots = [r for r in roots if r in ("models", "input", "output")]
     if not valid_roots:
-        return _error_response(400, "INVALID_BODY", "No valid roots specified")
+        return _build_error_response(400, "INVALID_BODY", "No valid roots specified")
 
     try:
-        seed_assets(tuple(valid_roots))
+        scanner_seed_assets(tuple(valid_roots))
     except Exception:
-        logging.exception("seed_assets failed for roots=%s", valid_roots)
-        return _error_response(500, "INTERNAL", "Seed operation failed")
+        logging.exception("scanner_seed_assets failed for roots=%s", valid_roots)
+        return _build_error_response(500, "INTERNAL", "Seed operation failed")
 
     return web.json_response({"seeded": valid_roots}, status=200)

@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetInfo, AssetInfoMeta
 from app.assets.database.queries import list_asset_infos_page
-from app.assets.database.queries.asset_info import project_kv
-from app.assets.helpers import utcnow
+from app.assets.database.queries.asset_info import expand_metadata_to_rows
+from app.assets.helpers import get_utc_now
 
 
 def _make_asset(session: Session, hash_val: str) -> Asset:
@@ -20,7 +20,7 @@ def _make_asset_info(
     name: str,
     metadata: dict | None = None,
 ) -> AssetInfo:
-    now = utcnow()
+    now = get_utc_now()
     info = AssetInfo(
         owner_id="",
         name=name,
@@ -35,7 +35,7 @@ def _make_asset_info(
 
     if metadata:
         for key, val in metadata.items():
-            for row in project_kv(key, val):
+            for row in expand_metadata_to_rows(key, val):
                 meta_row = AssetInfoMeta(
                     asset_info_id=info.id,
                     key=row["key"],

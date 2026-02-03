@@ -101,33 +101,33 @@ def get_relative_to_root_category_path_of_asset(file_path: str) -> tuple[Literal
     """
     fp_abs = os.path.abspath(file_path)
 
-    def _is_within(child: str, parent: str) -> bool:
+    def _check_is_within(child: str, parent: str) -> bool:
         try:
             return os.path.commonpath([child, parent]) == parent
         except Exception:
             return False
 
-    def _rel(child: str, parent: str) -> str:
+    def _compute_relative(child: str, parent: str) -> str:
         return os.path.relpath(os.path.join(os.sep, os.path.relpath(child, parent)), os.sep)
 
     # 1) input
     input_base = os.path.abspath(folder_paths.get_input_directory())
-    if _is_within(fp_abs, input_base):
-        return "input", _rel(fp_abs, input_base)
+    if _check_is_within(fp_abs, input_base):
+        return "input", _compute_relative(fp_abs, input_base)
 
     # 2) output
     output_base = os.path.abspath(folder_paths.get_output_directory())
-    if _is_within(fp_abs, output_base):
-        return "output", _rel(fp_abs, output_base)
+    if _check_is_within(fp_abs, output_base):
+        return "output", _compute_relative(fp_abs, output_base)
 
     # 3) models (check deepest matching base to avoid ambiguity)
     best: tuple[int, str, str] | None = None  # (base_len, bucket, rel_inside_bucket)
     for bucket, bases in get_comfy_models_folders():
         for b in bases:
             base_abs = os.path.abspath(b)
-            if not _is_within(fp_abs, base_abs):
+            if not _check_is_within(fp_abs, base_abs):
                 continue
-            cand = (len(base_abs), bucket, _rel(fp_abs, base_abs))
+            cand = (len(base_abs), bucket, _compute_relative(fp_abs, base_abs))
             if best is None or cand[0] > best[0]:
                 best = cand
 

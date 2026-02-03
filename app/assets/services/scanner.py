@@ -26,7 +26,7 @@ from app.assets.database.queries import (
     get_asset_info_ids_by_ids,
     bulk_insert_tags_and_meta,
 )
-from app.assets.helpers import utcnow
+from app.assets.helpers import get_utc_now
 from app.assets.services.path_utils import (
     compute_relative_filename,
     get_comfy_models_folders,
@@ -38,7 +38,7 @@ from app.database.db import create_session, dependencies_available
 RootType = Literal["models", "input", "output"]
 
 
-def fast_asset_file_check(
+def check_asset_file_fast(
     mtime_db: int | None,
     size_db: int | None,
     stat_result: os.stat_result,
@@ -65,7 +65,7 @@ def list_tree(base_dir: str) -> list[str]:
     return out
 
 
-def prefixes_for_root(root: RootType) -> list[str]:
+def get_prefixes_for_root(root: RootType) -> list[str]:
     if root == "models":
         bases: list[str] = []
         for _bucket, paths in get_comfy_models_folders():
@@ -128,7 +128,7 @@ def _seed_from_paths_batch(
     if not specs:
         return {"inserted_infos": 0, "won_states": 0, "lost_states": 0}
 
-    now = utcnow()
+    now = get_utc_now()
     asset_rows: list[dict] = []
     state_rows: list[dict] = []
     path_to_asset: dict[str, str] = {}
@@ -283,7 +283,7 @@ def reconcile_cache_states_for_root(
     Returns:
         Set of surviving absolute paths if collect_existing_paths=True, else None
     """
-    prefixes = prefixes_for_root(root)
+    prefixes = get_prefixes_for_root(root)
     if not prefixes:
         return set() if collect_existing_paths else None
 
@@ -299,7 +299,7 @@ def reconcile_cache_states_for_root(
         fast_ok = False
         try:
             exists = True
-            fast_ok = fast_asset_file_check(
+            fast_ok = check_asset_file_fast(
                 mtime_db=row.mtime_ns,
                 size_db=acc["size_db"],
                 stat_result=os.stat(row.file_path, follow_symlinks=True),
@@ -400,7 +400,7 @@ def seed_assets(roots: tuple[RootType, ...], enable_logging: bool = False) -> No
         try:
             with create_session() as sess:
                 all_prefixes = [
-                    os.path.abspath(p) for r in roots for p in prefixes_for_root(r)
+                    os.path.abspath(p) for r in roots for p in get_prefixes_for_root(r)
                 ]
                 orphans_pruned = prune_orphaned_assets(sess, all_prefixes)
                 sess.commit()

@@ -15,7 +15,7 @@ from app.assets.database.queries import (
     bulk_insert_cache_states_ignore_conflicts,
     get_cache_states_by_paths_and_asset_ids,
 )
-from app.assets.helpers import pick_best_live_path, utcnow
+from app.assets.helpers import pick_best_live_path, get_utc_now
 
 
 def _make_asset(session: Session, hash_val: str | None = None, size: int = 1024) -> Asset:
@@ -228,7 +228,7 @@ class TestGetOrphanedSeedAssetIds:
 class TestDeleteAssetsByIds:
     def test_deletes_assets_and_infos(self, session: Session):
         asset = _make_asset(session, "hash1")
-        now = utcnow()
+        now = get_utc_now()
         info = AssetInfo(
             owner_id="", name="test", asset_id=asset.id,
             created_at=now, updated_at=now, last_access_time=now
@@ -325,7 +325,7 @@ class TestDeleteCacheStatesByIds:
 class TestDeleteOrphanedSeedAsset:
     def test_deletes_seed_asset_and_infos(self, session: Session):
         asset = _make_asset(session, hash_val=None)
-        now = utcnow()
+        now = get_utc_now()
         info = AssetInfo(
             owner_id="", name="test", asset_id=asset.id,
             created_at=now, updated_at=now, last_access_time=now

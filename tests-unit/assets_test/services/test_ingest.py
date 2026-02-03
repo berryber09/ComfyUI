@@ -177,14 +177,14 @@ class TestRegisterExistingAsset:
         session.add(asset)
         session.flush()
 
-        from app.assets.helpers import utcnow
+        from app.assets.helpers import get_utc_now
         info = AssetInfo(
             owner_id="",
             name="Existing Info",
             asset_id=asset.id,
-            created_at=utcnow(),
-            updated_at=utcnow(),
-            last_access_time=utcnow(),
+            created_at=get_utc_now(),
+            updated_at=get_utc_now(),
+            last_access_time=get_utc_now(),
         )
         session.add(info)
         session.flush()  # Flush to get the ID

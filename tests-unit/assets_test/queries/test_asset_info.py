@@ -22,7 +22,7 @@ from app.assets.database.queries import (
     ensure_tags_exist,
     add_tags_to_asset_info,
 )
-from app.assets.helpers import utcnow
+from app.assets.helpers import get_utc_now
 
 
 def _make_asset(session: Session, hash_val: str | None = None, size: int = 1024) -> Asset:
@@ -38,7 +38,7 @@ def _make_asset_info(
     name: str = "test",
     owner_id: str = "",
 ) -> AssetInfo:
-    now = utcnow()
+    now = get_utc_now()
     info = AssetInfo(
         owner_id=owner_id,
         name=name,
@@ -423,7 +423,7 @@ class TestReplaceAssetInfoMetadataProjection:
 class TestBulkInsertAssetInfosIgnoreConflicts:
     def test_inserts_multiple_infos(self, session: Session):
         asset = _make_asset(session, "hash1")
-        now = utcnow()
+        now = get_utc_now()
         rows = [
             {
                 "id": str(uuid.uuid4()),
@@ -459,7 +459,7 @@ class TestBulkInsertAssetInfosIgnoreConflicts:
         _make_asset_info(session, asset, name="existing.bin", owner_id="")
         session.commit()
 
-        now = utcnow()
+        now = get_utc_now()
         rows = [
             {
                 "id": str(uuid.uuid4()),

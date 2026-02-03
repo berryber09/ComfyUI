@@ -52,7 +52,7 @@ from app.assets.services import (
 from app.assets.services.tagging import list_tags as svc_list_tags
 
 
-def _safe_sort_field(requested: str | None) -> str:
+def _validate_sort_field(requested: str | None) -> str:
     if not requested:
         return "created_at"
     v = requested.lower()
@@ -66,7 +66,7 @@ def _get_size_mtime_ns(path: str) -> tuple[int, int]:
     return st.st_size, getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000))
 
 
-def _safe_filename(name: str | None, fallback: str) -> str:
+def _sanitize_filename(name: str | None, fallback: str) -> str:
     n = os.path.basename((name or "").strip() or fallback)
     if n:
         return n
@@ -89,7 +89,7 @@ def list_assets(
     order: str = "desc",
     owner_id: str = "",
 ) -> schemas_out.AssetsList:
-    sort = _safe_sort_field(sort)
+    sort = _validate_sort_field(sort)
     order = "desc" if (order or "desc").lower() not in {"asc", "desc"} else order.lower()
 
     with create_session() as session:
@@ -188,7 +188,7 @@ def upload_asset_from_temp_path(
     expected_asset_hash: str | None = None,
 ) -> schemas_out.AssetCreated:
     try:
-        digest = hashing.blake3_hash(temp_path)
+        digest = hashing.compute_blake3_hash(temp_path)
     except Exception as e:
         raise RuntimeError(f"failed to hash uploaded file: {e}")
     asset_hash = "blake3:" + digest
@@ -205,7 +205,7 @@ def upload_asset_from_temp_path(
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
 
-        display_name = _safe_filename(spec.name or (client_filename or ""), fallback=digest)
+        display_name = _sanitize_filename(spec.name or (client_filename or ""), fallback=digest)
         result = register_existing_asset(
             asset_hash=asset_hash,
             name=display_name,
@@ -266,7 +266,7 @@ def upload_asset_from_temp_path(
         size_bytes=size_bytes,
         mtime_ns=mtime_ns,
         mime_type=content_type,
-        info_name=_safe_filename(spec.name or (client_filename or ""), fallback=digest),
+        info_name=_sanitize_filename(spec.name or (client_filename or ""), fallback=digest),
         owner_id=owner_id,
         preview_id=None,
         user_metadata=spec.user_metadata or {},
@@ -456,7 +456,7 @@ def create_asset_from_hash(
 
     result = register_existing_asset(
         asset_hash=canonical,
-        name=_safe_filename(name, fallback=canonical.split(":", 1)[1] if ":" in canonical else canonical),
+        name=_sanitize_filename(name, fallback=canonical.split(":", 1)[1] if ":" in canonical else canonical),
         user_metadata=user_metadata or {},
         tags=tags or [],
         tag_origin="manual",

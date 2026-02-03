@@ -13,7 +13,7 @@ from typing import Sequence
 
 from app.assets.database.models import Asset
 from app.database.db import create_session
-from app.assets.helpers import pick_best_live_path, utcnow
+from app.assets.helpers import pick_best_live_path, get_utc_now
 from app.assets.services.path_utils import compute_relative_filename
 from app.assets.database.queries import (
     asset_info_exists_for_asset_id,
@@ -108,7 +108,7 @@ def update_asset_metadata(
             touched = True
 
         if touched and user_metadata is None:
-            info.updated_at = utcnow()
+            info.updated_at = get_utc_now()
             session.flush()
 
         # Fetch updated info with tags

@@ -13,7 +13,7 @@ from app.assets.database.queries import (
     list_tags_with_usage,
     bulk_insert_tags_and_meta,
 )
-from app.assets.helpers import utcnow
+from app.assets.helpers import get_utc_now
 
 
 def _make_asset(session: Session, hash_val: str | None = None) -> Asset:
@@ -24,7 +24,7 @@ def _make_asset(session: Session, hash_val: str | None = None) -> Asset:
 
 
 def _make_asset_info(session: Session, asset: Asset, name: str = "test", owner_id: str = "") -> AssetInfo:
-    now = utcnow()
+    now = get_utc_now()
     info = AssetInfo(
         owner_id=owner_id,
         name=name,
@@ -87,8 +87,8 @@ class TestGetAssetTags:
 
         ensure_tags_exist(session, ["tag1", "tag2"])
         session.add_all([
-            AssetInfoTag(asset_info_id=info.id, tag_name="tag1", origin="manual", added_at=utcnow()),
-            AssetInfoTag(asset_info_id=info.id, tag_name="tag2", origin="manual", added_at=utcnow()),
+            AssetInfoTag(asset_info_id=info.id, tag_name="tag1", origin="manual", added_at=get_utc_now()),
+            AssetInfoTag(asset_info_id=info.id, tag_name="tag2", origin="manual", added_at=get_utc_now()),
         ])
         session.flush()
 
@@ -305,7 +305,7 @@ class TestBulkInsertTagsAndMeta:
         ensure_tags_exist(session, ["bulk-tag1", "bulk-tag2"])
         session.commit()
 
-        now = utcnow()
+        now = get_utc_now()
         tag_rows = [
             {"asset_info_id": info.id, "tag_name": "bulk-tag1", "origin": "manual", "added_at": now},
             {"asset_info_id": info.id, "tag_name": "bulk-tag2", "origin": "manual", "added_at": now},
@@ -347,7 +347,7 @@ class TestBulkInsertTagsAndMeta:
         add_tags_to_asset_info(session, asset_info_id=info.id, tags=["existing-tag"])
         session.commit()
 
-        now = utcnow()
+        now = get_utc_now()
         tag_rows = [
             {"asset_info_id": info.id, "tag_name": "existing-tag", "origin": "duplicate", "added_at": now},
         ]

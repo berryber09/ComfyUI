@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
-from app.assets.helpers import escape_like_prefix, normalize_tags, utcnow
+from app.assets.helpers import escape_like_prefix, normalize_tags, get_utc_now
 
 MAX_BIND_PARAMS = 800
 
@@ -16,7 +16,7 @@ def _rows_per_stmt(cols: int) -> int:
     return max(1, MAX_BIND_PARAMS // max(1, cols))
 
 
-def _chunk_rows(rows: list[dict], cols_per_row: int) -> Iterable[list[dict]]:
+def _iter_row_chunks(rows: list[dict], cols_per_row: int) -> Iterable[list[dict]]:
     if not rows:
         return []
     rows_per_stmt = max(1, MAX_BIND_PARAMS // max(1, cols_per_row))
@@ -24,7 +24,7 @@ def _chunk_rows(rows: list[dict], cols_per_row: int) -> Iterable[list[dict]]:
         yield rows[i : i + rows_per_stmt]
 
 
-def _visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
+def _build_visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
     """Build owner visibility predicate for reads. Owner-less rows are visible to everyone."""
     owner_id = (owner_id or "").strip()
     if owner_id == "":
@@ -75,7 +75,7 @@ def set_asset_info_tags(
     if to_add:
         ensure_tags_exist(session, to_add, tag_type="user")
         session.add_all([
-            AssetInfoTag(asset_info_id=asset_info_id, tag_name=t, origin=origin, added_at=utcnow())
+            AssetInfoTag(asset_info_id=asset_info_id, tag_name=t, origin=origin, added_at=get_utc_now())
             for t in to_add
         ])
         session.flush()
@@ -132,7 +132,7 @@ def add_tags_to_asset_info(
                             asset_info_id=asset_info_id,
                             tag_name=t,
                             origin=origin,
-                            added_at=utcnow(),
+                            added_at=get_utc_now(),
                         )
                         for t in to_add
                     ]
@@ -199,7 +199,7 @@ def add_missing_tag_for_asset_id(
             AssetInfo.id.label("asset_info_id"),
             sa.literal("missing").label("tag_name"),
             sa.literal(origin).label("origin"),
-            sa.literal(utcnow()).label("added_at"),
+            sa.literal(get_utc_now()).label("added_at"),
         )
         .where(AssetInfo.asset_id == asset_id)
         .where(
@@ -246,7 +246,7 @@ def list_tags_with_usage(
         )
         .select_from(AssetInfoTag)
         .join(AssetInfo, AssetInfo.id == AssetInfoTag.asset_info_id)
-        .where(_visible_owner_clause(owner_id))
+        .where(_build_visible_owner_clause(owner_id))
         .group_by(AssetInfoTag.tag_name)
         .subquery()
     )
@@ -305,12 +305,12 @@ def bulk_insert_tags_and_meta(
         ins_tags = sqlite.insert(AssetInfoTag).on_conflict_do_nothing(
             index_elements=[AssetInfoTag.asset_info_id, AssetInfoTag.tag_name]
         )
-        for chunk in _chunk_rows(tag_rows, cols_per_row=4):
+        for chunk in _iter_row_chunks(tag_rows, cols_per_row=4):
             session.execute(ins_tags, chunk)
 
     if meta_rows:
         ins_meta = sqlite.insert(AssetInfoMeta).on_conflict_do_nothing(
             index_elements=[AssetInfoMeta.asset_info_id, AssetInfoMeta.key, AssetInfoMeta.ordinal]
         )
-        for chunk in _chunk_rows(meta_rows, cols_per_row=7):
+        for chunk in _iter_row_chunks(meta_rows, cols_per_row=7):
             session.execute(ins_meta, chunk)

@@ -108,7 +108,7 @@ class UpdateAssetBody(BaseModel):
     user_metadata: dict[str, Any] | None = None
 
     @model_validator(mode="after")
-    def _at_least_one(self):
+    def _validate_at_least_one_field(self):
         if self.name is None and self.user_metadata is None:
             raise ValueError("Provide at least one of: name, user_metadata.")
         return self
@@ -137,7 +137,7 @@ class CreateFromHashBody(BaseModel):
 
     @field_validator("tags", mode="before")
     @classmethod
-    def _tags_norm(cls, v):
+    def _normalize_tags_field(cls, v):
         if v is None:
             return []
         if isinstance(v, list):

@@ -7,7 +7,7 @@ import asyncio
 DEFAULT_CHUNK = 8 * 1024 *1024 # 8MB
 
 # NOTE: this allows hashing different representations of a file-like object
-def blake3_hash(
+def compute_blake3_hash(
     fp: str | IO[bytes],
     chunk_size: int = DEFAULT_CHUNK,
 ) -> str:
@@ -27,16 +27,16 @@ def blake3_hash(
         return _hash_file_obj(f, chunk_size)
 
 
-async def blake3_hash_async(
+async def compute_compute_blake3_hash_async(
     fp: str | IO[bytes],
     chunk_size: int = DEFAULT_CHUNK,
 ) -> str:
-    """Async wrapper for ``blake3_hash_sync``.
+    """Async wrapper for ``compute_blake3_hash_sync``.
     Uses a worker thread so the event loop remains responsive.
     """
     # If it is a path, open inside the worker thread to keep I/O off the loop.
     if hasattr(fp, "read"):
-        return await asyncio.to_thread(blake3_hash, fp, chunk_size)
+        return await asyncio.to_thread(compute_blake3_hash, fp, chunk_size)
 
     def _worker() -> str:
         with open(os.fspath(fp), "rb") as f:
