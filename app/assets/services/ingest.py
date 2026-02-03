@@ -9,6 +9,9 @@ import logging
 import os
 from typing import Sequence
 
+from sqlalchemy import select
+
+from app.assets.database.models import Asset, Tag
 from app.database.db import create_session
 from app.assets.helpers import (
     compute_relative_filename,
@@ -33,7 +36,6 @@ from app.assets.database.queries import (
 
 
 def ingest_file_from_path(
-    *,
     abs_path: str,
     asset_hash: str,
     size_bytes: int,
@@ -67,7 +69,6 @@ def ingest_file_from_path(
     with create_session() as session:
         # Validate preview_id if provided
         if preview_id:
-            from app.assets.database.models import Asset
             if not session.get(Asset, preview_id):
                 preview_id = None
 
@@ -141,7 +142,6 @@ def ingest_file_from_path(
 
 
 def register_existing_asset(
-    *,
     asset_hash: str,
     name: str,
     user_metadata: dict | None = None,
@@ -212,8 +212,6 @@ def register_existing_asset(
 
 def _validate_tags_exist(session, tags: list[str]) -> None:
     """Raise ValueError if any tags don't exist."""
-    from sqlalchemy import select
-    from app.assets.database.models import Tag
     existing_tag_names = set(
         name for (name,) in session.execute(select(Tag.name).where(Tag.name.in_(tags))).all()
     )
@@ -230,7 +228,6 @@ def _compute_filename_for_asset(session, asset_id: str) -> str | None:
 
 def _update_metadata_with_filename(
     session,
-    *,
     asset_info_id: str,
     asset_id: str,
     info,

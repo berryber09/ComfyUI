@@ -27,7 +27,6 @@ def _rows_per_stmt(cols: int) -> int:
 
 def seed_from_paths_batch(
     session: Session,
-    *,
     specs: list[dict],
     owner_id: str = "",
 ) -> dict:
@@ -177,7 +176,6 @@ def seed_from_paths_batch(
 
 def bulk_insert_tags_and_meta(
     session: Session,
-    *,
     tag_rows: list[dict],
     meta_rows: list[dict],
     max_bind_params: int,

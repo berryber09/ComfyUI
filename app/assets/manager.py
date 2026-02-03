@@ -12,6 +12,7 @@ import mimetypes
 import contextlib
 from typing import Sequence
 
+import app.assets.hashing as hashing
 from app.database.db import create_session
 from app.assets.api import schemas_out, schemas_in
 from app.assets.database.queries import (
@@ -64,13 +65,12 @@ def _safe_filename(name: str | None, fallback: str) -> str:
     return fallback
 
 
-def asset_exists(*, asset_hash: str) -> bool:
+def asset_exists(asset_hash: str) -> bool:
     with create_session() as session:
         return asset_exists_by_hash(session, asset_hash=asset_hash)
 
 
 def list_assets(
-    *,
     include_tags: Sequence[str] | None = None,
     exclude_tags: Sequence[str] | None = None,
     name_contains: str | None = None,
@@ -124,7 +124,6 @@ def list_assets(
 
 
 def get_asset(
-    *,
     asset_info_id: str,
     owner_id: str = "",
 ) -> schemas_out.AssetDetail:
@@ -151,7 +150,6 @@ def get_asset(
 
 
 def resolve_asset_content_for_download(
-    *,
     asset_info_id: str,
     owner_id: str = "",
 ) -> tuple[str, str, str]:
@@ -176,14 +174,12 @@ def resolve_asset_content_for_download(
 
 def upload_asset_from_temp_path(
     spec: schemas_in.UploadAssetSpec,
-    *,
     temp_path: str,
     client_filename: str | None = None,
     owner_id: str = "",
     expected_asset_hash: str | None = None,
 ) -> schemas_out.AssetCreated:
     try:
-        import app.assets.hashing as hashing
         digest = hashing.blake3_hash(temp_path)
     except Exception as e:
         raise RuntimeError(f"failed to hash uploaded file: {e}")
@@ -297,7 +293,6 @@ def upload_asset_from_temp_path(
 
 
 def update_asset(
-    *,
     asset_info_id: str,
     name: str | None = None,
     tags: list[str] | None = None,
@@ -327,7 +322,6 @@ def update_asset(
 
 
 def set_asset_preview(
-    *,
     asset_info_id: str,
     preview_asset_id: str | None = None,
     owner_id: str = "",
@@ -355,7 +349,7 @@ def set_asset_preview(
     )
 
 
-def delete_asset_reference(*, asset_info_id: str, owner_id: str, delete_content_if_orphan: bool = True) -> bool:
+def delete_asset_reference(asset_info_id: str, owner_id: str, delete_content_if_orphan: bool = True) -> bool:
     return svc_delete_asset_reference(
         asset_info_id=asset_info_id,
         owner_id=owner_id,
@@ -364,7 +358,6 @@ def delete_asset_reference(*, asset_info_id: str, owner_id: str, delete_content_
 
 
 def create_asset_from_hash(
-    *,
     hash_str: str,
     name: str,
     tags: list[str] | None = None,
@@ -406,7 +399,6 @@ def create_asset_from_hash(
 
 
 def add_tags_to_asset(
-    *,
     asset_info_id: str,
     tags: list[str],
     origin: str = "manual",
@@ -422,7 +414,6 @@ def add_tags_to_asset(
 
 
 def remove_tags_from_asset(
-    *,
     asset_info_id: str,
     tags: list[str],
     owner_id: str = "",

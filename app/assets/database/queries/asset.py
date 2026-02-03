@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy import select
+from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset
@@ -7,7 +8,6 @@ from app.assets.database.models import Asset
 
 def asset_exists_by_hash(
     session: Session,
-    *,
     asset_hash: str,
 ) -> bool:
     """
@@ -23,7 +23,6 @@ def asset_exists_by_hash(
 
 def get_asset_by_hash(
     session: Session,
-    *,
     asset_hash: str,
 ) -> Asset | None:
     return (
@@ -33,14 +32,11 @@ def get_asset_by_hash(
 
 def upsert_asset(
     session: Session,
-    *,
     asset_hash: str,
     size_bytes: int,
     mime_type: str | None = None,
 ) -> tuple[Asset, bool, bool]:
     """Upsert an Asset by hash. Returns (asset, created, updated)."""
-    from sqlalchemy.dialects import sqlite
-    
     vals = {"hash": asset_hash, "size_bytes": int(size_bytes)}
     if mime_type:
         vals["mime_type"] = mime_type

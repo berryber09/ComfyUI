@@ -16,7 +16,6 @@ from app.assets.database.queries import (
 
 
 def apply_tags(
-    *,
     asset_info_id: str,
     tags: list[str],
     origin: str = "manual",
@@ -47,7 +46,6 @@ def apply_tags(
 
 
 def remove_tags(
-    *,
     asset_info_id: str,
     tags: list[str],
     owner_id: str = "",

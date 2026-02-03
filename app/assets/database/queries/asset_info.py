@@ -6,6 +6,7 @@ no filesystem operations, no orchestration across multiple tables.
 """
 from collections import defaultdict
 from datetime import datetime
+from decimal import Decimal
 from typing import Sequence
 
 import sqlalchemy as sa
@@ -90,7 +91,6 @@ def _apply_metadata_filter(
         if isinstance(value, bool):
             return _exists_for_pred(key, AssetInfoMeta.val_bool == bool(value))
         if isinstance(value, (int, float)):
-            from decimal import Decimal
             num = value if isinstance(value, Decimal) else Decimal(str(value))
             return _exists_for_pred(key, AssetInfoMeta.val_num == num)
         if isinstance(value, str):
@@ -109,7 +109,6 @@ def _apply_metadata_filter(
 
 def asset_info_exists_for_asset_id(
     session: Session,
-    *,
     asset_id: str,
 ) -> bool:
     q = (
@@ -123,7 +122,6 @@ def asset_info_exists_for_asset_id(
 
 def get_asset_info_by_id(
     session: Session,
-    *,
     asset_info_id: str,
 ) -> AssetInfo | None:
     return session.get(AssetInfo, asset_info_id)
@@ -131,7 +129,6 @@ def get_asset_info_by_id(
 
 def insert_asset_info(
     session: Session,
-    *,
     asset_id: str,
     owner_id: str,
     name: str,
@@ -159,7 +156,6 @@ def insert_asset_info(
 
 def get_or_create_asset_info(
     session: Session,
-    *,
     asset_id: str,
     owner_id: str,
     name: str,
@@ -192,7 +188,6 @@ def get_or_create_asset_info(
 
 def update_asset_info_timestamps(
     session: Session,
-    *,
     asset_info: AssetInfo,
     preview_id: str | None = None,
 ) -> None:
@@ -311,7 +306,6 @@ def fetch_asset_info_asset_and_tags(
 
 def fetch_asset_info_and_asset(
     session: Session,
-    *,
     asset_info_id: str,
     owner_id: str = "",
 ) -> tuple[AssetInfo, Asset] | None:
@@ -334,7 +328,6 @@ def fetch_asset_info_and_asset(
 
 def touch_asset_info_by_id(
     session: Session,
-    *,
     asset_info_id: str,
     ts: datetime | None = None,
     only_if_newer: bool = True,
@@ -350,7 +343,6 @@ def touch_asset_info_by_id(
 
 def replace_asset_info_metadata_projection(
     session: Session,
-    *,
     asset_info_id: str,
     user_metadata: dict | None = None,
 ) -> None:
@@ -389,7 +381,6 @@ def replace_asset_info_metadata_projection(
 
 def delete_asset_info_by_id(
     session: Session,
-    *,
     asset_info_id: str,
     owner_id: str,
 ) -> bool:
@@ -402,7 +393,6 @@ def delete_asset_info_by_id(
 
 def set_asset_info_preview(
     session: Session,
-    *,
     asset_info_id: str,
     preview_asset_id: str | None = None,
 ) -> None:

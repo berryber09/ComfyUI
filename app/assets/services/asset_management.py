@@ -11,6 +11,7 @@ import contextlib
 import os
 from typing import Sequence
 
+from app.assets.database.models import Asset
 from app.database.db import create_session
 from app.assets.helpers import (
     compute_relative_filename,
@@ -31,7 +32,6 @@ from app.assets.database.queries import (
 
 
 def get_asset_detail(
-    *,
     asset_info_id: str,
     owner_id: str = "",
 ) -> dict | None:
@@ -57,7 +57,6 @@ def get_asset_detail(
 
 
 def update_asset_metadata(
-    *,
     asset_info_id: str,
     name: str | None = None,
     tags: Sequence[str] | None = None,
@@ -136,7 +135,6 @@ def update_asset_metadata(
 
 
 def delete_asset_reference(
-    *,
     asset_info_id: str,
     owner_id: str,
     delete_content_if_orphan: bool = True,
@@ -168,7 +166,6 @@ def delete_asset_reference(
         states = list_cache_states_by_asset_id(session, asset_id=asset_id)
         file_paths = [s.file_path for s in (states or []) if getattr(s, "file_path", None)]
 
-        from app.assets.database.models import Asset
         asset_row = session.get(Asset, asset_id)
         if asset_row is not None:
             session.delete(asset_row)
@@ -185,7 +182,6 @@ def delete_asset_reference(
 
 
 def set_asset_preview(
-    *,
     asset_info_id: str,
     preview_asset_id: str | None = None,
     owner_id: str = "",

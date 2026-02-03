@@ -31,7 +31,7 @@ def ensure_tags_exist(session: Session, names: Iterable[str], tag_type: str = "u
     session.execute(ins)
 
 
-def get_asset_tags(session: Session, *, asset_info_id: str) -> list[str]:
+def get_asset_tags(session: Session, asset_info_id: str) -> list[str]:
     return [
         tag_name for (tag_name,) in (
             session.execute(
@@ -43,7 +43,6 @@ def get_asset_tags(session: Session, *, asset_info_id: str) -> list[str]:
 
 def set_asset_info_tags(
     session: Session,
-    *,
     asset_info_id: str,
     tags: Sequence[str],
     origin: str = "manual",
@@ -79,7 +78,6 @@ def set_asset_info_tags(
 
 def add_tags_to_asset_info(
     session: Session,
-    *,
     asset_info_id: str,
     tags: Sequence[str],
     origin: str = "manual",
@@ -139,7 +137,6 @@ def add_tags_to_asset_info(
 
 def remove_tags_from_asset_info(
     session: Session,
-    *,
     asset_info_id: str,
     tags: Sequence[str],
 ) -> dict:
@@ -180,7 +177,6 @@ def remove_tags_from_asset_info(
 
 def add_missing_tag_for_asset_id(
     session: Session,
-    *,
     asset_id: str,
     origin: str = "automatic",
 ) -> None:
@@ -210,7 +206,6 @@ def add_missing_tag_for_asset_id(
 
 def remove_missing_tag_for_asset_id(
     session: Session,
-    *,
     asset_id: str,
 ) -> None:
     session.execute(

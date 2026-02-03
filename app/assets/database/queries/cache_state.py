@@ -1,8 +1,10 @@
+import contextlib
 import os
 from typing import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy import select
+from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetCacheState, AssetInfo
@@ -23,14 +25,11 @@ def list_cache_states_by_asset_id(
 
 def upsert_cache_state(
     session: Session,
-    *,
     asset_id: str,
     file_path: str,
     mtime_ns: int,
 ) -> tuple[bool, bool]:
     """Upsert a cache state by file_path. Returns (created, updated)."""
-    from sqlalchemy.dialects import sqlite
-
     vals = {
         "asset_id": asset_id,
         "file_path": file_path,
@@ -101,7 +100,6 @@ def prune_orphaned_assets(session: Session, roots: tuple[str, ...], prefixes_for
 def fast_db_consistency_pass(
     session: Session,
     root: str,
-    *,
     prefixes_for_root_fn,
     escape_like_prefix_fn,
     fast_asset_file_check_fn,
@@ -117,8 +115,6 @@ def fast_db_consistency_pass(
       - Optionally add/remove 'missing' tags based on fast-ok in this root
       - Optionally return surviving absolute paths
     """
-    import contextlib
-
     prefixes = prefixes_for_root_fn(root)
     if not prefixes:
         return set() if collect_existing_paths else None

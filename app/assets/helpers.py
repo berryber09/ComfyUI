@@ -71,7 +71,6 @@ def escape_like_prefix(s: str, escape: str = "!") -> tuple[str, str]:
     return s, escape
 
 def fast_asset_file_check(
-    *,
     mtime_db: int | None,
     size_db: int | None,
     stat_result: os.stat_result,
