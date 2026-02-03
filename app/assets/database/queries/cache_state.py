@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.assets.database.models import Asset, AssetCacheState, AssetInfo
 from app.assets.helpers import escape_like_prefix
 
+MAX_BIND_PARAMS = 800
+
 __all__ = [
     "CacheStateRow",
     "list_cache_states_by_asset_id",
@@ -20,7 +22,18 @@ __all__ = [
     "bulk_set_needs_verify",
     "delete_cache_states_by_ids",
     "delete_orphaned_seed_asset",
+    "bulk_insert_cache_states_ignore_conflicts",
+    "get_cache_states_by_paths_and_asset_ids",
 ]
+
+
+def _rows_per_stmt(cols: int) -> int:
+    return max(1, MAX_BIND_PARAMS // max(1, cols))
+
+
+def _iter_chunks(seq, n: int):
+    for i in range(0, len(seq), n):
+        yield seq[i : i + n]
 
 
 class CacheStateRow(NamedTuple):
@@ -233,3 +246,50 @@ def delete_orphaned_seed_asset(session: Session, asset_id: str) -> bool:
         session.delete(asset)
         return True
     return False
+
+
+def bulk_insert_cache_states_ignore_conflicts(
+    session: Session,
+    rows: list[dict],
+) -> None:
+    """Bulk insert cache state rows with ON CONFLICT DO NOTHING on file_path.
+
+    Each dict should have: asset_id, file_path, mtime_ns
+    """
+    if not rows:
+        return
+    ins = sqlite.insert(AssetCacheState).on_conflict_do_nothing(
+        index_elements=[AssetCacheState.file_path]
+    )
+    for chunk in _iter_chunks(rows, _rows_per_stmt(3)):
+        session.execute(ins, chunk)
+
+
+def get_cache_states_by_paths_and_asset_ids(
+    session: Session,
+    path_to_asset: dict[str, str],
+) -> set[str]:
+    """Query cache states to find paths where our asset_id won the insert.
+
+    Args:
+        path_to_asset: Mapping of file_path -> asset_id we tried to insert
+
+    Returns:
+        Set of file_paths where our asset_id is present
+    """
+    if not path_to_asset:
+        return set()
+
+    paths = list(path_to_asset.keys())
+    winners: set[str] = set()
+
+    for chunk in _iter_chunks(paths, MAX_BIND_PARAMS):
+        result = session.execute(
+            select(AssetCacheState.file_path).where(
+                AssetCacheState.file_path.in_(chunk),
+                AssetCacheState.asset_id.in_([path_to_asset[p] for p in chunk]),
+            )
+        )
+        winners.update(result.scalars().all())
+
+    return winners

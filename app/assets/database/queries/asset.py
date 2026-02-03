@@ -1,9 +1,22 @@
+from typing import Iterable
+
 import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset
+
+MAX_BIND_PARAMS = 800
+
+
+def _rows_per_stmt(cols: int) -> int:
+    return max(1, MAX_BIND_PARAMS // max(1, cols))
+
+
+def _iter_chunks(seq, n: int):
+    for i in range(0, len(seq), n):
+        yield seq[i : i + n]
 
 
 def asset_exists_by_hash(
@@ -68,3 +81,15 @@ def upsert_asset(
             updated = True
 
     return asset, created, updated
+
+
+def bulk_insert_assets(
+    session: Session,
+    rows: list[dict],
+) -> None:
+    """Bulk insert Asset rows. Each dict should have: id, hash, size_bytes, mime_type, created_at."""
+    if not rows:
+        return
+    ins = sqlite.insert(Asset)
+    for chunk in _iter_chunks(rows, _rows_per_stmt(5)):
+        session.execute(ins, chunk)

@@ -11,6 +11,7 @@ from typing import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy import select, delete, exists
+from sqlalchemy.dialects import sqlite
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, contains_eager, noload
 
@@ -18,6 +19,17 @@ from app.assets.database.models import (
     Asset, AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
 )
 from app.assets.helpers import escape_like_prefix, normalize_tags, project_kv, utcnow
+
+MAX_BIND_PARAMS = 800
+
+
+def _rows_per_stmt(cols: int) -> int:
+    return max(1, MAX_BIND_PARAMS // max(1, cols))
+
+
+def _iter_chunks(seq, n: int):
+    for i in range(0, len(seq), n):
+        yield seq[i : i + n]
 
 
 def _visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
@@ -410,3 +422,38 @@ def set_asset_info_preview(
 
     info.updated_at = utcnow()
     session.flush()
+
+
+def bulk_insert_asset_infos_ignore_conflicts(
+    session: Session,
+    rows: list[dict],
+) -> None:
+    """Bulk insert AssetInfo rows with ON CONFLICT DO NOTHING.
+
+    Each dict should have: id, owner_id, name, asset_id, preview_id,
+    user_metadata, created_at, updated_at, last_access_time
+    """
+    if not rows:
+        return
+    ins = sqlite.insert(AssetInfo).on_conflict_do_nothing(
+        index_elements=[AssetInfo.asset_id, AssetInfo.owner_id, AssetInfo.name]
+    )
+    for chunk in _iter_chunks(rows, _rows_per_stmt(9)):
+        session.execute(ins, chunk)
+
+
+def get_asset_info_ids_by_ids(
+    session: Session,
+    info_ids: list[str],
+) -> set[str]:
+    """Query to find which AssetInfo IDs exist in the database."""
+    if not info_ids:
+        return set()
+
+    found: set[str] = set()
+    for chunk in _iter_chunks(info_ids, MAX_BIND_PARAMS):
+        result = session.execute(
+            select(AssetInfo.id).where(AssetInfo.id.in_(chunk))
+        )
+        found.update(result.scalars().all())
+    return found

@@ -6,8 +6,22 @@ from sqlalchemy.dialects import sqlite
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import AssetInfo, AssetInfoTag, Tag
+from app.assets.database.models import AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
 from app.assets.helpers import escape_like_prefix, normalize_tags, utcnow
+
+MAX_BIND_PARAMS = 800
+
+
+def _rows_per_stmt(cols: int) -> int:
+    return max(1, MAX_BIND_PARAMS // max(1, cols))
+
+
+def _chunk_rows(rows: list[dict], cols_per_row: int) -> Iterable[list[dict]]:
+    if not rows:
+        return []
+    rows_per_stmt = max(1, MAX_BIND_PARAMS // max(1, cols_per_row))
+    for i in range(0, len(rows), rows_per_stmt):
+        yield rows[i : i + rows_per_stmt]
 
 
 def _visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
@@ -273,3 +287,30 @@ def list_tags_with_usage(
 
     rows_norm = [(name, ttype, int(count or 0)) for (name, ttype, count) in rows]
     return rows_norm, int(total or 0)
+
+
+def bulk_insert_tags_and_meta(
+    session: Session,
+    tag_rows: list[dict],
+    meta_rows: list[dict],
+) -> None:
+    """Batch insert into asset_info_tags and asset_info_meta with ON CONFLICT DO NOTHING.
+
+    Args:
+        session: Database session
+        tag_rows: List of dicts with keys: asset_info_id, tag_name, origin, added_at
+        meta_rows: List of dicts with keys: asset_info_id, key, ordinal, val_str, val_num, val_bool, val_json
+    """
+    if tag_rows:
+        ins_tags = sqlite.insert(AssetInfoTag).on_conflict_do_nothing(
+            index_elements=[AssetInfoTag.asset_info_id, AssetInfoTag.tag_name]
+        )
+        for chunk in _chunk_rows(tag_rows, cols_per_row=4):
+            session.execute(ins_tags, chunk)
+
+    if meta_rows:
+        ins_meta = sqlite.insert(AssetInfoMeta).on_conflict_do_nothing(
+            index_elements=[AssetInfoMeta.asset_info_id, AssetInfoMeta.key, AssetInfoMeta.ordinal]
+        )
+        for chunk in _chunk_rows(meta_rows, cols_per_row=7):
+            session.execute(ins_meta, chunk)
