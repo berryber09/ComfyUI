@@ -33,7 +33,7 @@ import node_helpers
 from comfyui_version import __version__
 from app.frontend_management import FrontendManager, parse_version
 from comfy_api.internal import _ComfyNodeInternal
-from app.assets.services.scanner import seed_assets
+from app.assets.scanner import seed_assets
 from app.assets.api.routes import register_assets_system
 
 from app.user_manager import UserManager

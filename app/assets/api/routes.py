@@ -17,7 +17,7 @@ from app.assets.api.schemas_in import (
     UploadError,
 )
 from app.assets.api.upload import parse_multipart_upload
-from app.assets.services.scanner import seed_assets as scanner_seed_assets
+from app.assets.scanner import seed_assets as scanner_seed_assets
 from typing import Any
 
 

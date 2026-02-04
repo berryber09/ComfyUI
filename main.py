@@ -7,7 +7,7 @@ import folder_paths
 import time
 from comfy.cli_args import args, enables_dynamic_vram
 from app.logger import setup_logger
-from app.assets.services.scanner import seed_assets
+from app.assets.scanner import seed_assets
 import itertools
 import utils.extra_config
 import logging
