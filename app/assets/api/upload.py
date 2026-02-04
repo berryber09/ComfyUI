@@ -91,9 +91,8 @@ async def parse_multipart_upload(
                         file_written += len(chunk)
                 except Exception:
                     raise UploadError(500, "UPLOAD_IO_ERROR", "Failed to receive uploaded file.")
-                continue  # Do not create temp file; we will create AssetInfo from the existing content
+                continue
 
-            # Otherwise, store to temp for hashing/ingest
             uploads_root = os.path.join(folder_paths.get_temp_directory(), "uploads")
             unique_dir = os.path.join(uploads_root, uuid.uuid4().hex)
             os.makedirs(unique_dir, exist_ok=True)
@@ -118,7 +117,6 @@ async def parse_multipart_upload(
         elif fname == "user_metadata":
             user_metadata_raw = (await field.text()) or None
 
-    # Validate we have either a file or a known hash
     if not file_present and not (provided_hash and provided_hash_exists):
         raise UploadError(400, "MISSING_FILE", "Form must include a 'file' part or a known 'hash'.")
 

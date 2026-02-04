@@ -74,10 +74,8 @@ def update_asset_metadata(
             update_asset_info_name(session, asset_info_id=asset_info_id, name=name)
             touched = True
 
-        # Compute filename from best live path
         computed_filename = _compute_filename_for_asset(session, info.asset_id)
 
-        # Determine if metadata needs updating
         new_meta: dict | None = None
         if user_metadata is not None:
             new_meta = dict(user_metadata)
@@ -106,7 +104,6 @@ def update_asset_metadata(
         if touched and user_metadata is None:
             update_asset_info_updated_at(session, asset_info_id=asset_info_id)
 
-        # Fetch updated info with tags
         result = fetch_asset_info_asset_and_tags(
             session,
             asset_info_id=asset_info_id,
@@ -116,7 +113,6 @@ def update_asset_metadata(
             raise RuntimeError("State changed during update")
 
         info, asset, tag_list = result
-        # Extract plain data before session closes
         detail = AssetDetailResult(
             info=extract_info_data(info),
             asset=extract_asset_data(asset),
@@ -203,7 +199,6 @@ def set_asset_preview(
             raise RuntimeError("State changed during preview update")
 
         info, asset, tags = result
-        # Extract plain data before session closes
         detail = AssetDetailResult(
             info=extract_info_data(info),
             asset=extract_asset_data(asset),

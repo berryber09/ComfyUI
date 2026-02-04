@@ -193,7 +193,6 @@ def upload_asset_from_temp_path(
     if expected_asset_hash and asset_hash != expected_asset_hash.strip().lower():
         raise ValueError("HASH_MISMATCH")
 
-    # Check if asset already exists by hash
     with create_session() as session:
         existing = get_asset_by_hash(session, asset_hash=asset_hash)
 
@@ -228,7 +227,6 @@ def upload_asset_from_temp_path(
             created_new=False,
         )
 
-    # New asset - move file to destination
     base_dir, subdirs = resolve_destination_from_tags(spec.tags)
     dest_dir = os.path.join(base_dir, *subdirs) if subdirs else base_dir
     os.makedirs(dest_dir, exist_ok=True)
@@ -324,7 +322,6 @@ def process_upload(
         _delete_temp_file_if_exists(parsed.tmp_path)
         raise AssetValidationError("INVALID_BODY", f"Validation failed: {ve.json()}")
 
-    # Validate models category against configured folders
     if spec.tags and spec.tags[0] == "models":
         if len(spec.tags) < 2 or spec.tags[1] not in folder_paths.folder_names_and_paths:
             _delete_temp_file_if_exists(parsed.tmp_path)

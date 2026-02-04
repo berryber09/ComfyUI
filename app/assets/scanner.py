@@ -167,27 +167,20 @@ def _batch_insert_assets_from_paths(
             "_filename": sp["fname"],
         }
 
-    # 1. Insert all seed Assets (hash=NULL)
     bulk_insert_assets(session, asset_rows)
-
-    # 2. Try to claim cache states (file_path unique)
     bulk_insert_cache_states_ignore_conflicts(session, state_rows)
-
-    # 3. Query to find which paths we won
     winners_by_path = get_cache_states_by_paths_and_asset_ids(session, path_to_asset)
 
     all_paths_set = set(path_list)
     losers_by_path = all_paths_set - winners_by_path
     lost_assets = [path_to_asset[p] for p in losers_by_path]
 
-    # 4. Delete Assets for losers
     if lost_assets:
         delete_assets_by_ids(session, lost_assets)
 
     if not winners_by_path:
         return {"inserted_infos": 0, "won_states": 0, "lost_states": len(losers_by_path)}
 
-    # 5. Insert AssetInfo for winners
     winner_info_rows = [asset_to_info[path_to_asset[p]] for p in winners_by_path]
     db_info_rows = [
         {
@@ -205,11 +198,9 @@ def _batch_insert_assets_from_paths(
     ]
     bulk_insert_asset_infos_ignore_conflicts(session, db_info_rows)
 
-    # 6. Find which info rows were actually inserted
     all_info_ids = [row["id"] for row in winner_info_rows]
     inserted_info_ids = get_asset_info_ids_by_ids(session, all_info_ids)
 
-    # 7. Build and insert tag + meta rows
     tag_rows: list[dict] = []
     meta_rows: list[dict] = []
     if inserted_info_ids:
@@ -468,18 +459,15 @@ def seed_assets(roots: tuple[RootType, ...], enable_logging: bool = False) -> No
 
     t_start = time.perf_counter()
 
-    # Sync existing cache states
     existing_paths: set[str] = set()
     for r in roots:
         existing_paths.update(_sync_root_safely(r))
 
-    # Prune orphaned assets
     all_prefixes = [
         os.path.abspath(p) for r in roots for p in get_prefixes_for_root(r)
     ]
     orphans_pruned = _prune_orphans_safely(all_prefixes)
 
-    # Collect and process paths
     paths = _collect_paths_for_roots(roots)
     specs, tag_pool, skipped_existing = _build_asset_specs(paths, existing_paths)
     created = _insert_asset_specs(specs, tag_pool)

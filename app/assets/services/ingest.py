@@ -60,12 +60,10 @@ def ingest_file_from_path(
     }
 
     with create_session() as session:
-        # Validate preview_id if provided
         if preview_id:
             if not session.get(Asset, preview_id):
                 preview_id = None
 
-        # 1. Upsert Asset
         asset, created, updated = upsert_asset(
             session,
             asset_hash=asset_hash,
@@ -75,7 +73,6 @@ def ingest_file_from_path(
         out["asset_created"] = created
         out["asset_updated"] = updated
 
-        # 2. Upsert CacheState
         state_created, state_updated = upsert_cache_state(
             session,
             asset_id=asset.id,
@@ -85,7 +82,6 @@ def ingest_file_from_path(
         out["state_created"] = state_created
         out["state_updated"] = state_updated
 
-        # 3. Optionally create/update AssetInfo
         if info_name:
             info, info_created = get_or_create_asset_info(
                 session,
@@ -100,7 +96,6 @@ def ingest_file_from_path(
                 update_asset_info_timestamps(session, asset_info=info, preview_id=preview_id)
                 out["asset_info_id"] = info.id
 
-            # 4. Handle tags
             norm = normalize_tags(list(tags))
             if norm and out["asset_info_id"]:
                 if require_existing_tags:
@@ -113,7 +108,6 @@ def ingest_file_from_path(
                     create_if_missing=not require_existing_tags,
                 )
 
-            # 5. Update metadata with computed filename
             if out["asset_info_id"]:
                 _update_metadata_with_filename(
                     session,
@@ -123,7 +117,6 @@ def ingest_file_from_path(
                     user_metadata=user_metadata,
                 )
 
-        # 6. Remove missing tag
         try:
             remove_missing_tag_for_asset_id(session, asset_id=asset.id)
         except Exception:
@@ -161,9 +154,7 @@ def register_existing_asset(
         )
 
         if not info_created:
-            # Return existing info
             tag_names = get_asset_tags(session, asset_info_id=info.id)
-            # Extract plain data before session closes
             result = RegisterAssetResult(
                 info=extract_info_data(info),
                 asset=extract_asset_data(asset),
@@ -173,7 +164,6 @@ def register_existing_asset(
             session.commit()
             return result
 
-        # New info - apply metadata and tags
         new_meta = dict(user_metadata or {})
         computed_filename = _compute_filename_for_asset(session, asset.id)
         if computed_filename:
@@ -195,9 +185,7 @@ def register_existing_asset(
             )
 
         tag_names = get_asset_tags(session, asset_info_id=info.id)
-        # Refresh to get updated metadata after set_asset_info_metadata
         session.refresh(info)
-        # Extract plain data before session closes
         result = RegisterAssetResult(
             info=extract_info_data(info),
             asset=extract_asset_data(asset),

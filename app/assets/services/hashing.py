@@ -73,7 +73,6 @@ def _hash_file_obj(file_obj: IO, chunk_size: int = DEFAULT_CHUNK) -> str:
     orig_pos = file_obj.tell()
 
     try:
-        # seek to the beginning before reading
         if orig_pos != 0:
             file_obj.seek(0)
 

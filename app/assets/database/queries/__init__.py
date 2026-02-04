@@ -49,12 +49,10 @@ from app.assets.database.queries.tags import (
 )
 
 __all__ = [
-    # asset.py
     "asset_exists_by_hash",
     "get_asset_by_hash",
     "upsert_asset",
     "bulk_insert_assets",
-    # asset_info.py
     "asset_info_exists_for_asset_id",
     "get_asset_info_by_id",
     "insert_asset_info",
@@ -71,7 +69,6 @@ __all__ = [
     "set_asset_info_preview",
     "bulk_insert_asset_infos_ignore_conflicts",
     "get_asset_info_ids_by_ids",
-    # cache_state.py
     "CacheStateRow",
     "list_cache_states_by_asset_id",
     "upsert_cache_state",
@@ -84,7 +81,6 @@ __all__ = [
     "delete_orphaned_seed_asset",
     "bulk_insert_cache_states_ignore_conflicts",
     "get_cache_states_by_paths_and_asset_ids",
-    # tags.py
     "ensure_tags_exist",
     "get_asset_tags",
     "set_asset_info_tags",
