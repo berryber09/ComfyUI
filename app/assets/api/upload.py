@@ -1,9 +1,3 @@
-"""
-Multipart upload parsing for asset uploads.
-
-This module handles the HTTP-specific concerns of parsing multipart form data,
-streaming file uploads to temp storage, and validating hash fields.
-"""
 import os
 import uuid
 

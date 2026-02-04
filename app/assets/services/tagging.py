@@ -1,11 +1,3 @@
-"""
-Tagging services - manage tags on assets.
-
-Business logic for:
-- apply_tags: Add tags to an asset
-- remove_tags: Remove tags from an asset
-- list_tags: List tags with usage counts
-"""
 from app.assets.database.queries import (
     add_tags_to_asset_info,
     get_asset_info_by_id,

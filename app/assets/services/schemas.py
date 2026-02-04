@@ -1,9 +1,3 @@
-"""
-Service layer data transfer objects.
-
-These dataclasses represent the data returned by service functions,
-providing explicit types instead of raw dicts or ORM objects.
-"""
 from dataclasses import dataclass
 from datetime import datetime
 

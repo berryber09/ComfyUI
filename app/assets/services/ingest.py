@@ -1,10 +1,3 @@
-"""
-Ingest services - handles ingesting files into the asset database.
-
-Business logic for:
-- ingest_file_from_path: Ingest a file from filesystem path (upsert asset, cache state, info)
-- register_existing_asset: Create AssetInfo for an asset that already exists by hash
-"""
 import logging
 import os
 from typing import Sequence

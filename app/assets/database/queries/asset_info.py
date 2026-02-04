@@ -1,9 +1,3 @@
-"""
-Pure atomic database queries for AssetInfo operations.
-
-This module contains only atomic DB operations - no business logic,
-no filesystem operations, no orchestration across multiple tables.
-"""
 from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal

@@ -1,12 +1,3 @@
-"""
-Asset management services - CRUD operations on assets.
-
-Business logic for:
-- get_asset_detail: Fetch full asset details with tags
-- update_asset_metadata: Update name, tags, and/or metadata
-- delete_asset_reference: Delete AssetInfo and optionally orphaned content
-- set_asset_preview: Set or clear preview on an asset
-"""
 import contextlib
 import os
 from typing import Sequence

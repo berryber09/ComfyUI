@@ -1,12 +1,3 @@
-"""
-Asset manager - thin API adapter layer.
-
-This module transforms API schemas to/from service layer calls.
-It should NOT contain business logic or direct SQLAlchemy usage.
-
-Architecture:
-  API Routes -> manager.py (schema transformation) -> services/ (business logic) -> queries/ (DB ops)
-"""
 import contextlib
 import mimetypes
 import os

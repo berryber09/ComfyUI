@@ -1,4 +1,3 @@
-
 import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.dialects import sqlite

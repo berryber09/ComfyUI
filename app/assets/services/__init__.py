@@ -1,7 +1,3 @@
-# Asset services layer
-# Business logic that orchestrates database queries and filesystem operations
-# Services own session lifecycle via create_session()
-
 from app.assets.services.asset_management import (
     delete_asset_reference,
     get_asset_detail,

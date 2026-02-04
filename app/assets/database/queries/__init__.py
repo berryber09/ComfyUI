@@ -1,6 +1,3 @@
-# Re-export public API from query modules
-# Pure atomic database queries only - no business logic or orchestration
-
 from app.assets.database.queries.asset import (
     asset_exists_by_hash,
     bulk_insert_assets,
