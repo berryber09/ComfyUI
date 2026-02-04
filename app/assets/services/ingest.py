@@ -23,6 +23,7 @@ from app.assets.database.queries import (
     upsert_cache_state,
 )
 from app.assets.helpers import normalize_tags
+from app.assets.services.file_utils import get_size_and_mtime_ns
 from app.assets.services.path_utils import (
     compute_filename_for_asset,
     resolve_destination_from_tags,
@@ -233,11 +234,6 @@ def _update_metadata_with_filename(
         )
 
 
-def _get_size_mtime_ns(path: str) -> tuple[int, int]:
-    st = os.stat(path, follow_symlinks=True)
-    return st.st_size, getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000))
-
-
 def _sanitize_filename(name: str | None, fallback: str) -> str:
     n = os.path.basename((name or "").strip() or fallback)
     return n if n else fallback
@@ -320,7 +316,7 @@ def upload_from_temp_path(
         raise RuntimeError(f"failed to move uploaded file into place: {e}")
 
     try:
-        size_bytes, mtime_ns = _get_size_mtime_ns(dest_abs)
+        size_bytes, mtime_ns = get_size_and_mtime_ns(dest_abs)
     except OSError as e:
         raise RuntimeError(f"failed to stat destination file: {e}")
 
