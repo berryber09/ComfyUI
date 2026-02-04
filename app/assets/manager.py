@@ -268,7 +268,7 @@ def upload_asset_from_temp_path(
         tag_origin="manual",
         require_existing_tags=False,
     )
-    info_id = result["asset_info_id"]
+    info_id = result.asset_info_id
     if not info_id:
         raise RuntimeError("failed to create asset metadata")
 
@@ -290,7 +290,7 @@ def upload_asset_from_temp_path(
         preview_id=info.preview_id,
         created_at=info.created_at,
         last_access_time=info.last_access_time,
-        created_new=result["asset_created"],
+        created_new=result.asset_created,
     )
 
 
@@ -479,13 +479,17 @@ def add_tags_to_asset(
     origin: str = "manual",
     owner_id: str = "",
 ) -> schemas_out.TagsAdd:
-    data = apply_tags(
+    result = apply_tags(
         asset_info_id=asset_info_id,
         tags=tags,
         origin=origin,
         owner_id=owner_id,
     )
-    return schemas_out.TagsAdd(**data)
+    return schemas_out.TagsAdd(
+        added=result.added,
+        already_present=result.already_present,
+        total_tags=result.total_tags,
+    )
 
 
 def remove_tags_from_asset(
@@ -493,12 +497,16 @@ def remove_tags_from_asset(
     tags: list[str],
     owner_id: str = "",
 ) -> schemas_out.TagsRemove:
-    data = remove_tags(
+    result = remove_tags(
         asset_info_id=asset_info_id,
         tags=tags,
         owner_id=owner_id,
     )
-    return schemas_out.TagsRemove(**data)
+    return schemas_out.TagsRemove(
+        removed=result.removed,
+        not_present=result.not_present,
+        total_tags=result.total_tags,
+    )
 
 
 def list_tags(

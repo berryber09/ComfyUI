@@ -22,9 +22,9 @@ class TestIngestFileFromPath:
             mime_type="application/octet-stream",
         )
 
-        assert result["asset_created"] is True
-        assert result["state_created"] is True
-        assert result["asset_info_id"] is None  # no info_name provided
+        assert result.asset_created is True
+        assert result.state_created is True
+        assert result.asset_info_id is None  # no info_name provided
 
         # Verify DB state
         assets = session.query(Asset).all()
@@ -49,8 +49,8 @@ class TestIngestFileFromPath:
             owner_id="user1",
         )
 
-        assert result["asset_created"] is True
-        assert result["asset_info_id"] is not None
+        assert result.asset_created is True
+        assert result.asset_info_id is not None
 
         info = session.query(AssetInfo).first()
         assert info is not None
@@ -70,7 +70,7 @@ class TestIngestFileFromPath:
             tags=["models", "checkpoints"],
         )
 
-        assert result["asset_info_id"] is not None
+        assert result.asset_info_id is not None
 
         # Verify tags were created and linked
         tags = session.query(Tag).all()
@@ -78,7 +78,7 @@ class TestIngestFileFromPath:
         assert "models" in tag_names
         assert "checkpoints" in tag_names
 
-        asset_tags = get_asset_tags(session, asset_info_id=result["asset_info_id"])
+        asset_tags = get_asset_tags(session, asset_info_id=result.asset_info_id)
         assert set(asset_tags) == {"models", "checkpoints"}
 
     def test_idempotent_upsert(self, mock_create_session, temp_dir: Path, session: Session):
@@ -92,7 +92,7 @@ class TestIngestFileFromPath:
             size_bytes=7,
             mtime_ns=1234567890000000000,
         )
-        assert r1["asset_created"] is True
+        assert r1.asset_created is True
 
         # Second ingest with same hash - should update, not create
         r2 = ingest_file_from_path(
@@ -101,8 +101,8 @@ class TestIngestFileFromPath:
             size_bytes=7,
             mtime_ns=1234567890000000001,  # different mtime
         )
-        assert r2["asset_created"] is False
-        assert r2["state_updated"] is True or r2["state_created"] is False
+        assert r2.asset_created is False
+        assert r2.state_updated is True or r2.state_created is False
 
         # Still only one asset
         assets = session.query(Asset).all()
@@ -127,8 +127,8 @@ class TestIngestFileFromPath:
             preview_id=preview_id,
         )
 
-        assert result["asset_info_id"] is not None
-        info = session.query(AssetInfo).filter_by(id=result["asset_info_id"]).first()
+        assert result.asset_info_id is not None
+        info = session.query(AssetInfo).filter_by(id=result.asset_info_id).first()
         assert info.preview_id == preview_id
 
     def test_invalid_preview_id_is_cleared(self, mock_create_session, temp_dir: Path, session: Session):
@@ -144,8 +144,8 @@ class TestIngestFileFromPath:
             preview_id="nonexistent-uuid",
         )
 
-        assert result["asset_info_id"] is not None
-        info = session.query(AssetInfo).filter_by(id=result["asset_info_id"]).first()
+        assert result.asset_info_id is not None
+        info = session.query(AssetInfo).filter_by(id=result.asset_info_id).first()
         assert info.preview_id is None
 
 

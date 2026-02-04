@@ -46,9 +46,9 @@ class TestApplyTags:
             tags=["alpha", "beta"],
         )
 
-        assert set(result["added"]) == {"alpha", "beta"}
-        assert result["already_present"] == []
-        assert set(result["total_tags"]) == {"alpha", "beta"}
+        assert set(result.added) == {"alpha", "beta"}
+        assert result.already_present == []
+        assert set(result.total_tags) == {"alpha", "beta"}
 
     def test_reports_already_present(self, mock_create_session, session: Session):
         asset = _make_asset(session)
@@ -62,8 +62,8 @@ class TestApplyTags:
             tags=["existing", "new"],
         )
 
-        assert result["added"] == ["new"]
-        assert result["already_present"] == ["existing"]
+        assert result.added == ["new"]
+        assert result.already_present == ["existing"]
 
     def test_raises_for_nonexistent_info(self, mock_create_session):
         with pytest.raises(ValueError, match="not found"):
@@ -95,9 +95,9 @@ class TestRemoveTags:
             tags=["a", "b"],
         )
 
-        assert set(result["removed"]) == {"a", "b"}
-        assert result["not_present"] == []
-        assert result["total_tags"] == ["c"]
+        assert set(result.removed) == {"a", "b"}
+        assert result.not_present == []
+        assert result.total_tags == ["c"]
 
     def test_reports_not_present(self, mock_create_session, session: Session):
         asset = _make_asset(session)
@@ -111,8 +111,8 @@ class TestRemoveTags:
             tags=["present", "absent"],
         )
 
-        assert result["removed"] == ["present"]
-        assert result["not_present"] == ["absent"]
+        assert result.removed == ["present"]
+        assert result.not_present == ["absent"]
 
     def test_raises_for_nonexistent_info(self, mock_create_session):
         with pytest.raises(ValueError, match="not found"):

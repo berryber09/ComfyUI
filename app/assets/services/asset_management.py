@@ -2,6 +2,8 @@ import contextlib
 import os
 from typing import Sequence
 
+from sqlalchemy.orm import Session
+
 from app.assets.database.models import Asset
 from app.assets.database.queries import (
     asset_info_exists_for_asset_id,
@@ -19,6 +21,7 @@ from app.assets.helpers import select_best_live_path
 from app.assets.services.path_utils import compute_relative_filename
 from app.assets.services.schemas import (
     AssetDetailResult,
+    UserMetadata,
     extract_asset_data,
     extract_info_data,
 )
@@ -29,10 +32,6 @@ def get_asset_detail(
     asset_info_id: str,
     owner_id: str = "",
 ) -> AssetDetailResult | None:
-    """
-    Fetch full asset details including tags.
-    Returns AssetDetailResult or None if not found.
-    """
     with create_session() as session:
         result = fetch_asset_info_asset_and_tags(
             session,
@@ -54,14 +53,10 @@ def update_asset_metadata(
     asset_info_id: str,
     name: str | None = None,
     tags: Sequence[str] | None = None,
-    user_metadata: dict | None = None,
+    user_metadata: UserMetadata = None,
     tag_origin: str = "manual",
     owner_id: str = "",
 ) -> AssetDetailResult:
-    """
-    Update name, tags, and/or metadata on an AssetInfo.
-    Returns AssetDetailResult with updated data.
-    """
     with create_session() as session:
         info = get_asset_info_by_id(session, asset_info_id=asset_info_id)
         if not info:
@@ -128,11 +123,6 @@ def delete_asset_reference(
     owner_id: str,
     delete_content_if_orphan: bool = True,
 ) -> bool:
-    """
-    Delete an AssetInfo reference.
-    If delete_content_if_orphan is True and no other AssetInfos reference the asset,
-    also delete the Asset and its cached files.
-    """
     with create_session() as session:
         info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
         asset_id = info_row.asset_id if info_row else None
@@ -175,10 +165,6 @@ def set_asset_preview(
     preview_asset_id: str | None = None,
     owner_id: str = "",
 ) -> AssetDetailResult:
-    """
-    Set or clear preview_id on an AssetInfo.
-    Returns AssetDetailResult with updated data.
-    """
     with create_session() as session:
         info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
         if not info_row:
@@ -209,7 +195,6 @@ def set_asset_preview(
         return detail
 
 
-def _compute_filename_for_asset(session, asset_id: str) -> str | None:
-    """Compute the relative filename for an asset from its cache states."""
+def _compute_filename_for_asset(session: Session, asset_id: str) -> str | None:
     primary_path = select_best_live_path(list_cache_states_by_asset_id(session, asset_id=asset_id))
     return compute_relative_filename(primary_path) if primary_path else None

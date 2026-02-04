@@ -8,6 +8,18 @@ from app.assets.services.ingest import (
     ingest_file_from_path,
     register_existing_asset,
 )
+from app.assets.services.schemas import (
+    AddTagsResult,
+    AssetData,
+    AssetDetailResult,
+    AssetInfoData,
+    IngestResult,
+    RegisterAssetResult,
+    RemoveTagsResult,
+    SetTagsResult,
+    TagUsage,
+    UserMetadata,
+)
 from app.assets.services.tagging import (
     apply_tags,
     list_tags,
@@ -24,4 +36,14 @@ __all__ = [
     "apply_tags",
     "remove_tags",
     "list_tags",
+    "AddTagsResult",
+    "AssetData",
+    "AssetDetailResult",
+    "AssetInfoData",
+    "IngestResult",
+    "RegisterAssetResult",
+    "RemoveTagsResult",
+    "SetTagsResult",
+    "TagUsage",
+    "UserMetadata",
 ]

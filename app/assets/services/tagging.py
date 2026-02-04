@@ -4,6 +4,7 @@ from app.assets.database.queries import (
     list_tags_with_usage,
     remove_tags_from_asset_info,
 )
+from app.assets.services.schemas import AddTagsResult, RemoveTagsResult, TagUsage
 from app.database.db import create_session
 
 
@@ -12,11 +13,7 @@ def apply_tags(
     tags: list[str],
     origin: str = "manual",
     owner_id: str = "",
-) -> dict:
-    """
-    Add tags to an asset.
-    Returns dict with added, already_present, and total_tags lists.
-    """
+) -> AddTagsResult:
     with create_session() as session:
         info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
         if not info_row:
@@ -34,18 +31,18 @@ def apply_tags(
         )
         session.commit()
 
-    return data
+    return AddTagsResult(
+        added=data["added"],
+        already_present=data["already_present"],
+        total_tags=data["total_tags"],
+    )
 
 
 def remove_tags(
     asset_info_id: str,
     tags: list[str],
     owner_id: str = "",
-) -> dict:
-    """
-    Remove tags from an asset.
-    Returns dict with removed, not_present, and total_tags lists.
-    """
+) -> RemoveTagsResult:
     with create_session() as session:
         info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
         if not info_row:
@@ -60,7 +57,11 @@ def remove_tags(
         )
         session.commit()
 
-    return data
+    return RemoveTagsResult(
+        removed=data["removed"],
+        not_present=data["not_present"],
+        total_tags=data["total_tags"],
+    )
 
 
 def list_tags(
@@ -70,11 +71,7 @@ def list_tags(
     order: str = "count_desc",
     include_zero: bool = True,
     owner_id: str = "",
-) -> tuple[list[tuple[str, str, int]], int]:
-    """
-    List tags with usage counts.
-    Returns (rows, total) where rows are (name, tag_type, count) tuples.
-    """
+) -> tuple[list[TagUsage], int]:
     limit = max(1, min(1000, limit))
     offset = max(0, offset)
 
@@ -89,4 +86,4 @@ def list_tags(
             owner_id=owner_id,
         )
 
-    return rows, total
+    return [TagUsage(name, tag_type, count) for name, tag_type, count in rows], total

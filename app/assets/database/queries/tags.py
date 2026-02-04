@@ -1,4 +1,4 @@
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy import delete, func, select
@@ -8,6 +8,24 @@ from sqlalchemy.orm import Session
 
 from app.assets.database.models import AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
 from app.assets.helpers import escape_sql_like_string, get_utc_now, normalize_tags
+
+
+class AddTagsDict(TypedDict):
+    added: list[str]
+    already_present: list[str]
+    total_tags: list[str]
+
+
+class RemoveTagsDict(TypedDict):
+    removed: list[str]
+    not_present: list[str]
+    total_tags: list[str]
+
+
+class SetTagsDict(TypedDict):
+    added: list[str]
+    removed: list[str]
+    total: list[str]
 
 MAX_BIND_PARAMS = 800
 
@@ -60,7 +78,7 @@ def set_asset_info_tags(
     asset_info_id: str,
     tags: Sequence[str],
     origin: str = "manual",
-) -> dict:
+) -> SetTagsDict:
     desired = normalize_tags(tags)
 
     current = set(
@@ -96,8 +114,8 @@ def add_tags_to_asset_info(
     tags: Sequence[str],
     origin: str = "manual",
     create_if_missing: bool = True,
-    asset_info_row = None,
-) -> dict:
+    asset_info_row: AssetInfo | None = None,
+) -> AddTagsDict:
     if not asset_info_row:
         info = session.get(AssetInfo, asset_info_id)
         if not info:
@@ -153,7 +171,7 @@ def remove_tags_from_asset_info(
     session: Session,
     asset_info_id: str,
     tags: Sequence[str],
-) -> dict:
+) -> RemoveTagsDict:
     info = session.get(AssetInfo, asset_info_id)
     if not info:
         raise ValueError(f"AssetInfo {asset_info_id} not found")

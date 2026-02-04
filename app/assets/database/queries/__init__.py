@@ -37,6 +37,9 @@ from app.assets.database.queries.cache_state import (
     upsert_cache_state,
 )
 from app.assets.database.queries.tags import (
+    AddTagsDict,
+    RemoveTagsDict,
+    SetTagsDict,
     add_missing_tag_for_asset_id,
     add_tags_to_asset_info,
     bulk_insert_tags_and_meta,
@@ -90,4 +93,7 @@ __all__ = [
     "remove_missing_tag_for_asset_id",
     "list_tags_with_usage",
     "bulk_insert_tags_and_meta",
+    "AddTagsDict",
+    "RemoveTagsDict",
+    "SetTagsDict",
 ]
