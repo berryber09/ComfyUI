@@ -23,6 +23,19 @@ current_executing_context: contextvars.ContextVar[ExecutionContext | None] = con
 def get_executing_context() -> ExecutionContext | None:
     return current_executing_context.get(None)
 
+
+def is_output_needed(output_index: int) -> bool:
+    """Check if an output at the given index is connected downstream.
+
+    Returns True if the output might be used (should be computed).
+    Returns False if the output is definitely not connected (safe to skip).
+    """
+    ctx = get_executing_context()
+    if ctx is None or ctx.expected_outputs is None:
+        return True
+    return output_index in ctx.expected_outputs
+
+
 class CurrentNodeContext:
     """
     Context manager for setting the current executing node context.

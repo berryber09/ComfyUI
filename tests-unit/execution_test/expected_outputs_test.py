@@ -10,6 +10,7 @@ from comfy_execution.utils import (
     CurrentNodeContext,
     ExecutionContext,
     get_executing_context,
+    is_output_needed,
 )
 
 
@@ -267,3 +268,31 @@ class TestSchemaLazyOutputs:
                 return IO.NodeOutput(1.0)
 
         assert TestNodeWithoutLazyOutputs.LAZY_OUTPUTS is False
+
+
+class TestIsOutputNeeded:
+    """Tests for is_output_needed() helper function."""
+
+    def test_output_needed_when_in_expected(self):
+        """Test that output is needed when in expected_outputs."""
+        with CurrentNodeContext("prompt-1", "node-1", 0, frozenset({0, 2})):
+            assert is_output_needed(0) is True
+            assert is_output_needed(2) is True
+
+    def test_output_not_needed_when_not_in_expected(self):
+        """Test that output is not needed when not in expected_outputs."""
+        with CurrentNodeContext("prompt-1", "node-1", 0, frozenset({0, 2})):
+            assert is_output_needed(1) is False
+            assert is_output_needed(3) is False
+
+    def test_output_needed_when_no_context(self):
+        """Test that output is needed when no context."""
+        assert get_executing_context() is None
+        assert is_output_needed(0) is True
+        assert is_output_needed(1) is True
+
+    def test_output_needed_when_expected_outputs_is_none(self):
+        """Test that output is needed when expected_outputs is None."""
+        with CurrentNodeContext("prompt-1", "node-1", 0, None):
+            assert is_output_needed(0) is True
+            assert is_output_needed(1) is True
