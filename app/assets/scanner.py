@@ -2,7 +2,7 @@ import contextlib
 import logging
 import os
 import time
-from typing import Literal
+from typing import Literal, TypedDict
 
 import folder_paths
 from app.assets.database.queries import (
@@ -15,6 +15,7 @@ from app.assets.database.queries import (
     remove_missing_tag_for_asset_id,
 )
 from app.assets.services.bulk_ingest import (
+    SeedAssetSpec,
     batch_insert_seed_assets,
     prune_orphaned_assets,
 )
@@ -29,6 +30,20 @@ from app.assets.services.path_utils import (
     get_name_and_tags_from_asset_path,
 )
 from app.database.db import create_session, dependencies_available
+
+
+class _StateInfo(TypedDict):
+    sid: int
+    fp: str
+    exists: bool
+    fast_ok: bool
+    needs_verify: bool
+
+
+class _AssetAccumulator(TypedDict):
+    hash: str | None
+    size_db: int
+    states: list[_StateInfo]
 
 RootType = Literal["models", "input", "output"]
 
@@ -96,7 +111,7 @@ def sync_cache_states_with_filesystem(
 
     rows = get_cache_states_for_prefixes(session, prefixes)
 
-    by_asset: dict[str, dict] = {}
+    by_asset: dict[str, _AssetAccumulator] = {}
     for row in rows:
         acc = by_asset.get(row.asset_id)
         if acc is None:
@@ -226,9 +241,9 @@ def _collect_paths_for_roots(roots: tuple[RootType, ...]) -> list[str]:
 def _build_asset_specs(
     paths: list[str],
     existing_paths: set[str],
-) -> tuple[list[dict], set[str], int]:
+) -> tuple[list[SeedAssetSpec], set[str], int]:
     """Build asset specs from paths, returning (specs, tag_pool, skipped_count)."""
-    specs: list[dict] = []
+    specs: list[SeedAssetSpec] = []
     tag_pool: set[str] = set()
     skipped = 0
 
@@ -259,7 +274,7 @@ def _build_asset_specs(
     return specs, tag_pool, skipped
 
 
-def _insert_asset_specs(specs: list[dict], tag_pool: set[str]) -> int:
+def _insert_asset_specs(specs: list[SeedAssetSpec], tag_pool: set[str]) -> int:
     """Insert asset specs into database, returning count of created infos."""
     if not specs:
         return 0

@@ -1,8 +1,20 @@
 import os
 import uuid
 from dataclasses import dataclass
+from typing import TypedDict
 
 from sqlalchemy.orm import Session
+
+
+class SeedAssetSpec(TypedDict):
+    """Spec for seeding an asset from filesystem."""
+
+    abs_path: str
+    size_bytes: int
+    mtime_ns: int
+    info_name: str
+    tags: list[str]
+    fname: str
 
 from app.assets.database.queries import (
     bulk_insert_asset_infos_ignore_conflicts,
@@ -29,7 +41,7 @@ class BulkInsertResult:
 
 def batch_insert_seed_assets(
     session: Session,
-    specs: list[dict],
+    specs: list[SeedAssetSpec],
     owner_id: str = "",
 ) -> BulkInsertResult:
     """Seed assets from filesystem specs in batch.
