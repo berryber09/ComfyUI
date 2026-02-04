@@ -29,6 +29,8 @@ from app.assets.database.queries import (
     set_asset_info_metadata,
     set_asset_info_preview,
     set_asset_info_tags,
+    update_asset_info_name,
+    update_asset_info_updated_at,
 )
 
 
@@ -78,7 +80,7 @@ def update_asset_metadata(
 
         touched = False
         if name is not None and name != info.name:
-            info.name = name
+            update_asset_info_name(session, asset_info_id=asset_info_id, name=name)
             touched = True
 
         # Compute filename from best live path
@@ -111,8 +113,7 @@ def update_asset_metadata(
             touched = True
 
         if touched and user_metadata is None:
-            info.updated_at = get_utc_now()
-            session.flush()
+            update_asset_info_updated_at(session, asset_info_id=asset_info_id)
 
         # Fetch updated info with tags
         result = fetch_asset_info_asset_and_tags(

@@ -400,6 +400,34 @@ def update_asset_info_access_time(
     session.execute(stmt.values(last_access_time=ts))
 
 
+def update_asset_info_name(
+    session: Session,
+    asset_info_id: str,
+    name: str,
+) -> None:
+    """Update the name of an AssetInfo."""
+    now = get_utc_now()
+    session.execute(
+        sa.update(AssetInfo)
+        .where(AssetInfo.id == asset_info_id)
+        .values(name=name, updated_at=now)
+    )
+
+
+def update_asset_info_updated_at(
+    session: Session,
+    asset_info_id: str,
+    ts: datetime | None = None,
+) -> None:
+    """Update the updated_at timestamp of an AssetInfo."""
+    ts = ts or get_utc_now()
+    session.execute(
+        sa.update(AssetInfo)
+        .where(AssetInfo.id == asset_info_id)
+        .values(updated_at=ts)
+    )
+
+
 def set_asset_info_metadata(
     session: Session,
     asset_info_id: str,
