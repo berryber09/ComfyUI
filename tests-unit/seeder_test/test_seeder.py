@@ -2,7 +2,7 @@
 
 import threading
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -24,10 +24,10 @@ def mock_dependencies():
     """Mock all external dependencies for isolated testing."""
     with (
         patch("app.assets.seeder.dependencies_available", return_value=True),
-        patch("app.assets.seeder._sync_root_safely", return_value=set()),
-        patch("app.assets.seeder._collect_paths_for_roots", return_value=[]),
-        patch("app.assets.seeder._build_asset_specs", return_value=([], set(), 0)),
-        patch("app.assets.seeder._insert_asset_specs", return_value=0),
+        patch("app.assets.seeder.sync_root_safely", return_value=set()),
+        patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
+        patch("app.assets.seeder.build_asset_specs", return_value=([], set(), 0)),
+        patch("app.assets.seeder.insert_asset_specs", return_value=0),
     ):
         yield
 
@@ -56,7 +56,7 @@ class TestSeederStateTransitions:
             return []
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             fresh_seeder.start(roots=("models",))
             time.sleep(0.05)
@@ -76,7 +76,7 @@ class TestSeederStateTransitions:
             return []
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             fresh_seeder.start(roots=("models",))
             time.sleep(0.05)
@@ -121,7 +121,7 @@ class TestSeederWait:
             return []
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             fresh_seeder.start(roots=("models",))
             completed = fresh_seeder.wait(timeout=0.1)
@@ -148,7 +148,7 @@ class TestSeederProgress:
             return ["/path/file1.safetensors", "/path/file2.safetensors"]
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             fresh_seeder.start(roots=("models",))
             time.sleep(0.05)
@@ -168,7 +168,7 @@ class TestSeederProgress:
             progress_updates.append(p)
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots",
+            "app.assets.seeder.collect_paths_for_roots",
             return_value=[f"/path/file{i}.safetensors" for i in range(10)],
         ):
             fresh_seeder.start(roots=("models",), progress_callback=callback)
@@ -208,10 +208,12 @@ class TestSeederCancellation:
 
         with (
             patch("app.assets.seeder.dependencies_available", return_value=True),
-            patch("app.assets.seeder._sync_root_safely", return_value=set()),
-            patch("app.assets.seeder._collect_paths_for_roots", return_value=paths),
-            patch("app.assets.seeder._build_asset_specs", return_value=(specs, set(), 0)),
-            patch("app.assets.seeder._insert_asset_specs", side_effect=slow_insert),
+            patch("app.assets.seeder.sync_root_safely", return_value=set()),
+            patch("app.assets.seeder.collect_paths_for_roots", return_value=paths),
+            patch(
+                "app.assets.seeder.build_asset_specs", return_value=(specs, set(), 0)
+            ),
+            patch("app.assets.seeder.insert_asset_specs", side_effect=slow_insert),
         ):
             fresh_seeder.start(roots=("models",))
             time.sleep(0.1)
@@ -229,13 +231,13 @@ class TestSeederErrorHandling:
     def test_database_errors_captured_in_status(self, fresh_seeder: AssetSeeder):
         with (
             patch("app.assets.seeder.dependencies_available", return_value=True),
-            patch("app.assets.seeder._sync_root_safely", return_value=set()),
+            patch("app.assets.seeder.sync_root_safely", return_value=set()),
             patch(
-                "app.assets.seeder._collect_paths_for_roots",
+                "app.assets.seeder.collect_paths_for_roots",
                 return_value=["/path/file.safetensors"],
             ),
             patch(
-                "app.assets.seeder._build_asset_specs",
+                "app.assets.seeder.build_asset_specs",
                 return_value=(
                     [
                         {
@@ -252,7 +254,7 @@ class TestSeederErrorHandling:
                 ),
             ),
             patch(
-                "app.assets.seeder._insert_asset_specs",
+                "app.assets.seeder.insert_asset_specs",
                 side_effect=Exception("DB connection failed"),
             ),
         ):
@@ -278,7 +280,7 @@ class TestSeederErrorHandling:
         with (
             patch("app.assets.seeder.dependencies_available", return_value=True),
             patch(
-                "app.assets.seeder._sync_root_safely",
+                "app.assets.seeder.sync_root_safely",
                 side_effect=RuntimeError("Unexpected crash"),
             ),
         ):
@@ -303,7 +305,7 @@ class TestSeederThreadSafety:
             return []
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             results = []
 
@@ -330,7 +332,7 @@ class TestSeederThreadSafety:
             return []
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             fresh_seeder.start(roots=("models",))
 
@@ -341,7 +343,10 @@ class TestSeederThreadSafety:
 
             barrier.set()
 
-            assert all(s.state in (State.RUNNING, State.IDLE, State.CANCELLING) for s in statuses)
+            assert all(
+                s.state in (State.RUNNING, State.IDLE, State.CANCELLING)
+                for s in statuses
+            )
 
 
 class TestSeederPruneOrphans:
@@ -350,8 +355,13 @@ class TestSeederPruneOrphans:
     def test_prune_orphans_when_idle(self, fresh_seeder: AssetSeeder):
         with (
             patch("app.assets.seeder.dependencies_available", return_value=True),
-            patch("app.assets.seeder.get_all_known_prefixes", return_value=["/models", "/input", "/output"]),
-            patch("app.assets.seeder._prune_orphans_safely", return_value=5) as mock_prune,
+            patch(
+                "app.assets.seeder.get_all_known_prefixes",
+                return_value=["/models", "/input", "/output"],
+            ),
+            patch(
+                "app.assets.seeder.prune_orphans_safely", return_value=5
+            ) as mock_prune,
         ):
             result = fresh_seeder.prune_orphans()
             assert result == 5
@@ -367,7 +377,7 @@ class TestSeederPruneOrphans:
             return []
 
         with patch(
-            "app.assets.seeder._collect_paths_for_roots", side_effect=slow_collect
+            "app.assets.seeder.collect_paths_for_roots", side_effect=slow_collect
         ):
             fresh_seeder.start(roots=("models",))
             time.sleep(0.05)
@@ -400,11 +410,11 @@ class TestSeederPruneOrphans:
         with (
             patch("app.assets.seeder.dependencies_available", return_value=True),
             patch("app.assets.seeder.get_all_known_prefixes", return_value=["/models"]),
-            patch("app.assets.seeder._prune_orphans_safely", side_effect=track_prune),
-            patch("app.assets.seeder._sync_root_safely", side_effect=track_sync),
-            patch("app.assets.seeder._collect_paths_for_roots", return_value=[]),
-            patch("app.assets.seeder._build_asset_specs", return_value=([], set(), 0)),
-            patch("app.assets.seeder._insert_asset_specs", return_value=0),
+            patch("app.assets.seeder.prune_orphans_safely", side_effect=track_prune),
+            patch("app.assets.seeder.sync_root_safely", side_effect=track_sync),
+            patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
+            patch("app.assets.seeder.build_asset_specs", return_value=([], set(), 0)),
+            patch("app.assets.seeder.insert_asset_specs", return_value=0),
         ):
             fresh_seeder.start(roots=("models",), prune_first=True)
             fresh_seeder.wait(timeout=5.0)

@@ -46,6 +46,7 @@ class _AssetAccumulator(TypedDict):
     size_db: int
     states: list[_StateInfo]
 
+
 RootType = Literal["models", "input", "output"]
 
 
@@ -200,7 +201,7 @@ def sync_cache_states_with_filesystem(
     return survivors if collect_existing_paths else None
 
 
-def _sync_root_safely(root: RootType) -> set[str]:
+def sync_root_safely(root: RootType) -> set[str]:
     """Sync a single root's cache states with the filesystem.
 
     Returns survivors (existing paths) or empty set on failure.
@@ -220,7 +221,7 @@ def _sync_root_safely(root: RootType) -> set[str]:
         return set()
 
 
-def _prune_orphans_safely(prefixes: list[str]) -> int:
+def prune_orphans_safely(prefixes: list[str]) -> int:
     """Prune orphaned assets outside the given prefixes.
 
     Returns count pruned or 0 on failure.
@@ -235,7 +236,7 @@ def _prune_orphans_safely(prefixes: list[str]) -> int:
         return 0
 
 
-def _collect_paths_for_roots(roots: tuple[RootType, ...]) -> list[str]:
+def collect_paths_for_roots(roots: tuple[RootType, ...]) -> list[str]:
     """Collect all file paths for the given roots."""
     paths: list[str] = []
     if "models" in roots:
@@ -247,7 +248,7 @@ def _collect_paths_for_roots(roots: tuple[RootType, ...]) -> list[str]:
     return paths
 
 
-def _build_asset_specs(
+def build_asset_specs(
     paths: list[str],
     existing_paths: set[str],
     enable_metadata_extraction: bool = True,
@@ -303,7 +304,7 @@ def _build_asset_specs(
     return specs, tag_pool, skipped
 
 
-def _insert_asset_specs(specs: list[SeedAssetSpec], tag_pool: set[str]) -> int:
+def insert_asset_specs(specs: list[SeedAssetSpec], tag_pool: set[str]) -> int:
     """Insert asset specs into database, returning count of created infos."""
     if not specs:
         return 0
@@ -330,11 +331,11 @@ def seed_assets(roots: tuple[RootType, ...], enable_logging: bool = False) -> No
 
     existing_paths: set[str] = set()
     for r in roots:
-        existing_paths.update(_sync_root_safely(r))
+        existing_paths.update(sync_root_safely(r))
 
-    paths = _collect_paths_for_roots(roots)
-    specs, tag_pool, skipped_existing = _build_asset_specs(paths, existing_paths)
-    created = _insert_asset_specs(specs, tag_pool)
+    paths = collect_paths_for_roots(roots)
+    specs, tag_pool, skipped_existing = build_asset_specs(paths, existing_paths)
+    created = insert_asset_specs(specs, tag_pool)
 
     if enable_logging:
         logging.info(

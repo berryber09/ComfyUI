@@ -10,18 +10,18 @@ from typing import TYPE_CHECKING, Callable
 
 from app.assets.scanner import (
     RootType,
-    _build_asset_specs,
-    _collect_paths_for_roots,
-    _insert_asset_specs,
-    _prune_orphans_safely,
-    _sync_root_safely,
+    build_asset_specs,
+    collect_paths_for_roots,
     get_all_known_prefixes,
     get_prefixes_for_root,
+    insert_asset_specs,
+    prune_orphans_safely,
+    sync_root_safely,
 )
 from app.database.db import dependencies_available
 
 if TYPE_CHECKING:
-    from server import PromptServer
+    pass
 
 
 class State(Enum):
@@ -193,11 +193,13 @@ class AssetSeeder:
                 return 0
 
         if not dependencies_available():
-            logging.warning("Database dependencies not available, skipping orphan pruning")
+            logging.warning(
+                "Database dependencies not available, skipping orphan pruning"
+            )
             return 0
 
         all_prefixes = get_all_known_prefixes()
-        pruned = _prune_orphans_safely(all_prefixes)
+        pruned = prune_orphans_safely(all_prefixes)
         if pruned > 0:
             logging.info("Pruned %d orphaned assets", pruned)
         return pruned
@@ -288,7 +290,7 @@ class AssetSeeder:
 
             if self._prune_first:
                 all_prefixes = get_all_known_prefixes()
-                pruned = _prune_orphans_safely(all_prefixes)
+                pruned = prune_orphans_safely(all_prefixes)
                 if pruned > 0:
                     logging.info("Pruned %d orphaned assets before scan", pruned)
 
@@ -305,14 +307,14 @@ class AssetSeeder:
                     logging.info("Asset scan cancelled during sync phase")
                     cancelled = True
                     return
-                existing_paths.update(_sync_root_safely(r))
+                existing_paths.update(sync_root_safely(r))
 
             if self._is_cancelled():
                 logging.info("Asset scan cancelled after sync phase")
                 cancelled = True
                 return
 
-            paths = _collect_paths_for_roots(roots)
+            paths = collect_paths_for_roots(roots)
             total_paths = len(paths)
             self._update_progress(total=total_paths)
 
@@ -321,7 +323,7 @@ class AssetSeeder:
                 {"roots": list(roots), "total": total_paths},
             )
 
-            specs, tag_pool, skipped_existing = _build_asset_specs(paths, existing_paths)
+            specs, tag_pool, skipped_existing = build_asset_specs(paths, existing_paths)
             self._update_progress(skipped=skipped_existing)
 
             if self._is_cancelled():
@@ -347,7 +349,7 @@ class AssetSeeder:
                 batch = specs[i : i + batch_size]
                 batch_tags = {t for spec in batch for t in spec["tags"]}
                 try:
-                    created = _insert_asset_specs(batch, batch_tags)
+                    created = insert_asset_specs(batch, batch_tags)
                     total_created += created
                 except Exception as e:
                     self._add_error(f"Batch insert failed at offset {i}: {e}")
@@ -360,7 +362,11 @@ class AssetSeeder:
                 if now - last_progress_time >= progress_interval:
                     self._emit_event(
                         "assets.seed.progress",
-                        {"scanned": scanned, "total": len(specs), "created": total_created},
+                        {
+                            "scanned": scanned,
+                            "total": len(specs),
+                            "created": total_created,
+                        },
                     )
                     last_progress_time = now
 
