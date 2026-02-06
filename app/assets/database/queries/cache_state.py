@@ -261,6 +261,21 @@ def bulk_update_needs_verify(session: Session, state_ids: list[int], value: bool
     return result.rowcount
 
 
+def bulk_update_is_missing(session: Session, state_ids: list[int], value: bool) -> int:
+    """Set is_missing flag for multiple cache states.
+
+    Returns: Number of rows updated
+    """
+    if not state_ids:
+        return 0
+    result = session.execute(
+        sa.update(AssetCacheState)
+        .where(AssetCacheState.id.in_(state_ids))
+        .values(is_missing=value)
+    )
+    return result.rowcount
+
+
 def delete_cache_states_by_ids(session: Session, state_ids: list[int]) -> int:
     """Delete cache states by their IDs.
 

@@ -18,6 +18,7 @@ from app.assets.database.queries import (
     get_cache_states_by_paths_and_asset_ids,
     get_unreferenced_unhashed_asset_ids,
     mark_cache_states_missing_outside_prefixes,
+    restore_cache_states_by_paths,
 )
 from app.assets.helpers import get_utc_now
 
@@ -201,6 +202,7 @@ def batch_insert_seed_assets(
 
     bulk_insert_assets(session, asset_rows)
     bulk_insert_cache_states_ignore_conflicts(session, cache_state_rows)
+    restore_cache_states_by_paths(session, absolute_path_list)
     winning_paths = get_cache_states_by_paths_and_asset_ids(session, path_to_asset_id)
 
     all_paths_set = set(absolute_path_list)

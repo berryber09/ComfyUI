@@ -7,6 +7,7 @@ from typing import Literal, TypedDict
 import folder_paths
 from app.assets.database.queries import (
     add_missing_tag_for_asset_id,
+    bulk_update_is_missing,
     bulk_update_needs_verify,
     delete_cache_states_by_ids,
     delete_orphaned_seed_asset,
@@ -154,6 +155,7 @@ def sync_cache_states_with_filesystem(
     to_set_verify: list[int] = []
     to_clear_verify: list[int] = []
     stale_state_ids: list[int] = []
+    to_mark_missing: list[int] = []
     survivors: set[str] = set()
 
     for aid, acc in by_asset.items():
@@ -164,6 +166,7 @@ def sync_cache_states_with_filesystem(
 
         for s in states:
             if not s["exists"]:
+                to_mark_missing.append(s["sid"])
                 continue
             if s["fast_ok"] and s["needs_verify"]:
                 to_clear_verify.append(s["sid"])
@@ -195,6 +198,9 @@ def sync_cache_states_with_filesystem(
                 survivors.add(os.path.abspath(s["fp"]))
 
     delete_cache_states_by_ids(session, stale_state_ids)
+    stale_set = set(stale_state_ids)
+    to_mark_missing = [sid for sid in to_mark_missing if sid not in stale_set]
+    bulk_update_is_missing(session, to_mark_missing, value=True)
     bulk_update_needs_verify(session, to_set_verify, value=True)
     bulk_update_needs_verify(session, to_clear_verify, value=False)
 
