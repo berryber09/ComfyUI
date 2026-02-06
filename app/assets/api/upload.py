@@ -1,5 +1,6 @@
 import os
 import uuid
+from typing import Callable
 
 from aiohttp import web
 
@@ -30,7 +31,7 @@ def normalize_and_validate_hash(s: str) -> str:
 
 async def parse_multipart_upload(
     request: web.Request,
-    check_hash_exists: callable,
+    check_hash_exists: Callable[[str], bool],
 ) -> ParsedUpload:
     """
     Parse a multipart/form-data upload request.
