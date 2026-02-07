@@ -2,6 +2,7 @@ from app.assets.database.queries.asset import (
     asset_exists_by_hash,
     bulk_insert_assets,
     get_asset_by_hash,
+    get_existing_asset_ids,
     upsert_asset,
 )
 from app.assets.database.queries.asset_info import (
@@ -76,6 +77,7 @@ __all__ = [
     "fetch_asset_info_and_asset",
     "fetch_asset_info_asset_and_tags",
     "get_asset_by_hash",
+    "get_existing_asset_ids",
     "get_asset_info_by_id",
     "get_asset_info_ids_by_ids",
     "get_asset_tags",

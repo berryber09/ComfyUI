@@ -88,3 +88,16 @@ def bulk_insert_assets(
     ins = sqlite.insert(Asset).on_conflict_do_nothing(index_elements=[Asset.hash])
     for chunk in iter_chunks(rows, calculate_rows_per_statement(5)):
         session.execute(ins, chunk)
+
+
+def get_existing_asset_ids(
+    session: Session,
+    asset_ids: list[str],
+) -> set[str]:
+    """Return the subset of asset_ids that exist in the database."""
+    if not asset_ids:
+        return set()
+    rows = session.execute(
+        select(Asset.id).where(Asset.id.in_(asset_ids))
+    ).fetchall()
+    return {row[0] for row in rows}

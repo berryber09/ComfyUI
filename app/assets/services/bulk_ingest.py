@@ -16,6 +16,7 @@ from app.assets.database.queries import (
     delete_assets_by_ids,
     get_asset_info_ids_by_ids,
     get_cache_states_by_paths_and_asset_ids,
+    get_existing_asset_ids,
     get_unreferenced_unhashed_asset_ids,
     mark_cache_states_missing_outside_prefixes,
     restore_cache_states_by_paths,
@@ -202,6 +203,16 @@ def batch_insert_seed_assets(
         }
 
     bulk_insert_assets(session, asset_rows)
+
+    # Filter cache states to only those whose assets were actually inserted
+    # (assets with duplicate hashes are silently dropped by ON CONFLICT DO NOTHING)
+    inserted_asset_ids = get_existing_asset_ids(
+        session, [r["asset_id"] for r in cache_state_rows]
+    )
+    cache_state_rows = [
+        r for r in cache_state_rows if r["asset_id"] in inserted_asset_ids
+    ]
+
     bulk_insert_cache_states_ignore_conflicts(session, cache_state_rows)
     restore_cache_states_by_paths(session, absolute_path_list)
     winning_paths = get_cache_states_by_paths_and_asset_ids(session, path_to_asset_id)
