@@ -20,6 +20,31 @@ SAFETENSORS_EXTENSIONS = frozenset({".safetensors", ".sft"})
 # Maximum safetensors header size to read (8MB)
 MAX_SAFETENSORS_HEADER_SIZE = 8 * 1024 * 1024
 
+def _register_custom_mime_types():
+    """Register custom MIME types for model and config files.
+    
+    Called before each use because mimetypes.init() in server.py resets the database.
+    Uses a quick check to avoid redundant registrations.
+    """
+    # Quick check if already registered (avoids redundant add_type calls)
+    test_result, _ = mimetypes.guess_type("test.safetensors")
+    if test_result == "application/safetensors":
+        return
+    
+    mimetypes.add_type("application/safetensors", ".safetensors")
+    mimetypes.add_type("application/safetensors", ".sft")
+    mimetypes.add_type("application/pytorch", ".pt")
+    mimetypes.add_type("application/pytorch", ".pth")
+    mimetypes.add_type("application/pickle", ".ckpt")
+    mimetypes.add_type("application/pickle", ".pkl")
+    mimetypes.add_type("application/gguf", ".gguf")
+    mimetypes.add_type("application/yaml", ".yaml")
+    mimetypes.add_type("application/yaml", ".yml")
+
+
+# Register custom types at module load
+_register_custom_mime_types()
+
 
 @dataclass
 class ExtractedMetadata:
@@ -284,9 +309,12 @@ def extract_file_metadata(
     _, ext = os.path.splitext(abs_path)
     meta.format = ext.lstrip(".").lower() if ext else ""
 
-    # MIME type guess
+    # MIME type guess (re-register in case mimetypes.init() was called elsewhere)
+    _register_custom_mime_types()
     mime_type, _ = mimetypes.guess_type(abs_path)
     meta.content_type = mime_type
+    if mime_type is None:
+        print(f"[extract_file_metadata] No mime_type for {abs_path}")
 
     # Size from stat
     if stat_result is None:

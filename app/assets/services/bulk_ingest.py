@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 from dataclasses import dataclass
@@ -38,6 +39,7 @@ class SeedAssetSpec(TypedDict):
     fname: str
     metadata: ExtractedMetadata | None
     hash: str | None
+    mime_type: str | None
 
 
 class AssetRow(TypedDict):
@@ -162,12 +164,15 @@ def batch_insert_seed_assets(
         absolute_path_list.append(absolute_path)
         path_to_asset_id[absolute_path] = asset_id
 
+        mime_type = spec.get("mime_type")
+        if mime_type is None:
+            logging.info("batch_insert_seed_assets: no mime_type for %s", absolute_path)
         asset_rows.append(
             {
                 "id": asset_id,
                 "hash": spec.get("hash"),
                 "size_bytes": spec["size_bytes"],
-                "mime_type": None,
+                "mime_type": mime_type,
                 "created_at": current_time,
             }
         )

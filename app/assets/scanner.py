@@ -320,6 +320,9 @@ def build_asset_specs(
             except Exception as e:
                 logging.warning("Failed to hash %s: %s", abs_p, e)
 
+        mime_type = metadata.content_type if metadata else None
+        if mime_type is None:
+            print(f"[build_asset_specs] no mime_type for {abs_p} (metadata={metadata is not None})")
         specs.append(
             {
                 "abs_path": abs_p,
@@ -330,6 +333,7 @@ def build_asset_specs(
                 "fname": rel_fname,
                 "metadata": metadata,
                 "hash": asset_hash,
+                "mime_type": mime_type,
             }
         )
         tag_pool.update(tags)
