@@ -322,7 +322,7 @@ def build_asset_specs(
 
         mime_type = metadata.content_type if metadata else None
         if mime_type is None:
-            print(f"[build_asset_specs] no mime_type for {abs_p} (metadata={metadata is not None})")
+            pass
         specs.append(
             {
                 "abs_path": abs_p,

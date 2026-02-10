@@ -6,7 +6,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from app.assets.scanner import (
     RootType,
@@ -19,9 +19,6 @@ from app.assets.scanner import (
     sync_root_safely,
 )
 from app.database.db import dependencies_available
-
-if TYPE_CHECKING:
-    pass
 
 
 class State(Enum):

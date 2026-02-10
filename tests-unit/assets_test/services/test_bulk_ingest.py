@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset

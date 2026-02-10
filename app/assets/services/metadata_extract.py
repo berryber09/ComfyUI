@@ -22,7 +22,7 @@ MAX_SAFETENSORS_HEADER_SIZE = 8 * 1024 * 1024
 
 def _register_custom_mime_types():
     """Register custom MIME types for model and config files.
-    
+
     Called before each use because mimetypes.init() in server.py resets the database.
     Uses a quick check to avoid redundant registrations.
     """
@@ -30,7 +30,7 @@ def _register_custom_mime_types():
     test_result, _ = mimetypes.guess_type("test.safetensors")
     if test_result == "application/safetensors":
         return
-    
+
     mimetypes.add_type("application/safetensors", ".safetensors")
     mimetypes.add_type("application/safetensors", ".sft")
     mimetypes.add_type("application/pytorch", ".pt")
@@ -314,7 +314,7 @@ def extract_file_metadata(
     mime_type, _ = mimetypes.guess_type(abs_path)
     meta.content_type = mime_type
     if mime_type is None:
-        print(f"[extract_file_metadata] No mime_type for {abs_path}")
+        pass
 
     # Size from stat
     if stat_result is None:
