@@ -1203,6 +1203,70 @@ class Color(ComfyTypeIO):
       def as_dict(self):
           return super().as_dict()
 
+@comfytype(io_type="COLOR_CORRECT")
+class ColorCorrect(ComfyTypeIO):
+    Type = dict
+
+    class Input(WidgetInput):
+        def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
+                     socketless: bool=True, default: dict=None, advanced: bool=None):
+            super().__init__(id, display_name, optional, tooltip, None, default, socketless, None, None, None, None, advanced)
+            if default is None:
+                self.default = {
+                    "temperature": 0,
+                    "hue": 0,
+                    "brightness": 0,
+                    "contrast": 0,
+                    "saturation": 0,
+                    "gamma": 1.0
+                }
+
+        def as_dict(self):
+            return super().as_dict()
+
+@comfytype(io_type="COLOR_BALANCE")
+class ColorBalance(ComfyTypeIO):
+    Type = dict
+
+    class Input(WidgetInput):
+        def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
+                     socketless: bool=True, default: dict=None, advanced: bool=None):
+            super().__init__(id, display_name, optional, tooltip, None, default, socketless, None, None, None, None, advanced)
+            if default is None:
+                self.default = {
+                    "shadows_red": 0,
+                    "shadows_green": 0,
+                    "shadows_blue": 0,
+                    "midtones_red": 0,
+                    "midtones_green": 0,
+                    "midtones_blue": 0,
+                    "highlights_red": 0,
+                    "highlights_green": 0,
+                    "highlights_blue": 0
+                }
+
+        def as_dict(self):
+            return super().as_dict()
+
+@comfytype(io_type="COLOR_CURVES")
+class ColorCurves(ComfyTypeIO):
+    Type = dict
+
+    class Input(WidgetInput):
+        def __init__(self, id: str, display_name: str=None, optional=False, tooltip: str=None,
+                     socketless: bool=True, default: dict=None, advanced: bool=None):
+            super().__init__(id, display_name, optional, tooltip, None, default, socketless, None, None, None, None, advanced)
+            if default is None:
+                self.default = {
+                    "rgb": [[0, 0], [1, 1]],
+                    "red": [[0, 0], [1, 1]],
+                    "green": [[0, 0], [1, 1]],
+                    "blue": [[0, 0], [1, 1]]
+                }
+
+        def as_dict(self):
+            return super().as_dict()
+
 DYNAMIC_INPUT_LOOKUP: dict[str, Callable[[dict[str, Any], dict[str, Any], tuple[str, dict[str, Any]], str, list[str] | None], None]] = {}
 def register_dynamic_input_func(io_type: str, func: Callable[[dict[str, Any], dict[str, Any], tuple[str, dict[str, Any]], str, list[str] | None], None]):
     DYNAMIC_INPUT_LOOKUP[io_type] = func
@@ -2121,4 +2185,7 @@ __all__ = [
     "ImageCompare",
     "PriceBadgeDepends",
     "PriceBadge",
+    "ColorCorrect",
+    "ColorBalance",
+    "ColorCurves"
 ]
