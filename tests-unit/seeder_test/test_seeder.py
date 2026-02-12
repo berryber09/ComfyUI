@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.assets.seeder import AssetSeeder, Progress, State
+from app.assets.seeder import AssetSeeder, Progress, ScanPhase, State
 
 
 @pytest.fixture
@@ -26,8 +26,10 @@ def mock_dependencies():
         patch("app.assets.seeder.dependencies_available", return_value=True),
         patch("app.assets.seeder.sync_root_safely", return_value=set()),
         patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
-        patch("app.assets.seeder.build_asset_specs", return_value=([], set(), 0)),
+        patch("app.assets.seeder.build_stub_specs", return_value=([], set(), 0)),
         patch("app.assets.seeder.insert_asset_specs", return_value=0),
+        patch("app.assets.seeder.get_unenriched_assets_for_roots", return_value=[]),
+        patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
     ):
         yield
 
@@ -202,6 +204,9 @@ class TestSeederCancellation:
                 "info_name": f"file{i}",
                 "tags": [],
                 "fname": f"file{i}",
+                "metadata": None,
+                "hash": None,
+                "mime_type": None,
             }
             for i, p in enumerate(paths)
         ]
@@ -211,9 +216,11 @@ class TestSeederCancellation:
             patch("app.assets.seeder.sync_root_safely", return_value=set()),
             patch("app.assets.seeder.collect_paths_for_roots", return_value=paths),
             patch(
-                "app.assets.seeder.build_asset_specs", return_value=(specs, set(), 0)
+                "app.assets.seeder.build_stub_specs", return_value=(specs, set(), 0)
             ),
             patch("app.assets.seeder.insert_asset_specs", side_effect=slow_insert),
+            patch("app.assets.seeder.get_unenriched_assets_for_roots", return_value=[]),
+            patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
         ):
             fresh_seeder.start(roots=("models",))
             time.sleep(0.1)
@@ -237,7 +244,7 @@ class TestSeederErrorHandling:
                 return_value=["/path/file.safetensors"],
             ),
             patch(
-                "app.assets.seeder.build_asset_specs",
+                "app.assets.seeder.build_stub_specs",
                 return_value=(
                     [
                         {
@@ -247,6 +254,9 @@ class TestSeederErrorHandling:
                             "info_name": "file",
                             "tags": [],
                             "fname": "file",
+                            "metadata": None,
+                            "hash": None,
+                            "mime_type": None,
                         }
                     ],
                     set(),
@@ -257,6 +267,8 @@ class TestSeederErrorHandling:
                 "app.assets.seeder.insert_asset_specs",
                 side_effect=Exception("DB connection failed"),
             ),
+            patch("app.assets.seeder.get_unenriched_assets_for_roots", return_value=[]),
+            patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
         ):
             fresh_seeder.start(roots=("models",))
             fresh_seeder.wait(timeout=5.0)
@@ -413,11 +425,101 @@ class TestSeederMarkMissing:
             patch("app.assets.seeder.mark_missing_outside_prefixes_safely", side_effect=track_mark),
             patch("app.assets.seeder.sync_root_safely", side_effect=track_sync),
             patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
-            patch("app.assets.seeder.build_asset_specs", return_value=([], set(), 0)),
+            patch("app.assets.seeder.build_stub_specs", return_value=([], set(), 0)),
             patch("app.assets.seeder.insert_asset_specs", return_value=0),
+            patch("app.assets.seeder.get_unenriched_assets_for_roots", return_value=[]),
+            patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
         ):
             fresh_seeder.start(roots=("models",), prune_first=True)
             fresh_seeder.wait(timeout=5.0)
 
             assert call_order[0] == "mark_missing"
             assert "sync_models" in call_order
+
+
+class TestSeederPhases:
+    """Test phased scanning behavior."""
+
+    def test_start_fast_only_runs_fast_phase(self, fresh_seeder: AssetSeeder):
+        """Verify start_fast only runs the fast phase."""
+        fast_called = []
+        enrich_called = []
+
+        def track_fast(*args, **kwargs):
+            fast_called.append(True)
+            return ([], set(), 0)
+
+        def track_enrich(*args, **kwargs):
+            enrich_called.append(True)
+            return []
+
+        with (
+            patch("app.assets.seeder.dependencies_available", return_value=True),
+            patch("app.assets.seeder.sync_root_safely", return_value=set()),
+            patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
+            patch("app.assets.seeder.build_stub_specs", side_effect=track_fast),
+            patch("app.assets.seeder.insert_asset_specs", return_value=0),
+            patch("app.assets.seeder.get_unenriched_assets_for_roots", side_effect=track_enrich),
+            patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
+        ):
+            fresh_seeder.start_fast(roots=("models",))
+            fresh_seeder.wait(timeout=5.0)
+
+            assert len(fast_called) == 1
+            assert len(enrich_called) == 0
+
+    def test_start_enrich_only_runs_enrich_phase(self, fresh_seeder: AssetSeeder):
+        """Verify start_enrich only runs the enrich phase."""
+        fast_called = []
+        enrich_called = []
+
+        def track_fast(*args, **kwargs):
+            fast_called.append(True)
+            return ([], set(), 0)
+
+        def track_enrich(*args, **kwargs):
+            enrich_called.append(True)
+            return []
+
+        with (
+            patch("app.assets.seeder.dependencies_available", return_value=True),
+            patch("app.assets.seeder.sync_root_safely", return_value=set()),
+            patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
+            patch("app.assets.seeder.build_stub_specs", side_effect=track_fast),
+            patch("app.assets.seeder.insert_asset_specs", return_value=0),
+            patch("app.assets.seeder.get_unenriched_assets_for_roots", side_effect=track_enrich),
+            patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
+        ):
+            fresh_seeder.start_enrich(roots=("models",))
+            fresh_seeder.wait(timeout=5.0)
+
+            assert len(fast_called) == 0
+            assert len(enrich_called) == 1
+
+    def test_full_scan_runs_both_phases(self, fresh_seeder: AssetSeeder):
+        """Verify full scan runs both fast and enrich phases."""
+        fast_called = []
+        enrich_called = []
+
+        def track_fast(*args, **kwargs):
+            fast_called.append(True)
+            return ([], set(), 0)
+
+        def track_enrich(*args, **kwargs):
+            enrich_called.append(True)
+            return []
+
+        with (
+            patch("app.assets.seeder.dependencies_available", return_value=True),
+            patch("app.assets.seeder.sync_root_safely", return_value=set()),
+            patch("app.assets.seeder.collect_paths_for_roots", return_value=[]),
+            patch("app.assets.seeder.build_stub_specs", side_effect=track_fast),
+            patch("app.assets.seeder.insert_asset_specs", return_value=0),
+            patch("app.assets.seeder.get_unenriched_assets_for_roots", side_effect=track_enrich),
+            patch("app.assets.seeder.enrich_assets_batch", return_value=(0, 0)),
+        ):
+            fresh_seeder.start(roots=("models",), phase=ScanPhase.FULL)
+            fresh_seeder.wait(timeout=5.0)
+
+            assert len(fast_called) == 1
+            assert len(enrich_called) == 1

@@ -7,13 +7,16 @@ from typing import Literal, TypedDict
 import folder_paths
 from app.assets.database.queries import (
     add_missing_tag_for_asset_id,
+    bulk_update_enrichment_level,
     bulk_update_is_missing,
     bulk_update_needs_verify,
     delete_cache_states_by_ids,
     delete_orphaned_seed_asset,
     ensure_tags_exist,
     get_cache_states_for_prefixes,
+    get_unenriched_cache_states,
     remove_missing_tag_for_asset_id,
+    set_asset_info_metadata,
 )
 from app.assets.services.bulk_ingest import (
     SeedAssetSpec,
@@ -341,6 +344,59 @@ def build_asset_specs(
     return specs, tag_pool, skipped
 
 
+def build_stub_specs(
+    paths: list[str],
+    existing_paths: set[str],
+) -> tuple[list[SeedAssetSpec], set[str], int]:
+    """Build minimal stub specs for fast phase scanning.
+
+    Only collects filesystem metadata (stat), no file content reading.
+    This is the fastest possible scan to populate the asset database.
+
+    Args:
+        paths: List of file paths to process
+        existing_paths: Set of paths that already exist in the database
+
+    Returns:
+        Tuple of (specs, tag_pool, skipped_count)
+    """
+    specs: list[SeedAssetSpec] = []
+    tag_pool: set[str] = set()
+    skipped = 0
+
+    for p in paths:
+        abs_p = os.path.abspath(p)
+        if abs_p in existing_paths:
+            skipped += 1
+            continue
+        try:
+            stat_p = os.stat(abs_p, follow_symlinks=False)
+        except OSError:
+            continue
+        if not stat_p.st_size:
+            continue
+
+        name, tags = get_name_and_tags_from_asset_path(abs_p)
+        rel_fname = compute_relative_filename(abs_p)
+
+        specs.append(
+            {
+                "abs_path": abs_p,
+                "size_bytes": stat_p.st_size,
+                "mtime_ns": get_mtime_ns(stat_p),
+                "info_name": name,
+                "tags": tags,
+                "fname": rel_fname,
+                "metadata": None,
+                "hash": None,
+                "mime_type": None,
+            }
+        )
+        tag_pool.update(tags)
+
+    return specs, tag_pool, skipped
+
+
 def insert_asset_specs(specs: list[SeedAssetSpec], tag_pool: set[str]) -> int:
     """Insert asset specs into database, returning count of created infos."""
     if not specs:
@@ -394,3 +450,129 @@ def seed_assets(
             skipped_existing,
             len(paths),
         )
+
+
+# Enrichment level constants
+ENRICHMENT_STUB = 0  # Fast scan: path, size, mtime only
+ENRICHMENT_METADATA = 1  # Metadata extracted (safetensors header, mime type)
+ENRICHMENT_HASHED = 2  # Hash computed (blake3)
+
+
+def get_unenriched_assets_for_roots(
+    roots: tuple[RootType, ...],
+    max_level: int = ENRICHMENT_STUB,
+    limit: int = 1000,
+) -> list:
+    """Get assets that need enrichment for the given roots.
+
+    Args:
+        roots: Tuple of root types to scan
+        max_level: Maximum enrichment level to include
+        limit: Maximum number of rows to return
+
+    Returns:
+        List of UnenrichedAssetRow
+    """
+    prefixes: list[str] = []
+    for root in roots:
+        prefixes.extend(get_prefixes_for_root(root))
+
+    if not prefixes:
+        return []
+
+    with create_session() as sess:
+        return get_unenriched_cache_states(sess, prefixes, max_level=max_level, limit=limit)
+
+
+def enrich_asset(
+    file_path: str,
+    cache_state_id: int,
+    asset_info_id: str,
+    extract_metadata: bool = True,
+    compute_hash: bool = False,
+) -> int:
+    """Enrich a single asset with metadata and/or hash.
+
+    Args:
+        file_path: Absolute path to the file
+        cache_state_id: ID of the cache state to update
+        asset_info_id: ID of the asset info to update
+        extract_metadata: If True, extract safetensors header and mime type
+        compute_hash: If True, compute blake3 hash
+
+    Returns:
+        New enrichment level achieved
+    """
+    new_level = ENRICHMENT_STUB
+
+    try:
+        stat_p = os.stat(file_path, follow_symlinks=True)
+    except OSError:
+        return new_level
+
+    rel_fname = compute_relative_filename(file_path)
+
+    with create_session() as sess:
+        if extract_metadata:
+            metadata = extract_file_metadata(
+                file_path,
+                stat_result=stat_p,
+                enable_safetensors=True,
+                relative_filename=rel_fname,
+            )
+            if metadata:
+                user_metadata = metadata.to_user_metadata()
+                set_asset_info_metadata(sess, asset_info_id, user_metadata)
+                new_level = ENRICHMENT_METADATA
+
+        if compute_hash:
+            try:
+                digest = compute_blake3_hash(file_path)
+                # TODO: Update asset.hash field
+                # For now just mark the enrichment level
+                new_level = ENRICHMENT_HASHED
+            except Exception as e:
+                logging.warning("Failed to hash %s: %s", file_path, e)
+
+        bulk_update_enrichment_level(sess, [cache_state_id], new_level)
+        sess.commit()
+
+    return new_level
+
+
+def enrich_assets_batch(
+    rows: list,
+    extract_metadata: bool = True,
+    compute_hash: bool = False,
+) -> tuple[int, int]:
+    """Enrich a batch of assets.
+
+    Args:
+        rows: List of UnenrichedAssetRow from get_unenriched_assets_for_roots
+        extract_metadata: If True, extract metadata for each asset
+        compute_hash: If True, compute hash for each asset
+
+    Returns:
+        Tuple of (enriched_count, failed_count)
+    """
+    enriched = 0
+    failed = 0
+
+    for row in rows:
+        try:
+            new_level = enrich_asset(
+                file_path=row.file_path,
+                cache_state_id=row.cache_state_id,
+                asset_info_id=row.asset_info_id,
+                extract_metadata=extract_metadata,
+                compute_hash=compute_hash,
+            )
+            if new_level > row.enrichment_level:
+                enriched += 1
+            else:
+                failed += 1
+        except Exception as e:
+            logging.warning("Failed to enrich %s: %s", row.file_path, e)
+            failed += 1
+
+    return enriched, failed

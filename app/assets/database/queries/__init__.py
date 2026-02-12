@@ -25,7 +25,9 @@ from app.assets.database.queries.asset_info import (
 )
 from app.assets.database.queries.cache_state import (
     CacheStateRow,
+    UnenrichedAssetRow,
     bulk_insert_cache_states_ignore_conflicts,
+    bulk_update_enrichment_level,
     bulk_update_is_missing,
     bulk_update_needs_verify,
     delete_assets_by_ids,
@@ -33,10 +35,12 @@ from app.assets.database.queries.cache_state import (
     delete_orphaned_seed_asset,
     get_cache_states_by_paths_and_asset_ids,
     get_cache_states_for_prefixes,
+    get_unenriched_cache_states,
     get_unreferenced_unhashed_asset_ids,
     list_cache_states_by_asset_id,
     mark_cache_states_missing_outside_prefixes,
     restore_cache_states_by_paths,
+    update_enrichment_level,
     upsert_cache_state,
 )
 from app.assets.database.queries.tags import (
@@ -59,6 +63,7 @@ __all__ = [
     "CacheStateRow",
     "RemoveTagsDict",
     "SetTagsDict",
+    "UnenrichedAssetRow",
     "add_missing_tag_for_asset_id",
     "add_tags_to_asset_info",
     "asset_exists_by_hash",
@@ -67,6 +72,7 @@ __all__ = [
     "bulk_insert_assets",
     "bulk_insert_cache_states_ignore_conflicts",
     "bulk_insert_tags_and_meta",
+    "bulk_update_enrichment_level",
     "bulk_update_is_missing",
     "bulk_update_needs_verify",
     "delete_asset_info_by_id",
@@ -84,6 +90,7 @@ __all__ = [
     "get_cache_states_by_paths_and_asset_ids",
     "get_cache_states_for_prefixes",
     "get_or_create_asset_info",
+    "get_unenriched_cache_states",
     "get_unreferenced_unhashed_asset_ids",
     "insert_asset_info",
     "list_asset_infos_page",
@@ -100,6 +107,7 @@ __all__ = [
     "update_asset_info_name",
     "update_asset_info_timestamps",
     "update_asset_info_updated_at",
+    "update_enrichment_level",
     "upsert_asset",
     "upsert_cache_state",
 ]

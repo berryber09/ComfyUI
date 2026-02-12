@@ -9,11 +9,15 @@ from enum import Enum
 from typing import Callable
 
 from app.assets.scanner import (
+    ENRICHMENT_METADATA,
+    ENRICHMENT_STUB,
     RootType,
-    build_asset_specs,
+    build_stub_specs,
     collect_paths_for_roots,
+    enrich_assets_batch,
     get_all_known_prefixes,
     get_prefixes_for_root,
+    get_unenriched_assets_for_roots,
     insert_asset_specs,
     mark_missing_outside_prefixes_safely,
     sync_root_safely,
@@ -27,6 +31,14 @@ class State(Enum):
     IDLE = "IDLE"
     RUNNING = "RUNNING"
     CANCELLING = "CANCELLING"
+
+
+class ScanPhase(Enum):
+    """Scan phase options."""
+
+    FAST = "fast"  # Phase 1: filesystem only (stubs)
+    ENRICH = "enrich"  # Phase 2: metadata + hash
+    FULL = "full"  # Both phases sequentially
 
 
 @dataclass
@@ -79,12 +91,14 @@ class AssetSeeder:
         self._thread: threading.Thread | None = None
         self._cancel_event = threading.Event()
         self._roots: tuple[RootType, ...] = ()
+        self._phase: ScanPhase = ScanPhase.FULL
         self._compute_hashes: bool = False
         self._progress_callback: ProgressCallback | None = None
 
     def start(
         self,
         roots: tuple[RootType, ...] = ("models", "input", "output"),
+        phase: ScanPhase = ScanPhase.FULL,
         progress_callback: ProgressCallback | None = None,
         prune_first: bool = False,
         compute_hashes: bool = False,
@@ -93,6 +107,7 @@ class AssetSeeder:
 
         Args:
             roots: Tuple of root types to scan (models, input, output)
+            phase: Scan phase to run (FAST, ENRICH, or FULL for both)
             progress_callback: Optional callback called with progress updates
             prune_first: If True, prune orphaned assets before scanning
             compute_hashes: If True, compute blake3 hashes for each file (slow for large files)
@@ -107,6 +122,7 @@ class AssetSeeder:
             self._progress = Progress()
             self._errors = []
             self._roots = roots
+            self._phase = phase
             self._prune_first = prune_first
             self._compute_hashes = compute_hashes
             self._progress_callback = progress_callback
@@ -118,6 +134,54 @@ class AssetSeeder:
             )
             self._thread.start()
             return True
+
+    def start_fast(
+        self,
+        roots: tuple[RootType, ...] = ("models", "input", "output"),
+        progress_callback: ProgressCallback | None = None,
+        prune_first: bool = False,
+    ) -> bool:
+        """Start a fast scan (phase 1 only) - creates stub records.
+
+        Args:
+            roots: Tuple of root types to scan
+            progress_callback: Optional callback for progress updates
+            prune_first: If True, prune orphaned assets before scanning
+
+        Returns:
+            True if scan was started, False if already running
+        """
+        return self.start(
+            roots=roots,
+            phase=ScanPhase.FAST,
+            progress_callback=progress_callback,
+            prune_first=prune_first,
+            compute_hashes=False,
+        )
+
+    def start_enrich(
+        self,
+        roots: tuple[RootType, ...] = ("models", "input", "output"),
+        progress_callback: ProgressCallback | None = None,
+        compute_hashes: bool = False,
+    ) -> bool:
+        """Start an enrichment scan (phase 2 only) - extracts metadata and hashes.
+
+        Args:
+            roots: Tuple of root types to scan
+            progress_callback: Optional callback for progress updates
+            compute_hashes: If True, compute blake3 hashes
+
+        Returns:
+            True if scan was started, False if already running
+        """
+        return self.start(
+            roots=roots,
+            phase=ScanPhase.ENRICH,
+            progress_callback=progress_callback,
+            prune_first=False,
+            compute_hashes=compute_hashes,
+        )
 
     def cancel(self) -> bool:
         """Request cancellation of the current scan.
@@ -291,8 +355,10 @@ class AssetSeeder:
         """Main scan loop running in background thread."""
         t_start = time.perf_counter()
         roots = self._roots
+        phase = self._phase
         cancelled = False
         total_created = 0
+        total_enriched = 0
         skipped_existing = 0
         total_paths = 0
 
@@ -318,95 +384,58 @@ class AssetSeeder:
 
             self._log_scan_config(roots)
 
-            existing_paths: set[str] = set()
-            for r in roots:
+            # Phase 1: Fast scan (stub records)
+            if phase in (ScanPhase.FAST, ScanPhase.FULL):
+                total_created, skipped_existing, total_paths = self._run_fast_phase(roots)
+
                 if self._is_cancelled():
-                    logging.info("Asset scan cancelled during sync phase")
-                    cancelled = True
-                    return
-                existing_paths.update(sync_root_safely(r))
-
-            if self._is_cancelled():
-                logging.info("Asset scan cancelled after sync phase")
-                cancelled = True
-                return
-
-            paths = collect_paths_for_roots(roots)
-            total_paths = len(paths)
-            self._update_progress(total=total_paths)
-
-            self._emit_event(
-                "assets.seed.started",
-                {"roots": list(roots), "total": total_paths},
-            )
-
-            specs, tag_pool, skipped_existing = build_asset_specs(
-                paths, existing_paths, compute_hashes=self._compute_hashes
-            )
-            self._update_progress(skipped=skipped_existing)
-
-            if self._is_cancelled():
-                logging.info("Asset scan cancelled after building specs")
-                cancelled = True
-                return
-
-            batch_size = 500
-            last_progress_time = time.perf_counter()
-            progress_interval = 1.0
-
-            for i in range(0, len(specs), batch_size):
-                if self._is_cancelled():
-                    logging.info(
-                        "Asset scan cancelled after %d/%d files (created=%d)",
-                        i,
-                        len(specs),
-                        total_created,
-                    )
                     cancelled = True
                     return
 
-                batch = specs[i : i + batch_size]
-                batch_tags = {t for spec in batch for t in spec["tags"]}
-                try:
-                    created = insert_asset_specs(batch, batch_tags)
-                    total_created += created
-                except Exception as e:
-                    self._add_error(f"Batch insert failed at offset {i}: {e}")
-                    logging.exception("Batch insert failed at offset %d", i)
+                self._emit_event(
+                    "assets.seed.fast_complete",
+                    {
+                        "roots": list(roots),
+                        "created": total_created,
+                        "skipped": skipped_existing,
+                        "total": total_paths,
+                    },
+                )
 
-                scanned = i + len(batch)
-                now = time.perf_counter()
-                self._update_progress(scanned=scanned, created=total_created)
+            # Phase 2: Enrichment scan (metadata + hashes)
+            if phase in (ScanPhase.ENRICH, ScanPhase.FULL):
+                if self._is_cancelled():
+                    cancelled = True
+                    return
 
-                if now - last_progress_time >= progress_interval:
-                    self._emit_event(
-                        "assets.seed.progress",
-                        {
-                            "scanned": scanned,
-                            "total": len(specs),
-                            "created": total_created,
-                        },
-                    )
-                    last_progress_time = now
+                total_enriched = self._run_enrich_phase(roots)
 
-            self._update_progress(scanned=len(specs), created=total_created)
+                self._emit_event(
+                    "assets.seed.enrich_complete",
+                    {
+                        "roots": list(roots),
+                        "enriched": total_enriched,
+                    },
+                )
 
             elapsed = time.perf_counter() - t_start
             logging.info(
-                "Asset scan(roots=%s) completed in %.3fs (created=%d, skipped=%d, total=%d)",
+                "Asset scan(roots=%s, phase=%s) completed in %.3fs (created=%d, enriched=%d, skipped=%d)",
                 roots,
+                phase.value,
                 elapsed,
                 total_created,
+                total_enriched,
                 skipped_existing,
-                len(paths),
             )
 
             self._emit_event(
                 "assets.seed.completed",
                 {
-                    "scanned": len(specs),
+                    "phase": phase.value,
                     "total": total_paths,
                     "created": total_created,
+                    "enriched": total_enriched,
                     "skipped": skipped_existing,
                     "elapsed": round(elapsed, 3),
                 },
@@ -428,6 +457,136 @@ class AssetSeeder:
                 )
             with self._lock:
                 self._state = State.IDLE
+
+    def _run_fast_phase(self, roots: tuple[RootType, ...]) -> tuple[int, int, int]:
+        """Run phase 1: fast scan to create stub records.
+
+        Returns:
+            Tuple of (total_created, skipped_existing, total_paths)
+        """
+        total_created = 0
+        skipped_existing = 0
+
+        existing_paths: set[str] = set()
+        for r in roots:
+            if self._is_cancelled():
+                return total_created, skipped_existing, 0
+            existing_paths.update(sync_root_safely(r))
+
+        if self._is_cancelled():
+            return total_created, skipped_existing, 0
+
+        paths = collect_paths_for_roots(roots)
+        total_paths = len(paths)
+        self._update_progress(total=total_paths)
+
+        self._emit_event(
+            "assets.seed.started",
+            {"roots": list(roots), "total": total_paths, "phase": "fast"},
+        )
+
+        # Use stub specs (no metadata extraction, no hashing)
+        specs, tag_pool, skipped_existing = build_stub_specs(paths, existing_paths)
+        self._update_progress(skipped=skipped_existing)
+
+        if self._is_cancelled():
+            return total_created, skipped_existing, total_paths
+
+        batch_size = 500
+        last_progress_time = time.perf_counter()
+        progress_interval = 1.0
+
+        for i in range(0, len(specs), batch_size):
+            if self._is_cancelled():
+                logging.info(
+                    "Fast scan cancelled after %d/%d files (created=%d)",
+                    i,
+                    len(specs),
+                    total_created,
+                )
+                return total_created, skipped_existing, total_paths
+
+            batch = specs[i : i + batch_size]
+            batch_tags = {t for spec in batch for t in spec["tags"]}
+            try:
+                created = insert_asset_specs(batch, batch_tags)
+                total_created += created
+            except Exception as e:
+                self._add_error(f"Batch insert failed at offset {i}: {e}")
+                logging.exception("Batch insert failed at offset %d", i)
+
+            scanned = i + len(batch)
+            now = time.perf_counter()
+            self._update_progress(scanned=scanned, created=total_created)
+
+            if now - last_progress_time >= progress_interval:
+                self._emit_event(
+                    "assets.seed.progress",
+                    {
+                        "phase": "fast",
+                        "scanned": scanned,
+                        "total": len(specs),
+                        "created": total_created,
+                    },
+                )
+                last_progress_time = now
+
+        self._update_progress(scanned=len(specs), created=total_created)
+        return total_created, skipped_existing, total_paths
+
+    def _run_enrich_phase(self, roots: tuple[RootType, ...]) -> int:
+        """Run phase 2: enrich existing records with metadata and hashes.
+
+        Returns:
+            Total number of assets enriched
+        """
+        total_enriched = 0
+        batch_size = 100
+        last_progress_time = time.perf_counter()
+        progress_interval = 1.0
+
+        # Get the target enrichment level based on compute_hashes
+        target_max_level = ENRICHMENT_STUB if not self._compute_hashes else ENRICHMENT_METADATA
+
+        self._emit_event(
+            "assets.seed.started",
+            {"roots": list(roots), "phase": "enrich"},
+        )
+
+        while True:
+            if self._is_cancelled():
+                logging.info("Enrich scan cancelled after %d assets", total_enriched)
+                break
+
+            # Fetch next batch of unenriched assets
+            unenriched = get_unenriched_assets_for_roots(
+                roots,
+                max_level=target_max_level,
+                limit=batch_size,
+            )
+
+            if not unenriched:
+                break
+
+            enriched, failed = enrich_assets_batch(
+                unenriched,
+                extract_metadata=True,
+                compute_hash=self._compute_hashes,
+            )
+            total_enriched += enriched
+
+            now = time.perf_counter()
+            if now - last_progress_time >= progress_interval:
+                self._emit_event(
+                    "assets.seed.progress",
+                    {
+                        "phase": "enrich",
+                        "enriched": total_enriched,
+                    },
+                )
+                last_progress_time = now
+
+        return total_enriched
 
 
 asset_seeder = AssetSeeder()

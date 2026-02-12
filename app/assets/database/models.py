@@ -84,6 +84,7 @@ class AssetCacheState(Base):
     mtime_ns: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     needs_verify: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_missing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    enrichment_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     asset: Mapped[Asset] = relationship(back_populates="cache_states")
 
@@ -91,8 +92,13 @@ class AssetCacheState(Base):
         Index("ix_asset_cache_state_file_path", "file_path"),
         Index("ix_asset_cache_state_asset_id", "asset_id"),
         Index("ix_asset_cache_state_is_missing", "is_missing"),
+        Index("ix_asset_cache_state_enrichment_level", "enrichment_level"),
         CheckConstraint(
             "(mtime_ns IS NULL) OR (mtime_ns >= 0)", name="ck_acs_mtime_nonneg"
+        ),
+        CheckConstraint(
+            "enrichment_level >= 0 AND enrichment_level <= 2",
+            name="ck_acs_enrichment_level_range",
         ),
         UniqueConstraint("file_path", name="uq_asset_cache_state_file_path"),
     )

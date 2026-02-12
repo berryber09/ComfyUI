@@ -302,6 +302,106 @@ def delete_orphaned_seed_asset(session: Session, asset_id: str) -> bool:
     return False
 
 
+class UnenrichedAssetRow(NamedTuple):
+    """Row for assets needing enrichment."""
+
+    cache_state_id: int
+    asset_id: str
+    asset_info_id: str
+    file_path: str
+    enrichment_level: int
+
+
+def get_unenriched_cache_states(
+    session: Session,
+    prefixes: list[str],
+    max_level: int = 0,
+    limit: int = 1000,
+) -> list[UnenrichedAssetRow]:
+    """Get cache states that need enrichment (enrichment_level <= max_level).
+
+    Args:
+        session: Database session
+        prefixes: List of absolute directory prefixes to scan
+        max_level: Maximum enrichment level to include (0=stubs, 1=metadata done)
+        limit: Maximum number of rows to return
+
+    Returns:
+        List of unenriched asset rows with file paths
+    """
+    if not prefixes:
+        return []
+
+    conds = []
+    for p in prefixes:
+        base = os.path.abspath(p)
+        if not base.endswith(os.sep):
+            base += os.sep
+        escaped, esc = escape_sql_like_string(base)
+        conds.append(AssetCacheState.file_path.like(escaped + "%", escape=esc))
+
+    query = (
+        sa.select(
+            AssetCacheState.id,
+            AssetCacheState.asset_id,
+            AssetInfo.id,
+            AssetCacheState.file_path,
+            AssetCacheState.enrichment_level,
+        )
+        .join(Asset, Asset.id == AssetCacheState.asset_id)
+        .join(AssetInfo, AssetInfo.asset_id == Asset.id)
+        .where(sa.or_(*conds))
+        .where(AssetCacheState.is_missing == False)  # noqa: E712
+        .where(AssetCacheState.enrichment_level <= max_level)
+        .order_by(AssetCacheState.id.asc())
+        .limit(limit)
+    )
+
+    rows = session.execute(query).all()
+    return [
+        UnenrichedAssetRow(
+            cache_state_id=row[0],
+            asset_id=row[1],
+            asset_info_id=row[2],
+            file_path=row[3],
+            enrichment_level=row[4],
+        )
+        for row in rows
+    ]
+
+
+def update_enrichment_level(
+    session: Session,
+    cache_state_id: int,
+    level: int,
+) -> None:
+    """Update the enrichment level for a cache state."""
+    session.execute(
+        sa.update(AssetCacheState)
+        .where(AssetCacheState.id == cache_state_id)
+        .values(enrichment_level=level)
+    )
+
+
+def bulk_update_enrichment_level(
+    session: Session,
+    cache_state_ids: list[int],
+    level: int,
+) -> int:
+    """Update enrichment level for multiple cache states.
+
+    Returns: Number of rows updated
+    """
+    if not cache_state_ids:
+        return 0
+    result = session.execute(
+        sa.update(AssetCacheState)
+        .where(AssetCacheState.id.in_(cache_state_ids))
+        .values(enrichment_level=level)
+    )
+    return result.rowcount
+
+
 def bulk_insert_cache_states_ignore_conflicts(
     session: Session,
     rows: list[dict],
