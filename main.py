@@ -360,9 +360,10 @@ def setup_database():
         from app.database.db import init_db, dependencies_available
         if dependencies_available():
             init_db()
-            if not args.disable_assets_autoscan:
-                if asset_seeder.start(roots=("models", "input", "output"), prune_first=True, compute_hashes=True):
-                    logging.info("Background asset scan initiated for models, input, output")
+            if args.disable_assets_autoscan:
+                asset_seeder.disable()
+            elif asset_seeder.start(roots=("models", "input", "output"), prune_first=True, compute_hashes=True):
+                logging.info("Background asset scan initiated for models, input, output")
     except Exception as e:
         logging.error(f"Failed to initialize database. Please ensure you have installed the latest requirements. If the error persists, please report this as in future the database will be required: {e}")
 

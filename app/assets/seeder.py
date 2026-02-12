@@ -97,6 +97,21 @@ class AssetSeeder:
         self._phase: ScanPhase = ScanPhase.FULL
         self._compute_hashes: bool = False
         self._progress_callback: ProgressCallback | None = None
+        self._disabled: bool = False
+
+    def disable(self) -> None:
+        """Disable the asset seeder, preventing any scans from starting."""
+        self._disabled = True
+        logging.info("Asset seeder disabled")
+
+    def enable(self) -> None:
+        """Enable the asset seeder, allowing scans to start."""
+        self._disabled = False
+        logging.info("Asset seeder enabled")
+
+    def is_disabled(self) -> bool:
+        """Check if the asset seeder is disabled."""
+        return self._disabled
 
     def start(
         self,
@@ -118,6 +133,9 @@ class AssetSeeder:
         Returns:
             True if scan was started, False if already running
         """
+        if self._disabled:
+            logging.debug("Asset seeder is disabled, skipping start")
+            return False
         logging.info("Asset seeder start requested (roots=%s, phase=%s)", roots, phase.value)
         with self._lock:
             if self._state != State.IDLE:
