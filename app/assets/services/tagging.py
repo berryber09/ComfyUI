@@ -1,33 +1,33 @@
 from app.assets.database.queries import (
-    add_tags_to_asset_info,
-    get_asset_info_by_id,
+    add_tags_to_reference,
+    get_reference_by_id,
     list_tags_with_usage,
-    remove_tags_from_asset_info,
+    remove_tags_from_reference,
 )
 from app.assets.services.schemas import AddTagsResult, RemoveTagsResult, TagUsage
 from app.database.db import create_session
 
 
 def apply_tags(
-    asset_info_id: str,
+    reference_id: str,
     tags: list[str],
     origin: str = "manual",
     owner_id: str = "",
 ) -> AddTagsResult:
     with create_session() as session:
-        info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
-        if not info_row:
-            raise ValueError(f"AssetInfo {asset_info_id} not found")
-        if info_row.owner_id and info_row.owner_id != owner_id:
+        ref_row = get_reference_by_id(session, reference_id=reference_id)
+        if not ref_row:
+            raise ValueError(f"AssetReference {reference_id} not found")
+        if ref_row.owner_id and ref_row.owner_id != owner_id:
             raise PermissionError("not owner")
 
-        data = add_tags_to_asset_info(
+        data = add_tags_to_reference(
             session,
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             tags=tags,
             origin=origin,
             create_if_missing=True,
-            asset_info_row=info_row,
+            reference_row=ref_row,
         )
         session.commit()
 
@@ -39,20 +39,20 @@ def apply_tags(
 
 
 def remove_tags(
-    asset_info_id: str,
+    reference_id: str,
     tags: list[str],
     owner_id: str = "",
 ) -> RemoveTagsResult:
     with create_session() as session:
-        info_row = get_asset_info_by_id(session, asset_info_id=asset_info_id)
-        if not info_row:
-            raise ValueError(f"AssetInfo {asset_info_id} not found")
-        if info_row.owner_id and info_row.owner_id != owner_id:
+        ref_row = get_reference_by_id(session, reference_id=reference_id)
+        if not ref_row:
+            raise ValueError(f"AssetReference {reference_id} not found")
+        if ref_row.owner_id and ref_row.owner_id != owner_id:
             raise PermissionError("not owner")
 
-        data = remove_tags_from_asset_info(
+        data = remove_tags_from_reference(
             session,
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             tags=tags,
         )
         session.commit()

@@ -7,18 +7,15 @@ from app.assets.helpers import normalize_tags
 
 
 def get_comfy_models_folders() -> list[tuple[str, list[str]]]:
-    """Build a list of (folder_name, base_paths[]) categories that are configured for model locations.
+    """Build list of (folder_name, base_paths[]) for model locations.
 
-    We trust `folder_paths.folder_names_and_paths` and include a category if
-    *any* of its base paths lies under the Comfy `models_dir`.
+    Includes a category if any of its base paths lies under models_dir.
     """
     targets: list[tuple[str, list[str]]] = []
     models_root = os.path.abspath(folder_paths.models_dir)
     for name, values in folder_paths.folder_names_and_paths.items():
-        paths, _exts = (
-            values[0],
-            values[1],
-        )  # NOTE: this prevents nodepacks that hackily edit folder_... from breaking ComfyUI
+        # Unpack carefully to handle nodepacks that modify folder_paths
+        paths, _exts = values[0], values[1]
         if any(os.path.abspath(p).startswith(models_root + os.sep) for p in paths):
             targets.append((name, paths))
     return targets
@@ -70,7 +67,6 @@ def compute_relative_filename(file_path: str) -> str | None:
       /.../models/text_encoders/clip_g.safetensors -> "clip_g.safetensors"
 
     For non-model paths, returns None.
-    NOTE: this is a temporary helper, used only for initializing metadata["filename"] field.
     """
     try:
         root_category, rel_path = get_asset_category_and_relative_path(file_path)
@@ -92,18 +88,18 @@ def compute_relative_filename(file_path: str) -> str | None:
 def get_asset_category_and_relative_path(
     file_path: str,
 ) -> tuple[Literal["input", "output", "models"], str]:
-    """Given an absolute or relative file path, determine which root category the path belongs to:
-      - 'input' if the file resides under `folder_paths.get_input_directory()`
-      - 'output' if the file resides under `folder_paths.get_output_directory()`
-      - 'models' if the file resides under any base path of categories returned by `get_comfy_models_folders()`
+    """Determine which root category a file path belongs to.
+
+    Categories:
+      - 'input': under folder_paths.get_input_directory()
+      - 'output': under folder_paths.get_output_directory()
+      - 'models': under any base path from get_comfy_models_folders()
 
     Returns:
         (root_category, relative_path_inside_that_root)
-        For 'models', the relative path is prefixed with the category name:
-            e.g. ('models', 'vae/test/sub/ae.safetensors')
 
     Raises:
-        ValueError: if the path does not belong to input, output, or configured model bases.
+        ValueError: path does not belong to any known root.
     """
     fp_abs = os.path.abspath(file_path)
 
@@ -149,32 +145,35 @@ def get_asset_category_and_relative_path(
     )
 
 
+def compute_filename_for_reference(session, ref) -> str | None:
+    """Compute the relative filename for an asset reference.
+
+    Uses the file_path from the reference if available.
+    """
+    if ref.file_path:
+        return compute_relative_filename(ref.file_path)
+    return None
+
+
 def compute_filename_for_asset(session, asset_id: str) -> str | None:
-    """Compute the relative filename for an asset from its best live cache state path."""
-    from app.assets.database.queries import list_cache_states_by_asset_id
+    """Compute the relative filename for an asset from its best live reference path."""
+    from app.assets.database.queries import list_references_by_asset_id
     from app.assets.helpers import select_best_live_path
 
     primary_path = select_best_live_path(
-        list_cache_states_by_asset_id(session, asset_id=asset_id)
+        list_references_by_asset_id(session, asset_id=asset_id)
     )
     return compute_relative_filename(primary_path) if primary_path else None
 
 
 def get_name_and_tags_from_asset_path(file_path: str) -> tuple[str, list[str]]:
-    """Return a tuple (name, tags) derived from a filesystem path.
+    """Return (name, tags) derived from a filesystem path.
 
-    Semantics:
-      - Root category is determined by `get_asset_category_and_relative_path`.
-      - The returned `name` is the base filename with extension from the relative path.
-      - The returned `tags` are:
-            [root_category] + parent folders of the relative path (in order)
-        For 'models', this means:
-            file '/.../ModelsDir/vae/test_tag/ae.safetensors'
-            -> root_category='models', some_path='vae/test_tag/ae.safetensors'
-            -> name='ae.safetensors', tags=['models', 'vae', 'test_tag']
+    - name: base filename with extension
+    - tags: [root_category] + parent folder names in order
 
     Raises:
-        ValueError: if the path does not belong to input, output, or configured model bases.
+        ValueError: path does not belong to any known root.
     """
     root_category, some_path = get_asset_category_and_relative_path(file_path)
     p = Path(some_path)

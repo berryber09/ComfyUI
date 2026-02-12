@@ -6,7 +6,12 @@ from sqlalchemy.dialects import sqlite
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import AssetInfo, AssetInfoMeta, AssetInfoTag, Tag
+from app.assets.database.models import (
+    AssetReference,
+    AssetReferenceMeta,
+    AssetReferenceTag,
+    Tag,
+)
 from app.assets.database.queries.common import (
     build_visible_owner_clause,
     iter_row_chunks,
@@ -47,22 +52,22 @@ def ensure_tags_exist(
     session.execute(ins)
 
 
-def get_asset_tags(session: Session, asset_info_id: str) -> list[str]:
+def get_reference_tags(session: Session, reference_id: str) -> list[str]:
     return [
         tag_name
         for (tag_name,) in (
             session.execute(
-                select(AssetInfoTag.tag_name).where(
-                    AssetInfoTag.asset_info_id == asset_info_id
+                select(AssetReferenceTag.tag_name).where(
+                    AssetReferenceTag.asset_reference_id == reference_id
                 )
             )
         ).all()
     ]
 
 
-def set_asset_info_tags(
+def set_reference_tags(
     session: Session,
-    asset_info_id: str,
+    reference_id: str,
     tags: Sequence[str],
     origin: str = "manual",
 ) -> SetTagsDict:
@@ -72,8 +77,8 @@ def set_asset_info_tags(
         tag_name
         for (tag_name,) in (
             session.execute(
-                select(AssetInfoTag.tag_name).where(
-                    AssetInfoTag.asset_info_id == asset_info_id
+                select(AssetReferenceTag.tag_name).where(
+                    AssetReferenceTag.asset_reference_id == reference_id
                 )
             )
         ).all()
@@ -86,8 +91,8 @@ def set_asset_info_tags(
         ensure_tags_exist(session, to_add, tag_type="user")
         session.add_all(
             [
-                AssetInfoTag(
-                    asset_info_id=asset_info_id,
+                AssetReferenceTag(
+                    asset_reference_id=reference_id,
                     tag_name=t,
                     origin=origin,
                     added_at=get_utc_now(),
@@ -99,9 +104,9 @@ def set_asset_info_tags(
 
     if to_remove:
         session.execute(
-            delete(AssetInfoTag).where(
-                AssetInfoTag.asset_info_id == asset_info_id,
-                AssetInfoTag.tag_name.in_(to_remove),
+            delete(AssetReferenceTag).where(
+                AssetReferenceTag.asset_reference_id == reference_id,
+                AssetReferenceTag.tag_name.in_(to_remove),
             )
         )
         session.flush()
@@ -109,22 +114,22 @@ def set_asset_info_tags(
     return {"added": to_add, "removed": to_remove, "total": desired}
 
 
-def add_tags_to_asset_info(
+def add_tags_to_reference(
     session: Session,
-    asset_info_id: str,
+    reference_id: str,
     tags: Sequence[str],
     origin: str = "manual",
     create_if_missing: bool = True,
-    asset_info_row: AssetInfo | None = None,
+    reference_row: AssetReference | None = None,
 ) -> AddTagsDict:
-    if not asset_info_row:
-        info = session.get(AssetInfo, asset_info_id)
-        if not info:
-            raise ValueError(f"AssetInfo {asset_info_id} not found")
+    if not reference_row:
+        ref = session.get(AssetReference, reference_id)
+        if not ref:
+            raise ValueError(f"AssetReference {reference_id} not found")
 
     norm = normalize_tags(tags)
     if not norm:
-        total = get_asset_tags(session, asset_info_id=asset_info_id)
+        total = get_reference_tags(session, reference_id=reference_id)
         return {"added": [], "already_present": [], "total_tags": total}
 
     if create_if_missing:
@@ -134,8 +139,8 @@ def add_tags_to_asset_info(
         tag_name
         for (tag_name,) in (
             session.execute(
-                sa.select(AssetInfoTag.tag_name).where(
-                    AssetInfoTag.asset_info_id == asset_info_id
+                sa.select(AssetReferenceTag.tag_name).where(
+                    AssetReferenceTag.asset_reference_id == reference_id
                 )
             )
         ).all()
@@ -149,8 +154,8 @@ def add_tags_to_asset_info(
             try:
                 session.add_all(
                     [
-                        AssetInfoTag(
-                            asset_info_id=asset_info_id,
+                        AssetReferenceTag(
+                            asset_reference_id=reference_id,
                             tag_name=t,
                             origin=origin,
                             added_at=get_utc_now(),
@@ -162,7 +167,7 @@ def add_tags_to_asset_info(
             except IntegrityError:
                 nested.rollback()
 
-    after = set(get_asset_tags(session, asset_info_id=asset_info_id))
+    after = set(get_reference_tags(session, reference_id=reference_id))
     return {
         "added": sorted(((after - current) & want)),
         "already_present": sorted(want & current),
@@ -170,26 +175,26 @@ def add_tags_to_asset_info(
     }
 
 
-def remove_tags_from_asset_info(
+def remove_tags_from_reference(
     session: Session,
-    asset_info_id: str,
+    reference_id: str,
     tags: Sequence[str],
 ) -> RemoveTagsDict:
-    info = session.get(AssetInfo, asset_info_id)
-    if not info:
-        raise ValueError(f"AssetInfo {asset_info_id} not found")
+    ref = session.get(AssetReference, reference_id)
+    if not ref:
+        raise ValueError(f"AssetReference {reference_id} not found")
 
     norm = normalize_tags(tags)
     if not norm:
-        total = get_asset_tags(session, asset_info_id=asset_info_id)
+        total = get_reference_tags(session, reference_id=reference_id)
         return {"removed": [], "not_present": [], "total_tags": total}
 
     existing = {
         tag_name
         for (tag_name,) in (
             session.execute(
-                sa.select(AssetInfoTag.tag_name).where(
-                    AssetInfoTag.asset_info_id == asset_info_id
+                sa.select(AssetReferenceTag.tag_name).where(
+                    AssetReferenceTag.asset_reference_id == reference_id
                 )
             )
         ).all()
@@ -200,14 +205,14 @@ def remove_tags_from_asset_info(
 
     if to_remove:
         session.execute(
-            delete(AssetInfoTag).where(
-                AssetInfoTag.asset_info_id == asset_info_id,
-                AssetInfoTag.tag_name.in_(to_remove),
+            delete(AssetReferenceTag).where(
+                AssetReferenceTag.asset_reference_id == reference_id,
+                AssetReferenceTag.tag_name.in_(to_remove),
             )
         )
         session.flush()
 
-    total = get_asset_tags(session, asset_info_id=asset_info_id)
+    total = get_reference_tags(session, reference_id=reference_id)
     return {"removed": to_remove, "not_present": not_present, "total_tags": total}
 
 
@@ -218,29 +223,32 @@ def add_missing_tag_for_asset_id(
 ) -> None:
     select_rows = (
         sa.select(
-            AssetInfo.id.label("asset_info_id"),
+            AssetReference.id.label("asset_reference_id"),
             sa.literal("missing").label("tag_name"),
             sa.literal(origin).label("origin"),
             sa.literal(get_utc_now()).label("added_at"),
         )
-        .where(AssetInfo.asset_id == asset_id)
+        .where(AssetReference.asset_id == asset_id)
         .where(
             sa.not_(
                 sa.exists().where(
-                    (AssetInfoTag.asset_info_id == AssetInfo.id)
-                    & (AssetInfoTag.tag_name == "missing")
+                    (AssetReferenceTag.asset_reference_id == AssetReference.id)
+                    & (AssetReferenceTag.tag_name == "missing")
                 )
             )
         )
     )
     session.execute(
-        sqlite.insert(AssetInfoTag)
+        sqlite.insert(AssetReferenceTag)
         .from_select(
-            ["asset_info_id", "tag_name", "origin", "added_at"],
+            ["asset_reference_id", "tag_name", "origin", "added_at"],
             select_rows,
         )
         .on_conflict_do_nothing(
-            index_elements=[AssetInfoTag.asset_info_id, AssetInfoTag.tag_name]
+            index_elements=[
+                AssetReferenceTag.asset_reference_id,
+                AssetReferenceTag.tag_name,
+            ]
         )
     )
 
@@ -250,11 +258,11 @@ def remove_missing_tag_for_asset_id(
     asset_id: str,
 ) -> None:
     session.execute(
-        sa.delete(AssetInfoTag).where(
-            AssetInfoTag.asset_info_id.in_(
-                sa.select(AssetInfo.id).where(AssetInfo.asset_id == asset_id)
+        sa.delete(AssetReferenceTag).where(
+            AssetReferenceTag.asset_reference_id.in_(
+                sa.select(AssetReference.id).where(AssetReference.asset_id == asset_id)
             ),
-            AssetInfoTag.tag_name == "missing",
+            AssetReferenceTag.tag_name == "missing",
         )
     )
 
@@ -270,13 +278,13 @@ def list_tags_with_usage(
 ) -> tuple[list[tuple[str, str, int]], int]:
     counts_sq = (
         select(
-            AssetInfoTag.tag_name.label("tag_name"),
-            func.count(AssetInfoTag.asset_info_id).label("cnt"),
+            AssetReferenceTag.tag_name.label("tag_name"),
+            func.count(AssetReferenceTag.asset_reference_id).label("cnt"),
         )
-        .select_from(AssetInfoTag)
-        .join(AssetInfo, AssetInfo.id == AssetInfoTag.asset_info_id)
+        .select_from(AssetReferenceTag)
+        .join(AssetReference, AssetReference.id == AssetReferenceTag.asset_reference_id)
         .where(build_visible_owner_clause(owner_id))
-        .group_by(AssetInfoTag.tag_name)
+        .group_by(AssetReferenceTag.tag_name)
         .subquery()
     )
 
@@ -308,7 +316,9 @@ def list_tags_with_usage(
         total_q = total_q.where(Tag.name.like(escaped + "%", escape=esc))
     if not include_zero:
         total_q = total_q.where(
-            Tag.name.in_(select(AssetInfoTag.tag_name).group_by(AssetInfoTag.tag_name))
+            Tag.name.in_(
+                select(AssetReferenceTag.tag_name).group_by(AssetReferenceTag.tag_name)
+            )
         )
 
     rows = (session.execute(q.limit(limit).offset(offset))).all()
@@ -323,26 +333,31 @@ def bulk_insert_tags_and_meta(
     tag_rows: list[dict],
     meta_rows: list[dict],
 ) -> None:
-    """Batch insert into asset_info_tags and asset_info_meta with ON CONFLICT DO NOTHING.
+    """Batch insert into asset_reference_tags and asset_reference_meta.
+
+    Uses ON CONFLICT DO NOTHING.
 
     Args:
         session: Database session
-        tag_rows: List of dicts with keys: asset_info_id, tag_name, origin, added_at
-        meta_rows: List of dicts with keys: asset_info_id, key, ordinal, val_str, val_num, val_bool, val_json
+        tag_rows: Dicts with: asset_reference_id, tag_name, origin, added_at
+        meta_rows: Dicts with: asset_reference_id, key, ordinal, val_*
     """
     if tag_rows:
-        ins_tags = sqlite.insert(AssetInfoTag).on_conflict_do_nothing(
-            index_elements=[AssetInfoTag.asset_info_id, AssetInfoTag.tag_name]
+        ins_tags = sqlite.insert(AssetReferenceTag).on_conflict_do_nothing(
+            index_elements=[
+                AssetReferenceTag.asset_reference_id,
+                AssetReferenceTag.tag_name,
+            ]
         )
         for chunk in iter_row_chunks(tag_rows, cols_per_row=4):
             session.execute(ins_tags, chunk)
 
     if meta_rows:
-        ins_meta = sqlite.insert(AssetInfoMeta).on_conflict_do_nothing(
+        ins_meta = sqlite.insert(AssetReferenceMeta).on_conflict_do_nothing(
             index_elements=[
-                AssetInfoMeta.asset_info_id,
-                AssetInfoMeta.key,
-                AssetInfoMeta.ordinal,
+                AssetReferenceMeta.asset_reference_id,
+                AssetReferenceMeta.key,
+                AssetReferenceMeta.ordinal,
             ]
         )
         for chunk in iter_row_chunks(meta_rows, cols_per_row=7):

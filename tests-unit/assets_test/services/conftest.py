@@ -9,6 +9,12 @@ from sqlalchemy.orm import Session
 from app.assets.database.models import Base
 
 
+@pytest.fixture(autouse=True)
+def autoclean_unit_test_assets():
+    """Override parent autouse fixture - service unit tests don't need server cleanup."""
+    yield
+
+
 @pytest.fixture
 def db_engine():
     """In-memory SQLite engine for fast unit tests."""

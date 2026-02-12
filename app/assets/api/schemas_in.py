@@ -13,7 +13,7 @@ from pydantic import (
 
 
 class UploadError(Exception):
-    """Error during upload parsing with HTTP status and code (used in HTTP layer only)."""
+    """Error during upload parsing with HTTP status and code."""
 
     def __init__(self, status: int, code: str, message: str):
         super().__init__(message)
@@ -216,14 +216,14 @@ class TagsRemove(TagsAdd):
 
 class UploadAssetSpec(BaseModel):
     """Upload Asset operation.
+
     - tags: ordered; first is root ('models'|'input'|'output');
-            if root == 'models', second must be a valid category from folder_paths.folder_names_and_paths
+            if root == 'models', second must be a valid category
     - name: display name
     - user_metadata: arbitrary JSON object (optional)
-    - hash: optional canonical 'blake3:<hex>' provided by the client for validation / fast-path
+    - hash: optional canonical 'blake3:<hex>' for validation / fast-path
 
-    Files created via this endpoint are stored on disk using the **content hash** as the filename stem
-    and the original extension is preserved when available.
+    Files are stored using the content hash as filename stem.
     """
 
     model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)

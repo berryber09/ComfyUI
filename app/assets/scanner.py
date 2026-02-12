@@ -10,13 +10,16 @@ from app.assets.database.queries import (
     bulk_update_enrichment_level,
     bulk_update_is_missing,
     bulk_update_needs_verify,
-    delete_cache_states_by_ids,
     delete_orphaned_seed_asset,
+    delete_references_by_ids,
     ensure_tags_exist,
-    get_cache_states_for_prefixes,
-    get_unenriched_cache_states,
+    get_asset_by_hash,
+    get_references_for_prefixes,
+    get_unenriched_references,
+    reassign_asset_references,
     remove_missing_tag_for_asset_id,
-    set_asset_info_metadata,
+    set_reference_metadata,
+    update_asset_hash_and_mime,
 )
 from app.assets.services.bulk_ingest import (
     SeedAssetSpec,
@@ -38,8 +41,8 @@ from app.assets.services.path_utils import (
 from app.database.db import create_session, dependencies_available
 
 
-class _StateInfo(TypedDict):
-    sid: int
+class _RefInfo(TypedDict):
+    ref_id: str
     fp: str
     exists: bool
     fast_ok: bool
@@ -49,7 +52,7 @@ class _StateInfo(TypedDict):
 class _AssetAccumulator(TypedDict):
     hash: str | None
     size_db: int
-    states: list[_StateInfo]
+    refs: list[_RefInfo]
 
 
 RootType = Literal["models", "input", "output"]
@@ -97,17 +100,17 @@ def collect_models_files() -> list[str]:
     return out
 
 
-def sync_cache_states_with_filesystem(
+def sync_references_with_filesystem(
     session,
     root: RootType,
     collect_existing_paths: bool = False,
     update_missing_tags: bool = False,
 ) -> set[str] | None:
-    """Reconcile cache states with filesystem for a root.
+    """Reconcile asset references with filesystem for a root.
 
-    - Toggle needs_verify per state using fast mtime/size check
-    - For hashed assets with at least one fast-ok state in this root: delete stale missing states
-    - For seed assets with all states missing: delete Asset and its AssetInfos
+    - Toggle needs_verify per reference using fast mtime/size check
+    - For hashed assets with at least one fast-ok ref: delete stale missing refs
+    - For seed assets with all refs missing: delete Asset and its references
     - Optionally add/remove 'missing' tags based on fast-ok in this root
     - Optionally return surviving absolute paths
 
@@ -124,7 +127,7 @@ def sync_cache_states_with_filesystem(
     if not prefixes:
         return set() if collect_existing_paths else None
 
-    rows = get_cache_states_for_prefixes(
+    rows = get_references_for_prefixes(
         session, prefixes, include_missing=update_missing_tags
     )
 
@@ -132,7 +135,7 @@ def sync_cache_states_with_filesystem(
     for row in rows:
         acc = by_asset.get(row.asset_id)
         if acc is None:
-            acc = {"hash": row.asset_hash, "size_db": row.size_bytes, "states": []}
+            acc = {"hash": row.asset_hash, "size_db": row.size_bytes, "refs": []}
             by_asset[row.asset_id] = acc
 
         fast_ok = False
@@ -152,9 +155,9 @@ def sync_cache_states_with_filesystem(
             exists = False
             logging.debug("OSError checking %s: %s", row.file_path, e)
 
-        acc["states"].append(
+        acc["refs"].append(
             {
-                "sid": row.state_id,
+                "ref_id": row.reference_id,
                 "fp": row.file_path,
                 "exists": exists,
                 "fast_ok": fast_ok,
@@ -162,61 +165,63 @@ def sync_cache_states_with_filesystem(
             }
         )
 
-    to_set_verify: list[int] = []
-    to_clear_verify: list[int] = []
-    stale_state_ids: list[int] = []
-    to_mark_missing: list[int] = []
-    to_clear_missing: list[int] = []
+    to_set_verify: list[str] = []
+    to_clear_verify: list[str] = []
+    stale_ref_ids: list[str] = []
+    to_mark_missing: list[str] = []
+    to_clear_missing: list[str] = []
     survivors: set[str] = set()
 
     for aid, acc in by_asset.items():
         a_hash = acc["hash"]
-        states = acc["states"]
-        any_fast_ok = any(s["fast_ok"] for s in states)
-        all_missing = all(not s["exists"] for s in states)
+        refs = acc["refs"]
+        any_fast_ok = any(r["fast_ok"] for r in refs)
+        all_missing = all(not r["exists"] for r in refs)
 
-        for s in states:
-            if not s["exists"]:
-                to_mark_missing.append(s["sid"])
+        for r in refs:
+            if not r["exists"]:
+                to_mark_missing.append(r["ref_id"])
                 continue
-            if s["fast_ok"]:
-                to_clear_missing.append(s["sid"])
-                if s["needs_verify"]:
-                    to_clear_verify.append(s["sid"])
-            if not s["fast_ok"] and not s["needs_verify"]:
-                to_set_verify.append(s["sid"])
+            if r["fast_ok"]:
+                to_clear_missing.append(r["ref_id"])
+                if r["needs_verify"]:
+                    to_clear_verify.append(r["ref_id"])
+            if not r["fast_ok"] and not r["needs_verify"]:
+                to_set_verify.append(r["ref_id"])
 
         if a_hash is None:
-            if states and all_missing:
+            if refs and all_missing:
                 delete_orphaned_seed_asset(session, aid)
             else:
-                for s in states:
-                    if s["exists"]:
-                        survivors.add(os.path.abspath(s["fp"]))
+                for r in refs:
+                    if r["exists"]:
+                        survivors.add(os.path.abspath(r["fp"]))
             continue
 
         if any_fast_ok:
-            for s in states:
-                if not s["exists"]:
-                    stale_state_ids.append(s["sid"])
+            for r in refs:
+                if not r["exists"]:
+                    stale_ref_ids.append(r["ref_id"])
             if update_missing_tags:
                 try:
                     remove_missing_tag_for_asset_id(session, asset_id=aid)
                 except Exception as e:
-                    logging.warning("Failed to remove missing tag for asset %s: %s", aid, e)
+                    logging.warning(
+                        "Failed to remove missing tag for asset %s: %s", aid, e
+                    )
         elif update_missing_tags:
             try:
                 add_missing_tag_for_asset_id(session, asset_id=aid, origin="automatic")
             except Exception as e:
                 logging.warning("Failed to add missing tag for asset %s: %s", aid, e)
 
-        for s in states:
-            if s["exists"]:
-                survivors.add(os.path.abspath(s["fp"]))
+        for r in refs:
+            if r["exists"]:
+                survivors.add(os.path.abspath(r["fp"]))
 
-    delete_cache_states_by_ids(session, stale_state_ids)
-    stale_set = set(stale_state_ids)
-    to_mark_missing = [sid for sid in to_mark_missing if sid not in stale_set]
+    delete_references_by_ids(session, stale_ref_ids)
+    stale_set = set(stale_ref_ids)
+    to_mark_missing = [ref_id for ref_id in to_mark_missing if ref_id not in stale_set]
     bulk_update_is_missing(session, to_mark_missing, value=True)
     bulk_update_is_missing(session, to_clear_missing, value=False)
     bulk_update_needs_verify(session, to_set_verify, value=True)
@@ -226,13 +231,13 @@ def sync_cache_states_with_filesystem(
 
 
 def sync_root_safely(root: RootType) -> set[str]:
-    """Sync a single root's cache states with the filesystem.
+    """Sync a single root's references with the filesystem.
 
     Returns survivors (existing paths) or empty set on failure.
     """
     try:
         with create_session() as sess:
-            survivors = sync_cache_states_with_filesystem(
+            survivors = sync_references_with_filesystem(
                 sess,
                 root,
                 collect_existing_paths=True,
@@ -246,7 +251,7 @@ def sync_root_safely(root: RootType) -> set[str]:
 
 
 def mark_missing_outside_prefixes_safely(prefixes: list[str]) -> int:
-    """Mark cache states as missing when outside the given prefixes.
+    """Mark references as missing when outside the given prefixes.
 
     This is a non-destructive soft-delete. Returns count marked or 0 on failure.
     """
@@ -283,8 +288,8 @@ def build_asset_specs(
     Args:
         paths: List of file paths to process
         existing_paths: Set of paths that already exist in the database
-        enable_metadata_extraction: If True, extract tier 1 & 2 metadata from files
-        compute_hashes: If True, compute blake3 hashes for each file (slow for large files)
+        enable_metadata_extraction: If True, extract tier 1 & 2 metadata
+        compute_hashes: If True, compute blake3 hashes (slow for large files)
     """
     specs: list[SeedAssetSpec] = []
     tag_pool: set[str] = set()
@@ -398,7 +403,7 @@ def build_stub_specs(
 
 
 def insert_asset_specs(specs: list[SeedAssetSpec], tag_pool: set[str]) -> int:
-    """Insert asset specs into database, returning count of created infos."""
+    """Insert asset specs into database, returning count of created refs."""
     if not specs:
         return 0
     with create_session() as sess:
@@ -406,7 +411,7 @@ def insert_asset_specs(specs: list[SeedAssetSpec], tag_pool: set[str]) -> int:
             ensure_tags_exist(sess, tag_pool, tag_type="user")
         result = batch_insert_seed_assets(sess, specs=specs, owner_id="")
         sess.commit()
-        return result.inserted_infos
+        return result.inserted_refs
 
 
 def seed_assets(
@@ -419,10 +424,10 @@ def seed_assets(
     Args:
         roots: Tuple of root types to scan (models, input, output)
         enable_logging: If True, log progress and completion messages
-        compute_hashes: If True, compute blake3 hashes for each file (slow for large files)
+        compute_hashes: If True, compute blake3 hashes (slow for large files)
 
-    Note: This function does not mark missing assets. Call mark_missing_outside_prefixes_safely
-    separately if cleanup is needed.
+    Note: This function does not mark missing assets.
+    Call mark_missing_outside_prefixes_safely separately if cleanup is needed.
     """
     if not dependencies_available():
         if enable_logging:
@@ -443,7 +448,8 @@ def seed_assets(
 
     if enable_logging:
         logging.info(
-            "Assets scan(roots=%s) completed in %.3fs (created=%d, skipped_existing=%d, total_seen=%d)",
+            "Assets scan(roots=%s) completed in %.3fs "
+            "(created=%d, skipped_existing=%d, total_seen=%d)",
             roots,
             time.perf_counter() - t_start,
             created,
@@ -471,7 +477,7 @@ def get_unenriched_assets_for_roots(
         limit: Maximum number of rows to return
 
     Returns:
-        List of UnenrichedAssetRow
+        List of UnenrichedReferenceRow
     """
     prefixes: list[str] = []
     for root in roots:
@@ -481,13 +487,15 @@ def get_unenriched_assets_for_roots(
         return []
 
     with create_session() as sess:
-        return get_unenriched_cache_states(sess, prefixes, max_level=max_level, limit=limit)
+        return get_unenriched_references(
+            sess, prefixes, max_level=max_level, limit=limit
+        )
 
 
 def enrich_asset(
     file_path: str,
-    cache_state_id: int,
-    asset_info_id: str,
+    reference_id: str,
+    asset_id: str,
     extract_metadata: bool = True,
     compute_hash: bool = False,
 ) -> int:
@@ -495,8 +503,8 @@ def enrich_asset(
 
     Args:
         file_path: Absolute path to the file
-        cache_state_id: ID of the cache state to update
-        asset_info_id: ID of the asset info to update
+        reference_id: ID of the reference to update
+        asset_id: ID of the asset to update (for mime_type and hash)
         extract_metadata: If True, extract safetensors header and mime type
         compute_hash: If True, compute blake3 hash
 
@@ -511,30 +519,46 @@ def enrich_asset(
         return new_level
 
     rel_fname = compute_relative_filename(file_path)
+    mime_type: str | None = None
+
+    if extract_metadata:
+        metadata = extract_file_metadata(
+            file_path,
+            stat_result=stat_p,
+            enable_safetensors=True,
+            relative_filename=rel_fname,
+        )
+        if metadata:
+            mime_type = metadata.content_type
+            new_level = ENRICHMENT_METADATA
+
+    full_hash: str | None = None
+    if compute_hash:
+        try:
+            digest = compute_blake3_hash(file_path)
+            full_hash = f"blake3:{digest}"
+            new_level = ENRICHMENT_HASHED
+        except Exception as e:
+            logging.warning("Failed to hash %s: %s", file_path, e)
 
     with create_session() as sess:
-        if extract_metadata:
-            metadata = extract_file_metadata(
-                file_path,
-                stat_result=stat_p,
-                enable_safetensors=True,
-                relative_filename=rel_fname,
-            )
-            if metadata:
-                user_metadata = metadata.to_user_metadata()
-                set_asset_info_metadata(sess, asset_info_id, user_metadata)
-                new_level = ENRICHMENT_METADATA
+        if extract_metadata and metadata:
+            user_metadata = metadata.to_user_metadata()
+            set_reference_metadata(sess, reference_id, user_metadata)
 
-        if compute_hash:
-            try:
-                digest = compute_blake3_hash(file_path)
-                # TODO: Update asset.hash field
-                # For now just mark the enrichment level
-                new_level = ENRICHMENT_HASHED
-            except Exception as e:
-                logging.warning("Failed to hash %s: %s", file_path, e)
+        if full_hash:
+            existing = get_asset_by_hash(sess, full_hash)
+            if existing and existing.id != asset_id:
+                reassign_asset_references(sess, asset_id, existing.id, reference_id)
+                delete_orphaned_seed_asset(sess, asset_id)
+                if mime_type:
+                    update_asset_hash_and_mime(sess, existing.id, mime_type=mime_type)
+            else:
+                update_asset_hash_and_mime(sess, asset_id, full_hash, mime_type)
+        elif mime_type:
+            update_asset_hash_and_mime(sess, asset_id, mime_type=mime_type)
 
-        bulk_update_enrichment_level(sess, [cache_state_id], new_level)
+        bulk_update_enrichment_level(sess, [reference_id], new_level)
         sess.commit()
 
     return new_level
@@ -548,7 +572,7 @@ def enrich_assets_batch(
     """Enrich a batch of assets.
 
     Args:
-        rows: List of UnenrichedAssetRow from get_unenriched_assets_for_roots
+        rows: List of UnenrichedReferenceRow from get_unenriched_assets_for_roots
         extract_metadata: If True, extract metadata for each asset
         compute_hash: If True, compute hash for each asset
 
@@ -562,8 +586,8 @@ def enrich_assets_batch(
         try:
             new_level = enrich_asset(
                 file_path=row.file_path,
-                cache_state_id=row.cache_state_id,
-                asset_info_id=row.asset_info_id,
+                reference_id=row.reference_id,
+                asset_id=row.asset_id,
                 extract_metadata=extract_metadata,
                 compute_hash=compute_hash,
             )

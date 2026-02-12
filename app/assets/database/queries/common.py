@@ -4,7 +4,7 @@ from typing import Iterable
 
 import sqlalchemy as sa
 
-from app.assets.database.models import AssetInfo
+from app.assets.database.models import AssetReference
 
 MAX_BIND_PARAMS = 800
 
@@ -30,8 +30,11 @@ def iter_row_chunks(rows: list[dict], cols_per_row: int) -> Iterable[list[dict]]
 
 
 def build_visible_owner_clause(owner_id: str) -> sa.sql.ClauseElement:
-    """Build owner visibility predicate for reads. Owner-less rows are visible to everyone."""
+    """Build owner visibility predicate for reads.
+
+    Owner-less rows are visible to everyone.
+    """
     owner_id = (owner_id or "").strip()
     if owner_id == "":
-        return AssetInfo.owner_id == ""
-    return AssetInfo.owner_id.in_(["", owner_id])
+        return AssetReference.owner_id == ""
+    return AssetReference.owner_id.in_(["", owner_id])

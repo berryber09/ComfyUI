@@ -31,8 +31,9 @@ ALLOWED_ROOTS: tuple[Literal["models", "input", "output"], ...] = (
 
 
 def escape_sql_like_string(s: str, escape: str = "!") -> tuple[str, str]:
-    """Escapes %, _ and the escape char itself in a LIKE prefix.
-    Returns (escaped_prefix, escape_char). Caller should append '%' and pass escape=escape_char to .like().
+    """Escapes %, _ and the escape char in a LIKE prefix.
+
+    Returns (escaped_prefix, escape_char).
     """
     s = s.replace(escape, escape + escape)  # escape the escape char first
     s = s.replace("%", escape + "%").replace("_", escape + "_")  # escape LIKE wildcards

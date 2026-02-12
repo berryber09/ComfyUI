@@ -8,24 +8,23 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 import app.assets.services.hashing as hashing
-from app.assets.database.models import Asset, AssetInfo, Tag
+from app.assets.database.models import Asset, AssetReference, Tag
 from app.assets.database.queries import (
-    add_tags_to_asset_info,
-    fetch_asset_info_and_asset,
+    add_tags_to_reference,
+    fetch_reference_and_asset,
     get_asset_by_hash,
-    get_asset_tags,
-    get_or_create_asset_info,
+    get_reference_tags,
+    get_or_create_reference,
     remove_missing_tag_for_asset_id,
-    set_asset_info_metadata,
-    set_asset_info_tags,
-    update_asset_info_timestamps,
+    set_reference_metadata,
+    set_reference_tags,
     upsert_asset,
-    upsert_cache_state,
+    upsert_reference,
 )
 from app.assets.helpers import normalize_tags
 from app.assets.services.file_utils import get_size_and_mtime_ns
 from app.assets.services.path_utils import (
-    compute_filename_for_asset,
+    compute_filename_for_reference,
     resolve_destination_from_tags,
     validate_path_within_base,
 )
@@ -35,7 +34,7 @@ from app.assets.services.schemas import (
     UploadResult,
     UserMetadata,
     extract_asset_data,
-    extract_info_data,
+    extract_reference_data,
 )
 from app.database.db import create_session
 
@@ -58,9 +57,9 @@ def _ingest_file_from_path(
 
     asset_created = False
     asset_updated = False
-    state_created = False
-    state_updated = False
-    asset_info_id: str | None = None
+    ref_created = False
+    ref_updated = False
+    reference_id: str | None = None
 
     with create_session() as session:
         if preview_id:
@@ -74,49 +73,42 @@ def _ingest_file_from_path(
             mime_type=mime_type,
         )
 
-        state_created, state_updated = upsert_cache_state(
+        ref_created, ref_updated = upsert_reference(
             session,
             asset_id=asset.id,
             file_path=locator,
+            name=info_name or os.path.basename(locator),
             mtime_ns=mtime_ns,
+            owner_id=owner_id,
         )
 
-        if info_name:
-            info, info_created = get_or_create_asset_info(
-                session,
-                asset_id=asset.id,
-                owner_id=owner_id,
-                name=info_name,
-                preview_id=preview_id,
-            )
-            if info_created:
-                asset_info_id = info.id
-            else:
-                update_asset_info_timestamps(
-                    session, asset_info=info, preview_id=preview_id
-                )
-                asset_info_id = info.id
+        # Get the reference we just created/updated
+        from app.assets.database.queries import get_reference_by_file_path
+        ref = get_reference_by_file_path(session, locator)
+        if ref:
+            reference_id = ref.id
+
+            if preview_id and ref.preview_id != preview_id:
+                ref.preview_id = preview_id
 
             norm = normalize_tags(list(tags))
-            if norm and asset_info_id:
+            if norm:
                 if require_existing_tags:
                     _validate_tags_exist(session, norm)
-                add_tags_to_asset_info(
+                add_tags_to_reference(
                     session,
-                    asset_info_id=asset_info_id,
+                    reference_id=reference_id,
                     tags=norm,
                     origin=tag_origin,
                     create_if_missing=not require_existing_tags,
                 )
 
-            if asset_info_id:
-                _update_metadata_with_filename(
-                    session,
-                    asset_info_id=asset_info_id,
-                    asset_id=asset.id,
-                    info=info,
-                    user_metadata=user_metadata,
-                )
+            _update_metadata_with_filename(
+                session,
+                reference_id=reference_id,
+                ref=ref,
+                user_metadata=user_metadata,
+            )
 
         try:
             remove_missing_tag_for_asset_id(session, asset_id=asset.id)
@@ -128,9 +120,9 @@ def _ingest_file_from_path(
     return IngestResult(
         asset_created=asset_created,
         asset_updated=asset_updated,
-        state_created=state_created,
-        state_updated=state_updated,
-        asset_info_id=asset_info_id,
+        ref_created=ref_created,
+        ref_updated=ref_updated,
+        reference_id=reference_id,
     )
 
 
@@ -147,18 +139,17 @@ def _register_existing_asset(
         if not asset:
             raise ValueError(f"No asset with hash {asset_hash}")
 
-        info, info_created = get_or_create_asset_info(
+        ref, ref_created = get_or_create_reference(
             session,
             asset_id=asset.id,
             owner_id=owner_id,
             name=name,
-            preview_id=None,
         )
 
-        if not info_created:
-            tag_names = get_asset_tags(session, asset_info_id=info.id)
+        if not ref_created:
+            tag_names = get_reference_tags(session, reference_id=ref.id)
             result = RegisterAssetResult(
-                info=extract_info_data(info),
+                ref=extract_reference_data(ref),
                 asset=extract_asset_data(asset),
                 tags=tag_names,
                 created=False,
@@ -167,29 +158,29 @@ def _register_existing_asset(
             return result
 
         new_meta = dict(user_metadata or {})
-        computed_filename = compute_filename_for_asset(session, asset.id)
+        computed_filename = compute_filename_for_reference(session, ref)
         if computed_filename:
             new_meta["filename"] = computed_filename
 
         if new_meta:
-            set_asset_info_metadata(
+            set_reference_metadata(
                 session,
-                asset_info_id=info.id,
+                reference_id=ref.id,
                 user_metadata=new_meta,
             )
 
         if tags is not None:
-            set_asset_info_tags(
+            set_reference_tags(
                 session,
-                asset_info_id=info.id,
+                reference_id=ref.id,
                 tags=tags,
                 origin=tag_origin,
             )
 
-        tag_names = get_asset_tags(session, asset_info_id=info.id)
-        session.refresh(info)
+        tag_names = get_reference_tags(session, reference_id=ref.id)
+        session.refresh(ref)
         result = RegisterAssetResult(
-            info=extract_info_data(info),
+            ref=extract_reference_data(ref),
             asset=extract_asset_data(asset),
             tags=tag_names,
             created=True,
@@ -211,14 +202,13 @@ def _validate_tags_exist(session: Session, tags: list[str]) -> None:
 
 def _update_metadata_with_filename(
     session: Session,
-    asset_info_id: str,
-    asset_id: str,
-    info: AssetInfo,
+    reference_id: str,
+    ref: AssetReference,
     user_metadata: UserMetadata,
 ) -> None:
-    computed_filename = compute_filename_for_asset(session, asset_id)
+    computed_filename = compute_filename_for_reference(session, ref)
 
-    current_meta = info.user_metadata or {}
+    current_meta = ref.user_metadata or {}
     new_meta = dict(current_meta)
     if user_metadata:
         for k, v in user_metadata.items():
@@ -227,9 +217,9 @@ def _update_metadata_with_filename(
         new_meta["filename"] = computed_filename
 
     if new_meta != current_meta:
-        set_asset_info_metadata(
+        set_reference_metadata(
             session,
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             user_metadata=new_meta,
         )
 
@@ -287,7 +277,7 @@ def upload_from_temp_path(
             owner_id=owner_id,
         )
         return UploadResult(
-            info=result.info,
+            ref=result.ref,
             asset=result.asset,
             tags=result.tags,
             created_new=False,
@@ -334,21 +324,21 @@ def upload_from_temp_path(
         tag_origin="manual",
         require_existing_tags=False,
     )
-    info_id = ingest_result.asset_info_id
-    if not info_id:
-        raise RuntimeError("failed to create asset metadata")
+    reference_id = ingest_result.reference_id
+    if not reference_id:
+        raise RuntimeError("failed to create asset reference")
 
     with create_session() as session:
-        pair = fetch_asset_info_and_asset(
-            session, asset_info_id=info_id, owner_id=owner_id
+        pair = fetch_reference_and_asset(
+            session, reference_id=reference_id, owner_id=owner_id
         )
         if not pair:
             raise RuntimeError("inconsistent DB state after ingest")
-        info, asset = pair
-        tag_names = get_asset_tags(session, asset_info_id=info.id)
+        ref, asset = pair
+        tag_names = get_reference_tags(session, reference_id=ref.id)
 
     return UploadResult(
-        info=extract_info_data(info),
+        ref=extract_reference_data(ref),
         asset=extract_asset_data(asset),
         tags=tag_names,
         created_new=ingest_result.asset_created,
@@ -381,7 +371,7 @@ def create_from_hash(
     )
 
     return UploadResult(
-        info=result.info,
+        ref=result.ref,
         asset=result.asset,
         tags=result.tags,
         created_new=False,

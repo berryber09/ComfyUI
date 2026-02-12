@@ -1,10 +1,10 @@
-"""Tests for metadata filtering logic in asset_info queries."""
+"""Tests for metadata filtering logic in asset_reference queries."""
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo, AssetInfoMeta
-from app.assets.database.queries import list_asset_infos_page
-from app.assets.database.queries.asset_info import convert_metadata_to_rows
+from app.assets.database.models import Asset, AssetReference, AssetReferenceMeta
+from app.assets.database.queries import list_references_page
+from app.assets.database.queries.asset_reference import convert_metadata_to_rows
 from app.assets.helpers import get_utc_now
 
 
@@ -15,14 +15,14 @@ def _make_asset(session: Session, hash_val: str) -> Asset:
     return asset
 
 
-def _make_asset_info(
+def _make_reference(
     session: Session,
     asset: Asset,
     name: str,
     metadata: dict | None = None,
-) -> AssetInfo:
+) -> AssetReference:
     now = get_utc_now()
-    info = AssetInfo(
+    ref = AssetReference(
         owner_id="",
         name=name,
         asset_id=asset.id,
@@ -31,14 +31,14 @@ def _make_asset_info(
         updated_at=now,
         last_access_time=now,
     )
-    session.add(info)
+    session.add(ref)
     session.flush()
 
     if metadata:
         for key, val in metadata.items():
             for row in convert_metadata_to_rows(key, val):
-                meta_row = AssetInfoMeta(
-                    asset_info_id=info.id,
+                meta_row = AssetReferenceMeta(
+                    asset_reference_id=ref.id,
                     key=row["key"],
                     ordinal=row.get("ordinal", 0),
                     val_str=row.get("val_str"),
@@ -49,7 +49,7 @@ def _make_asset_info(
                 session.add(meta_row)
         session.flush()
 
-    return info
+    return ref
 
 
 class TestMetadataFilterByType:
@@ -75,15 +75,15 @@ class TestMetadataFilterByType:
         self, session: Session, match_meta, nomatch_meta, filter_key, filter_val
     ):
         asset = _make_asset(session, "hash1")
-        _make_asset_info(session, asset, "match", match_meta)
-        _make_asset_info(session, asset, "nomatch", nomatch_meta)
+        _make_reference(session, asset, "match", match_meta)
+        _make_reference(session, asset, "nomatch", nomatch_meta)
         session.commit()
 
-        infos, _, total = list_asset_infos_page(
+        refs, _, total = list_references_page(
             session, metadata_filter={filter_key: filter_val}
         )
         assert total == 1
-        assert infos[0].name == "match"
+        assert refs[0].name == "match"
 
     @pytest.mark.parametrize(
         "stored_meta,filter_key,filter_val",
@@ -101,10 +101,10 @@ class TestMetadataFilterByType:
         self, session: Session, stored_meta, filter_key, filter_val
     ):
         asset = _make_asset(session, "hash1")
-        _make_asset_info(session, asset, "item", stored_meta)
+        _make_reference(session, asset, "item", stored_meta)
         session.commit()
 
-        infos, _, total = list_asset_infos_page(
+        refs, _, total = list_references_page(
             session, metadata_filter={filter_key: filter_val}
         )
         assert total == 0
@@ -127,13 +127,13 @@ class TestMetadataFilterNull:
         self, session: Session, match_name, match_meta, nomatch_name, nomatch_meta, filter_key
     ):
         asset = _make_asset(session, "hash1")
-        _make_asset_info(session, asset, match_name, match_meta)
-        _make_asset_info(session, asset, nomatch_name, nomatch_meta)
+        _make_reference(session, asset, match_name, match_meta)
+        _make_reference(session, asset, nomatch_name, nomatch_meta)
         session.commit()
 
-        infos, _, total = list_asset_infos_page(session, metadata_filter={filter_key: None})
+        refs, _, total = list_references_page(session, metadata_filter={filter_key: None})
         assert total == 1
-        assert infos[0].name == match_name
+        assert refs[0].name == match_name
 
 
 class TestMetadataFilterList:
@@ -142,14 +142,14 @@ class TestMetadataFilterList:
     def test_filter_by_list_matches_any(self, session: Session):
         """List values should match ANY of the values (OR)."""
         asset = _make_asset(session, "hash1")
-        _make_asset_info(session, asset, "cat_a", {"category": "a"})
-        _make_asset_info(session, asset, "cat_b", {"category": "b"})
-        _make_asset_info(session, asset, "cat_c", {"category": "c"})
+        _make_reference(session, asset, "cat_a", {"category": "a"})
+        _make_reference(session, asset, "cat_b", {"category": "b"})
+        _make_reference(session, asset, "cat_c", {"category": "c"})
         session.commit()
 
-        infos, _, total = list_asset_infos_page(session, metadata_filter={"category": ["a", "b"]})
+        refs, _, total = list_references_page(session, metadata_filter={"category": ["a", "b"]})
         assert total == 2
-        names = {i.name for i in infos}
+        names = {r.name for r in refs}
         assert names == {"cat_a", "cat_b"}
 
 
@@ -159,16 +159,16 @@ class TestMetadataFilterMultipleKeys:
     def test_multiple_keys_must_all_match(self, session: Session):
         """Multiple keys should ALL match (AND)."""
         asset = _make_asset(session, "hash1")
-        _make_asset_info(session, asset, "match", {"type": "model", "version": 2})
-        _make_asset_info(session, asset, "wrong_type", {"type": "config", "version": 2})
-        _make_asset_info(session, asset, "wrong_version", {"type": "model", "version": 1})
+        _make_reference(session, asset, "match", {"type": "model", "version": 2})
+        _make_reference(session, asset, "wrong_type", {"type": "config", "version": 2})
+        _make_reference(session, asset, "wrong_version", {"type": "model", "version": 1})
         session.commit()
 
-        infos, _, total = list_asset_infos_page(
+        refs, _, total = list_references_page(
             session, metadata_filter={"type": "model", "version": 2}
         )
         assert total == 1
-        assert infos[0].name == "match"
+        assert refs[0].name == "match"
 
 
 class TestMetadataFilterEmptyDict:
@@ -176,9 +176,9 @@ class TestMetadataFilterEmptyDict:
 
     def test_empty_filter_returns_all(self, session: Session):
         asset = _make_asset(session, "hash1")
-        _make_asset_info(session, asset, "a", {"key": "val"})
-        _make_asset_info(session, asset, "b", {})
+        _make_reference(session, asset, "a", {"key": "val"})
+        _make_reference(session, asset, "b", {})
         session.commit()
 
-        infos, _, total = list_asset_infos_page(session, metadata_filter={})
+        refs, _, total = list_references_page(session, metadata_filter={})
         assert total == 2

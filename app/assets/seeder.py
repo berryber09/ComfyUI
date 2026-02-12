@@ -128,7 +128,7 @@ class AssetSeeder:
             phase: Scan phase to run (FAST, ENRICH, or FULL for both)
             progress_callback: Optional callback called with progress updates
             prune_first: If True, prune orphaned assets before scanning
-            compute_hashes: If True, compute blake3 hashes for each file (slow for large files)
+            compute_hashes: If True, compute blake3 hashes (slow)
 
         Returns:
             True if scan was started, False if already running
@@ -136,7 +136,7 @@ class AssetSeeder:
         if self._disabled:
             logging.debug("Asset seeder is disabled, skipping start")
             return False
-        logging.info("Asset seeder start requested (roots=%s, phase=%s)", roots, phase.value)
+        logging.info("Seeder start (roots=%s, phase=%s)", roots, phase.value)
         with self._lock:
             if self._state != State.IDLE:
                 logging.info("Asset seeder already running, skipping start")
@@ -295,12 +295,15 @@ class AssetSeeder:
         if not self.wait(timeout=timeout):
             return False
 
+        cb = progress_callback if progress_callback is not None else prev_callback
         return self.start(
             roots=roots if roots is not None else prev_roots,
             phase=phase if phase is not None else prev_phase,
-            progress_callback=progress_callback if progress_callback is not None else prev_callback,
+            progress_callback=cb,
             prune_first=prune_first if prune_first is not None else prev_prune,
-            compute_hashes=compute_hashes if compute_hashes is not None else prev_hashes,
+            compute_hashes=(
+                compute_hashes if compute_hashes is not None else prev_hashes
+            ),
         )
 
     def wait(self, timeout: float | None = None) -> bool:
@@ -497,7 +500,7 @@ class AssetSeeder:
                 all_prefixes = get_all_known_prefixes()
                 marked = mark_missing_outside_prefixes_safely(all_prefixes)
                 if marked > 0:
-                    logging.info("Marked %d cache states as missing before scan", marked)
+                    logging.info("Marked %d refs as missing before scan", marked)
 
             if self._check_pause_and_cancel():
                 logging.info("Asset scan cancelled after pruning phase")
@@ -508,7 +511,8 @@ class AssetSeeder:
 
             # Phase 1: Fast scan (stub records)
             if phase in (ScanPhase.FAST, ScanPhase.FULL):
-                total_created, skipped_existing, total_paths = self._run_fast_phase(roots)
+                created, skipped, paths = self._run_fast_phase(roots)
+                total_created, skipped_existing, total_paths = created, skipped, paths
 
                 if self._check_pause_and_cancel():
                     cancelled = True
@@ -542,12 +546,8 @@ class AssetSeeder:
 
             elapsed = time.perf_counter() - t_start
             logging.info(
-                "Asset scan(roots=%s, phase=%s) completed in %.3fs (created=%d, enriched=%d, skipped=%d)",
-                roots,
-                phase.value,
-                elapsed,
-                total_created,
-                total_enriched,
+                "Scan(%s, %s) done %.3fs: created=%d enriched=%d skipped=%d",
+                roots, phase.value, elapsed, total_created, total_enriched,
                 skipped_existing,
             )
 
@@ -668,7 +668,10 @@ class AssetSeeder:
         progress_interval = 1.0
 
         # Get the target enrichment level based on compute_hashes
-        target_max_level = ENRICHMENT_STUB if not self._compute_hashes else ENRICHMENT_METADATA
+        if not self._compute_hashes:
+            target_max_level = ENRICHMENT_STUB
+        else:
+            target_max_level = ENRICHMENT_METADATA
 
         self._emit_event(
             "assets.seed.started",

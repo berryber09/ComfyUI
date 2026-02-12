@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset
+from app.assets.database.models import Asset, AssetReference
 from app.assets.services.bulk_ingest import SeedAssetSpec, batch_insert_seed_assets
 
 
@@ -30,7 +30,7 @@ class TestBatchInsertSeedAssets:
 
         result = batch_insert_seed_assets(session, specs=specs, owner_id="")
 
-        assert result.inserted_infos == 1
+        assert result.inserted_refs == 1
 
         # Verify Asset has mime_type populated
         assets = session.query(Asset).all()
@@ -58,7 +58,7 @@ class TestBatchInsertSeedAssets:
 
         result = batch_insert_seed_assets(session, specs=specs, owner_id="")
 
-        assert result.inserted_infos == 1
+        assert result.inserted_refs == 1
 
         assets = session.query(Asset).all()
         assert len(assets) == 1
@@ -93,13 +93,12 @@ class TestBatchInsertSeedAssets:
 
         result = batch_insert_seed_assets(session, specs=specs, owner_id="")
 
-        assert result.inserted_infos == len(test_cases)
+        assert result.inserted_refs == len(test_cases)
 
         for filename, expected_mime in test_cases:
-            from app.assets.database.models import AssetInfo
-            info = session.query(AssetInfo).filter_by(name=filename).first()
-            assert info is not None
-            asset = session.query(Asset).filter_by(id=info.asset_id).first()
+            ref = session.query(AssetReference).filter_by(name=filename).first()
+            assert ref is not None
+            asset = session.query(Asset).filter_by(id=ref.asset_id).first()
             assert asset.mime_type == expected_mime, f"Expected {expected_mime} for {filename}, got {asset.mime_type}"
 
 

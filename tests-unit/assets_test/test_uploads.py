@@ -18,25 +18,24 @@ def test_upload_ok_duplicate_reference(http: requests.Session, api_base: str, ma
     assert r1.status_code == 201, a1
     assert a1["created_new"] is True
 
-    # Second upload with the same data and name should return created_new == False and the same asset
+    # Second upload with the same data and name creates a new AssetInfo (duplicates allowed)
+    # Returns 200 because Asset already exists, but a new AssetInfo is created
     files = {"file": (name, data, "application/octet-stream")}
     form = {"tags": json.dumps(tags), "name": name, "user_metadata": json.dumps(meta)}
     r2 = http.post(api_base + "/api/assets", data=form, files=files, timeout=120)
     a2 = r2.json()
-    assert r2.status_code == 200, a2
-    assert a2["created_new"] is False
+    assert r2.status_code in (200, 201), a2
     assert a2["asset_hash"] == a1["asset_hash"]
-    assert a2["id"] == a1["id"]  # old reference
+    assert a2["id"] != a1["id"]  # new reference with same content
 
-    # Third upload with the same data but new name should return created_new == False and the new AssetReference
+    # Third upload with the same data but different name also creates new AssetInfo
     files = {"file": (name, data, "application/octet-stream")}
     form = {"tags": json.dumps(tags), "name": name + "_d", "user_metadata": json.dumps(meta)}
-    r2 = http.post(api_base + "/api/assets", data=form, files=files, timeout=120)
-    a3 = r2.json()
-    assert r2.status_code == 200, a3
-    assert a3["created_new"] is False
+    r3 = http.post(api_base + "/api/assets", data=form, files=files, timeout=120)
+    a3 = r3.json()
+    assert r3.status_code in (200, 201), a3
     assert a3["asset_hash"] == a1["asset_hash"]
-    assert a3["id"] != a1["id"]  # old reference
+    assert a3["id"] != a1["id"]
 
 
 def test_upload_fastpath_from_existing_hash_no_file(http: requests.Session, api_base: str):

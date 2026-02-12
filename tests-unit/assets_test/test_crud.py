@@ -24,11 +24,11 @@ def test_create_from_hash_success(
     assert b1["created_new"] is False
     aid = b1["id"]
 
-    # Calling again with the same name should return the same AssetInfo id
+    # Calling again with the same name creates a new AssetInfo (duplicates allowed)
     r2 = http.post(f"{api_base}/api/assets/from-hash", json=payload, timeout=120)
     b2 = r2.json()
     assert r2.status_code == 201, b2
-    assert b2["id"] == aid
+    assert b2["id"] != aid  # new reference, not the same one
 
 
 def test_get_and_delete_asset(http: requests.Session, api_base: str, seeded_asset: dict):

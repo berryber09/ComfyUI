@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, NamedTuple
 
-from app.assets.database.models import Asset, AssetInfo
+from app.assets.database.models import Asset, AssetReference
 
 UserMetadata = dict[str, Any] | None
 
@@ -15,9 +15,12 @@ class AssetData:
 
 
 @dataclass(frozen=True)
-class AssetInfoData:
+class ReferenceData:
+    """Data transfer object for AssetReference."""
+
     id: str
     name: str
+    file_path: str | None
     user_metadata: UserMetadata
     preview_id: str | None
     created_at: datetime
@@ -27,14 +30,14 @@ class AssetInfoData:
 
 @dataclass(frozen=True)
 class AssetDetailResult:
-    info: AssetInfoData
+    ref: ReferenceData
     asset: AssetData | None
     tags: list[str]
 
 
 @dataclass(frozen=True)
 class RegisterAssetResult:
-    info: AssetInfoData
+    ref: ReferenceData
     asset: AssetData
     tags: list[str]
     created: bool
@@ -44,9 +47,9 @@ class RegisterAssetResult:
 class IngestResult:
     asset_created: bool
     asset_updated: bool
-    state_created: bool
-    state_updated: bool
-    asset_info_id: str | None
+    ref_created: bool
+    ref_updated: bool
+    reference_id: str | None
 
 
 @dataclass(frozen=True)
@@ -78,7 +81,7 @@ class TagUsage(NamedTuple):
 
 @dataclass(frozen=True)
 class AssetSummaryData:
-    info: AssetInfoData
+    ref: ReferenceData
     asset: AssetData | None
     tags: list[str]
 
@@ -98,21 +101,22 @@ class DownloadResolutionResult:
 
 @dataclass(frozen=True)
 class UploadResult:
-    info: AssetInfoData
+    ref: ReferenceData
     asset: AssetData
     tags: list[str]
     created_new: bool
 
 
-def extract_info_data(info: AssetInfo) -> AssetInfoData:
-    return AssetInfoData(
-        id=info.id,
-        name=info.name,
-        user_metadata=info.user_metadata,
-        preview_id=info.preview_id,
-        created_at=info.created_at,
-        updated_at=info.updated_at,
-        last_access_time=info.last_access_time,
+def extract_reference_data(ref: AssetReference) -> ReferenceData:
+    return ReferenceData(
+        id=ref.id,
+        name=ref.name,
+        file_path=ref.file_path,
+        user_metadata=ref.user_metadata,
+        preview_id=ref.preview_id,
+        created_at=ref.created_at,
+        updated_at=ref.updated_at,
+        last_access_time=ref.last_access_time,
     )
 
 

@@ -2,8 +2,8 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetInfo
-from app.assets.database.queries import ensure_tags_exist, add_tags_to_asset_info
+from app.assets.database.models import Asset, AssetReference
+from app.assets.database.queries import ensure_tags_exist, add_tags_to_reference
 from app.assets.helpers import get_utc_now
 from app.assets.services import apply_tags, remove_tags, list_tags
 
@@ -15,14 +15,14 @@ def _make_asset(session: Session, hash_val: str = "blake3:test") -> Asset:
     return asset
 
 
-def _make_asset_info(
+def _make_reference(
     session: Session,
     asset: Asset,
     name: str = "test",
     owner_id: str = "",
-) -> AssetInfo:
+) -> AssetReference:
     now = get_utc_now()
-    info = AssetInfo(
+    ref = AssetReference(
         owner_id=owner_id,
         name=name,
         asset_id=asset.id,
@@ -30,19 +30,19 @@ def _make_asset_info(
         updated_at=now,
         last_access_time=now,
     )
-    session.add(info)
+    session.add(ref)
     session.flush()
-    return info
+    return ref
 
 
 class TestApplyTags:
     def test_adds_new_tags(self, mock_create_session, session: Session):
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset)
+        ref = _make_reference(session, asset)
         session.commit()
 
         result = apply_tags(
-            asset_info_id=info.id,
+            reference_id=ref.id,
             tags=["alpha", "beta"],
         )
 
@@ -52,31 +52,31 @@ class TestApplyTags:
 
     def test_reports_already_present(self, mock_create_session, session: Session):
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset)
+        ref = _make_reference(session, asset)
         ensure_tags_exist(session, ["existing"])
-        add_tags_to_asset_info(session, asset_info_id=info.id, tags=["existing"])
+        add_tags_to_reference(session, reference_id=ref.id, tags=["existing"])
         session.commit()
 
         result = apply_tags(
-            asset_info_id=info.id,
+            reference_id=ref.id,
             tags=["existing", "new"],
         )
 
         assert result.added == ["new"]
         assert result.already_present == ["existing"]
 
-    def test_raises_for_nonexistent_info(self, mock_create_session):
+    def test_raises_for_nonexistent_ref(self, mock_create_session):
         with pytest.raises(ValueError, match="not found"):
-            apply_tags(asset_info_id="nonexistent", tags=["x"])
+            apply_tags(reference_id="nonexistent", tags=["x"])
 
     def test_raises_for_wrong_owner(self, mock_create_session, session: Session):
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset, owner_id="user1")
+        ref = _make_reference(session, asset, owner_id="user1")
         session.commit()
 
         with pytest.raises(PermissionError, match="not owner"):
             apply_tags(
-                asset_info_id=info.id,
+                reference_id=ref.id,
                 tags=["new"],
                 owner_id="user2",
             )
@@ -85,13 +85,13 @@ class TestApplyTags:
 class TestRemoveTags:
     def test_removes_tags(self, mock_create_session, session: Session):
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset)
+        ref = _make_reference(session, asset)
         ensure_tags_exist(session, ["a", "b", "c"])
-        add_tags_to_asset_info(session, asset_info_id=info.id, tags=["a", "b", "c"])
+        add_tags_to_reference(session, reference_id=ref.id, tags=["a", "b", "c"])
         session.commit()
 
         result = remove_tags(
-            asset_info_id=info.id,
+            reference_id=ref.id,
             tags=["a", "b"],
         )
 
@@ -101,31 +101,31 @@ class TestRemoveTags:
 
     def test_reports_not_present(self, mock_create_session, session: Session):
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset)
+        ref = _make_reference(session, asset)
         ensure_tags_exist(session, ["present"])
-        add_tags_to_asset_info(session, asset_info_id=info.id, tags=["present"])
+        add_tags_to_reference(session, reference_id=ref.id, tags=["present"])
         session.commit()
 
         result = remove_tags(
-            asset_info_id=info.id,
+            reference_id=ref.id,
             tags=["present", "absent"],
         )
 
         assert result.removed == ["present"]
         assert result.not_present == ["absent"]
 
-    def test_raises_for_nonexistent_info(self, mock_create_session):
+    def test_raises_for_nonexistent_ref(self, mock_create_session):
         with pytest.raises(ValueError, match="not found"):
-            remove_tags(asset_info_id="nonexistent", tags=["x"])
+            remove_tags(reference_id="nonexistent", tags=["x"])
 
     def test_raises_for_wrong_owner(self, mock_create_session, session: Session):
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset, owner_id="user1")
+        ref = _make_reference(session, asset, owner_id="user1")
         session.commit()
 
         with pytest.raises(PermissionError, match="not owner"):
             remove_tags(
-                asset_info_id=info.id,
+                reference_id=ref.id,
                 tags=["x"],
                 owner_id="user2",
             )
@@ -135,8 +135,8 @@ class TestListTags:
     def test_returns_tags_with_counts(self, mock_create_session, session: Session):
         ensure_tags_exist(session, ["used", "unused"])
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset)
-        add_tags_to_asset_info(session, asset_info_id=info.id, tags=["used"])
+        ref = _make_reference(session, asset)
+        add_tags_to_reference(session, reference_id=ref.id, tags=["used"])
         session.commit()
 
         rows, total = list_tags()
@@ -149,8 +149,8 @@ class TestListTags:
     def test_excludes_zero_counts(self, mock_create_session, session: Session):
         ensure_tags_exist(session, ["used", "unused"])
         asset = _make_asset(session)
-        info = _make_asset_info(session, asset)
-        add_tags_to_asset_info(session, asset_info_id=info.id, tags=["used"])
+        ref = _make_reference(session, asset)
+        add_tags_to_reference(session, reference_id=ref.id, tags=["used"])
         session.commit()
 
         rows, total = list_tags(include_zero=False)

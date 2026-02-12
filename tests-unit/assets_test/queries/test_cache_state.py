@@ -1,21 +1,21 @@
-"""Tests for cache_state query functions."""
+"""Tests for cache_state (AssetReference file path) query functions."""
 import pytest
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import Asset, AssetCacheState, AssetInfo
+from app.assets.database.models import Asset, AssetReference
 from app.assets.database.queries import (
-    list_cache_states_by_asset_id,
-    upsert_cache_state,
+    list_references_by_asset_id,
+    upsert_reference,
     get_unreferenced_unhashed_asset_ids,
     delete_assets_by_ids,
-    get_cache_states_for_prefixes,
+    get_references_for_prefixes,
     bulk_update_needs_verify,
-    delete_cache_states_by_ids,
+    delete_references_by_ids,
     delete_orphaned_seed_asset,
-    bulk_insert_cache_states_ignore_conflicts,
-    get_cache_states_by_paths_and_asset_ids,
-    mark_cache_states_missing_outside_prefixes,
-    restore_cache_states_by_paths,
+    bulk_insert_references_ignore_conflicts,
+    get_references_by_paths_and_asset_ids,
+    mark_references_missing_outside_prefixes,
+    restore_references_by_paths,
 )
 from app.assets.helpers import select_best_live_path, get_utc_now
 
@@ -27,49 +27,55 @@ def _make_asset(session: Session, hash_val: str | None = None, size: int = 1024)
     return asset
 
 
-def _make_cache_state(
+def _make_reference(
     session: Session,
     asset: Asset,
     file_path: str,
+    name: str = "test",
     mtime_ns: int | None = None,
     needs_verify: bool = False,
-) -> AssetCacheState:
-    state = AssetCacheState(
+) -> AssetReference:
+    now = get_utc_now()
+    ref = AssetReference(
         asset_id=asset.id,
         file_path=file_path,
+        name=name,
         mtime_ns=mtime_ns,
         needs_verify=needs_verify,
+        created_at=now,
+        updated_at=now,
+        last_access_time=now,
     )
-    session.add(state)
+    session.add(ref)
     session.flush()
-    return state
+    return ref
 
 
-class TestListCacheStatesByAssetId:
-    def test_returns_empty_for_no_states(self, session: Session):
+class TestListReferencesByAssetId:
+    def test_returns_empty_for_no_references(self, session: Session):
         asset = _make_asset(session, "hash1")
-        states = list_cache_states_by_asset_id(session, asset_id=asset.id)
-        assert list(states) == []
+        refs = list_references_by_asset_id(session, asset_id=asset.id)
+        assert list(refs) == []
 
-    def test_returns_states_for_asset(self, session: Session):
+    def test_returns_references_for_asset(self, session: Session):
         asset = _make_asset(session, "hash1")
-        _make_cache_state(session, asset, "/path/a.bin")
-        _make_cache_state(session, asset, "/path/b.bin")
+        _make_reference(session, asset, "/path/a.bin", name="a")
+        _make_reference(session, asset, "/path/b.bin", name="b")
         session.commit()
 
-        states = list_cache_states_by_asset_id(session, asset_id=asset.id)
-        paths = [s.file_path for s in states]
+        refs = list_references_by_asset_id(session, asset_id=asset.id)
+        paths = [r.file_path for r in refs]
         assert set(paths) == {"/path/a.bin", "/path/b.bin"}
 
-    def test_does_not_return_other_assets_states(self, session: Session):
+    def test_does_not_return_other_assets_references(self, session: Session):
         asset1 = _make_asset(session, "hash1")
         asset2 = _make_asset(session, "hash2")
-        _make_cache_state(session, asset1, "/path/asset1.bin")
-        _make_cache_state(session, asset2, "/path/asset2.bin")
+        _make_reference(session, asset1, "/path/asset1.bin", name="a1")
+        _make_reference(session, asset2, "/path/asset2.bin", name="a2")
         session.commit()
 
-        states = list_cache_states_by_asset_id(session, asset_id=asset1.id)
-        paths = [s.file_path for s in states]
+        refs = list_references_by_asset_id(session, asset_id=asset1.id)
+        paths = [r.file_path for r in refs]
         assert paths == ["/path/asset1.bin"]
 
 
@@ -80,10 +86,10 @@ class TestSelectBestLivePath:
 
     def test_returns_empty_when_no_files_exist(self, session: Session):
         asset = _make_asset(session, "hash1")
-        state = _make_cache_state(session, asset, "/nonexistent/path.bin")
+        ref = _make_reference(session, asset, "/nonexistent/path.bin")
         session.commit()
 
-        result = select_best_live_path([state])
+        result = select_best_live_path([ref])
         assert result == ""
 
     def test_prefers_verified_path(self, session: Session, tmp_path):
@@ -96,124 +102,125 @@ class TestSelectBestLivePath:
         unverified_file = tmp_path / "unverified.bin"
         unverified_file.write_bytes(b"data")
 
-        state_verified = _make_cache_state(
-            session, asset, str(verified_file), needs_verify=False
+        ref_verified = _make_reference(
+            session, asset, str(verified_file), name="verified", needs_verify=False
         )
-        state_unverified = _make_cache_state(
-            session, asset, str(unverified_file), needs_verify=True
+        ref_unverified = _make_reference(
+            session, asset, str(unverified_file), name="unverified", needs_verify=True
         )
         session.commit()
 
-        states = [state_unverified, state_verified]
-        result = select_best_live_path(states)
+        refs = [ref_unverified, ref_verified]
+        result = select_best_live_path(refs)
         assert result == str(verified_file)
 
     def test_falls_back_to_existing_unverified(self, session: Session, tmp_path):
-        """If all states need verification, return first existing path."""
+        """If all references need verification, return first existing path."""
         asset = _make_asset(session, "hash1")
 
         existing_file = tmp_path / "exists.bin"
         existing_file.write_bytes(b"data")
 
-        state = _make_cache_state(session, asset, str(existing_file), needs_verify=True)
+        ref = _make_reference(session, asset, str(existing_file), needs_verify=True)
         session.commit()
 
-        result = select_best_live_path([state])
+        result = select_best_live_path([ref])
         assert result == str(existing_file)
 
 
 class TestSelectBestLivePathWithMocking:
     def test_handles_missing_file_path_attr(self):
-        """Gracefully handle states with None file_path."""
+        """Gracefully handle references with None file_path."""
 
-        class MockState:
+        class MockRef:
             file_path = None
             needs_verify = False
 
-        result = select_best_live_path([MockState()])
+        result = select_best_live_path([MockRef()])
         assert result == ""
 
 
-class TestUpsertCacheState:
+class TestUpsertReference:
     @pytest.mark.parametrize(
         "initial_mtime,second_mtime,expect_created,expect_updated,final_mtime",
         [
-            # New state creation
+            # New reference creation
             (None, 12345, True, False, 12345),
-            # Existing state, same mtime - no update
+            # Existing reference, same mtime - no update
             (100, 100, False, False, 100),
-            # Existing state, different mtime - update
+            # Existing reference, different mtime - update
             (100, 200, False, True, 200),
         ],
-        ids=["new_state", "existing_no_change", "existing_update_mtime"],
+        ids=["new_reference", "existing_no_change", "existing_update_mtime"],
     )
     def test_upsert_scenarios(
         self, session: Session, initial_mtime, second_mtime, expect_created, expect_updated, final_mtime
     ):
         asset = _make_asset(session, "hash1")
         file_path = f"/path_{initial_mtime}_{second_mtime}.bin"
+        name = f"file_{initial_mtime}_{second_mtime}"
 
-        # Create initial state if needed
+        # Create initial reference if needed
         if initial_mtime is not None:
-            upsert_cache_state(session, asset_id=asset.id, file_path=file_path, mtime_ns=initial_mtime)
+            upsert_reference(session, asset_id=asset.id, file_path=file_path, name=name, mtime_ns=initial_mtime)
             session.commit()
 
         # The upsert call we're testing
-        created, updated = upsert_cache_state(
-            session, asset_id=asset.id, file_path=file_path, mtime_ns=second_mtime
+        created, updated = upsert_reference(
+            session, asset_id=asset.id, file_path=file_path, name=name, mtime_ns=second_mtime
         )
         session.commit()
 
         assert created is expect_created
         assert updated is expect_updated
-        state = session.query(AssetCacheState).filter_by(file_path=file_path).one()
-        assert state.mtime_ns == final_mtime
+        ref = session.query(AssetReference).filter_by(file_path=file_path).one()
+        assert ref.mtime_ns == final_mtime
 
-    def test_upsert_restores_missing_state(self, session: Session):
-        """Upserting a cache state that was marked missing should restore it."""
+    def test_upsert_restores_missing_reference(self, session: Session):
+        """Upserting a reference that was marked missing should restore it."""
         asset = _make_asset(session, "hash1")
         file_path = "/restored/file.bin"
 
-        state = _make_cache_state(session, asset, file_path, mtime_ns=100)
-        state.is_missing = True
+        ref = _make_reference(session, asset, file_path, mtime_ns=100)
+        ref.is_missing = True
         session.commit()
 
-        created, updated = upsert_cache_state(
-            session, asset_id=asset.id, file_path=file_path, mtime_ns=100
+        created, updated = upsert_reference(
+            session, asset_id=asset.id, file_path=file_path, name="restored", mtime_ns=100
         )
         session.commit()
 
         assert created is False
         assert updated is True
-        restored_state = session.query(AssetCacheState).filter_by(file_path=file_path).one()
-        assert restored_state.is_missing is False
+        restored_ref = session.query(AssetReference).filter_by(file_path=file_path).one()
+        assert restored_ref.is_missing is False
 
 
-class TestRestoreCacheStatesByPaths:
-    def test_restores_missing_states(self, session: Session):
+class TestRestoreReferencesByPaths:
+    def test_restores_missing_references(self, session: Session):
         asset = _make_asset(session, "hash1")
         missing_path = "/missing/file.bin"
         active_path = "/active/file.bin"
 
-        missing_state = _make_cache_state(session, asset, missing_path)
-        missing_state.is_missing = True
-        _make_cache_state(session, asset, active_path)
+        missing_ref = _make_reference(session, asset, missing_path, name="missing")
+        missing_ref.is_missing = True
+        _make_reference(session, asset, active_path, name="active")
         session.commit()
 
-        restored = restore_cache_states_by_paths(session, [missing_path])
+        restored = restore_references_by_paths(session, [missing_path])
         session.commit()
 
         assert restored == 1
-        state = session.query(AssetCacheState).filter_by(file_path=missing_path).one()
-        assert state.is_missing is False
+        ref = session.query(AssetReference).filter_by(file_path=missing_path).one()
+        assert ref.is_missing is False
 
     def test_empty_list_restores_nothing(self, session: Session):
-        restored = restore_cache_states_by_paths(session, [])
+        restored = restore_references_by_paths(session, [])
         assert restored == 0
 
 
-class TestMarkCacheStatesMissingOutsidePrefixes:
-    def test_marks_states_missing_outside_prefixes(self, session: Session, tmp_path):
+class TestMarkReferencesMissingOutsidePrefixes:
+    def test_marks_references_missing_outside_prefixes(self, session: Session, tmp_path):
         asset = _make_asset(session, "hash1")
         valid_dir = tmp_path / "valid"
         valid_dir.mkdir()
@@ -223,63 +230,58 @@ class TestMarkCacheStatesMissingOutsidePrefixes:
         valid_path = str(valid_dir / "file.bin")
         invalid_path = str(invalid_dir / "file.bin")
 
-        _make_cache_state(session, asset, valid_path)
-        _make_cache_state(session, asset, invalid_path)
+        _make_reference(session, asset, valid_path, name="valid")
+        _make_reference(session, asset, invalid_path, name="invalid")
         session.commit()
 
-        marked = mark_cache_states_missing_outside_prefixes(session, [str(valid_dir)])
+        marked = mark_references_missing_outside_prefixes(session, [str(valid_dir)])
         session.commit()
 
         assert marked == 1
-        all_states = session.query(AssetCacheState).all()
-        assert len(all_states) == 2
+        all_refs = session.query(AssetReference).all()
+        assert len(all_refs) == 2
 
-        valid_state = next(s for s in all_states if s.file_path == valid_path)
-        invalid_state = next(s for s in all_states if s.file_path == invalid_path)
-        assert valid_state.is_missing is False
-        assert invalid_state.is_missing is True
+        valid_ref = next(r for r in all_refs if r.file_path == valid_path)
+        invalid_ref = next(r for r in all_refs if r.file_path == invalid_path)
+        assert valid_ref.is_missing is False
+        assert invalid_ref.is_missing is True
 
     def test_empty_prefixes_marks_nothing(self, session: Session):
         asset = _make_asset(session, "hash1")
-        _make_cache_state(session, asset, "/some/path.bin")
+        _make_reference(session, asset, "/some/path.bin")
         session.commit()
 
-        marked = mark_cache_states_missing_outside_prefixes(session, [])
+        marked = mark_references_missing_outside_prefixes(session, [])
 
         assert marked == 0
 
 
 class TestGetUnreferencedUnhashedAssetIds:
     def test_returns_unreferenced_unhashed_assets(self, session: Session):
-        # Unhashed asset (hash=None) with no cache states
-        no_states = _make_asset(session, hash_val=None)
-        # Unhashed asset with active cache state (not unreferenced)
-        with_active_state = _make_asset(session, hash_val=None)
-        _make_cache_state(session, with_active_state, "/has/state.bin")
-        # Unhashed asset with only missing cache state (should be unreferenced)
-        with_missing_state = _make_asset(session, hash_val=None)
-        missing_state = _make_cache_state(session, with_missing_state, "/missing/state.bin")
-        missing_state.is_missing = True
+        # Unhashed asset (hash=None) with no references (no file_path)
+        no_refs = _make_asset(session, hash_val=None)
+        # Unhashed asset with active reference (not unreferenced)
+        with_active_ref = _make_asset(session, hash_val=None)
+        _make_reference(session, with_active_ref, "/has/ref.bin", name="has_ref")
+        # Unhashed asset with only missing reference (should be unreferenced)
+        with_missing_ref = _make_asset(session, hash_val=None)
+        missing_ref = _make_reference(session, with_missing_ref, "/missing/ref.bin", name="missing_ref")
+        missing_ref.is_missing = True
         # Regular asset (hash not None) - should not be returned
         _make_asset(session, hash_val="blake3:regular")
         session.commit()
 
         unreferenced = get_unreferenced_unhashed_asset_ids(session)
 
-        assert no_states.id in unreferenced
-        assert with_missing_state.id in unreferenced
-        assert with_active_state.id not in unreferenced
+        assert no_refs.id in unreferenced
+        assert with_missing_ref.id in unreferenced
+        assert with_active_ref.id not in unreferenced
 
 
 class TestDeleteAssetsByIds:
-    def test_deletes_assets_and_infos(self, session: Session):
+    def test_deletes_assets_and_references(self, session: Session):
         asset = _make_asset(session, "hash1")
-        now = get_utc_now()
-        info = AssetInfo(
-            owner_id="", name="test", asset_id=asset.id,
-            created_at=now, updated_at=now, last_access_time=now
-        )
-        session.add(info)
+        _make_reference(session, asset, "/test/path.bin", name="test")
         session.commit()
 
         deleted = delete_assets_by_ids(session, [asset.id])
@@ -287,7 +289,7 @@ class TestDeleteAssetsByIds:
 
         assert deleted == 1
         assert session.query(Asset).count() == 0
-        assert session.query(AssetInfo).count() == 0
+        assert session.query(AssetReference).count() == 0
 
     def test_empty_list_deletes_nothing(self, session: Session):
         _make_asset(session, "hash1")
@@ -299,8 +301,8 @@ class TestDeleteAssetsByIds:
         assert session.query(Asset).count() == 1
 
 
-class TestGetCacheStatesForPrefixes:
-    def test_returns_states_matching_prefix(self, session: Session, tmp_path):
+class TestGetReferencesForPrefixes:
+    def test_returns_references_matching_prefix(self, session: Session, tmp_path):
         asset = _make_asset(session, "hash1")
         dir1 = tmp_path / "dir1"
         dir1.mkdir()
@@ -310,21 +312,21 @@ class TestGetCacheStatesForPrefixes:
         path1 = str(dir1 / "file.bin")
         path2 = str(dir2 / "file.bin")
 
-        _make_cache_state(session, asset, path1, mtime_ns=100)
-        _make_cache_state(session, asset, path2, mtime_ns=200)
+        _make_reference(session, asset, path1, name="file1", mtime_ns=100)
+        _make_reference(session, asset, path2, name="file2", mtime_ns=200)
         session.commit()
 
-        rows = get_cache_states_for_prefixes(session, [str(dir1)])
+        rows = get_references_for_prefixes(session, [str(dir1)])
 
         assert len(rows) == 1
         assert rows[0].file_path == path1
 
     def test_empty_prefixes_returns_empty(self, session: Session):
         asset = _make_asset(session, "hash1")
-        _make_cache_state(session, asset, "/some/path.bin")
+        _make_reference(session, asset, "/some/path.bin")
         session.commit()
 
-        rows = get_cache_states_for_prefixes(session, [])
+        rows = get_references_for_prefixes(session, [])
 
         assert rows == []
 
@@ -332,39 +334,39 @@ class TestGetCacheStatesForPrefixes:
 class TestBulkSetNeedsVerify:
     def test_sets_needs_verify_flag(self, session: Session):
         asset = _make_asset(session, "hash1")
-        state1 = _make_cache_state(session, asset, "/path1.bin", needs_verify=False)
-        state2 = _make_cache_state(session, asset, "/path2.bin", needs_verify=False)
+        ref1 = _make_reference(session, asset, "/path1.bin", needs_verify=False)
+        ref2 = _make_reference(session, asset, "/path2.bin", needs_verify=False)
         session.commit()
 
-        updated = bulk_update_needs_verify(session, [state1.id, state2.id], True)
+        updated = bulk_update_needs_verify(session, [ref1.id, ref2.id], True)
         session.commit()
 
         assert updated == 2
-        session.refresh(state1)
-        session.refresh(state2)
-        assert state1.needs_verify is True
-        assert state2.needs_verify is True
+        session.refresh(ref1)
+        session.refresh(ref2)
+        assert ref1.needs_verify is True
+        assert ref2.needs_verify is True
 
     def test_empty_list_updates_nothing(self, session: Session):
         updated = bulk_update_needs_verify(session, [], True)
         assert updated == 0
 
 
-class TestDeleteCacheStatesByIds:
-    def test_deletes_states_by_id(self, session: Session):
+class TestDeleteReferencesByIds:
+    def test_deletes_references_by_id(self, session: Session):
         asset = _make_asset(session, "hash1")
-        state1 = _make_cache_state(session, asset, "/path1.bin")
-        _make_cache_state(session, asset, "/path2.bin")
+        ref1 = _make_reference(session, asset, "/path1.bin")
+        _make_reference(session, asset, "/path2.bin")
         session.commit()
 
-        deleted = delete_cache_states_by_ids(session, [state1.id])
+        deleted = delete_references_by_ids(session, [ref1.id])
         session.commit()
 
         assert deleted == 1
-        assert session.query(AssetCacheState).count() == 1
+        assert session.query(AssetReference).count() == 1
 
     def test_empty_list_deletes_nothing(self, session: Session):
-        deleted = delete_cache_states_by_ids(session, [])
+        deleted = delete_references_by_ids(session, [])
         assert deleted == 0
 
 
@@ -384,12 +386,7 @@ class TestDeleteOrphanedSeedAsset:
         if create_asset:
             asset = _make_asset(session, hash_val=None)
             asset_id = asset.id
-            now = get_utc_now()
-            info = AssetInfo(
-                owner_id="", name="test", asset_id=asset.id,
-                created_at=now, updated_at=now, last_access_time=now
-            )
-            session.add(info)
+            _make_reference(session, asset, "/test/path.bin", name="test")
             session.commit()
 
         deleted = delete_orphaned_seed_asset(session, asset_id)
@@ -400,53 +397,87 @@ class TestDeleteOrphanedSeedAsset:
         assert session.query(Asset).count() == expected_count
 
 
-class TestBulkInsertCacheStatesIgnoreConflicts:
-    def test_inserts_multiple_states(self, session: Session):
+class TestBulkInsertReferencesIgnoreConflicts:
+    def test_inserts_multiple_references(self, session: Session):
         asset = _make_asset(session, "hash1")
+        now = get_utc_now()
         rows = [
-            {"asset_id": asset.id, "file_path": "/bulk1.bin", "mtime_ns": 100},
-            {"asset_id": asset.id, "file_path": "/bulk2.bin", "mtime_ns": 200},
+            {
+                "asset_id": asset.id,
+                "file_path": "/bulk1.bin",
+                "name": "bulk1",
+                "mtime_ns": 100,
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
+            {
+                "asset_id": asset.id,
+                "file_path": "/bulk2.bin",
+                "name": "bulk2",
+                "mtime_ns": 200,
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
         ]
-        bulk_insert_cache_states_ignore_conflicts(session, rows)
+        bulk_insert_references_ignore_conflicts(session, rows)
         session.commit()
 
-        assert session.query(AssetCacheState).count() == 2
+        assert session.query(AssetReference).count() == 2
 
     def test_ignores_conflicts(self, session: Session):
         asset = _make_asset(session, "hash1")
-        _make_cache_state(session, asset, "/existing.bin", mtime_ns=100)
+        _make_reference(session, asset, "/existing.bin", mtime_ns=100)
         session.commit()
 
+        now = get_utc_now()
         rows = [
-            {"asset_id": asset.id, "file_path": "/existing.bin", "mtime_ns": 999},
-            {"asset_id": asset.id, "file_path": "/new.bin", "mtime_ns": 200},
+            {
+                "asset_id": asset.id,
+                "file_path": "/existing.bin",
+                "name": "existing",
+                "mtime_ns": 999,
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
+            {
+                "asset_id": asset.id,
+                "file_path": "/new.bin",
+                "name": "new",
+                "mtime_ns": 200,
+                "created_at": now,
+                "updated_at": now,
+                "last_access_time": now,
+            },
         ]
-        bulk_insert_cache_states_ignore_conflicts(session, rows)
+        bulk_insert_references_ignore_conflicts(session, rows)
         session.commit()
 
-        assert session.query(AssetCacheState).count() == 2
-        existing = session.query(AssetCacheState).filter_by(file_path="/existing.bin").one()
+        assert session.query(AssetReference).count() == 2
+        existing = session.query(AssetReference).filter_by(file_path="/existing.bin").one()
         assert existing.mtime_ns == 100  # Original value preserved
 
     def test_empty_list_is_noop(self, session: Session):
-        bulk_insert_cache_states_ignore_conflicts(session, [])
-        assert session.query(AssetCacheState).count() == 0
+        bulk_insert_references_ignore_conflicts(session, [])
+        assert session.query(AssetReference).count() == 0
 
 
-class TestGetCacheStatesByPathsAndAssetIds:
+class TestGetReferencesByPathsAndAssetIds:
     def test_returns_matching_paths(self, session: Session):
         asset1 = _make_asset(session, "hash1")
         asset2 = _make_asset(session, "hash2")
 
-        _make_cache_state(session, asset1, "/path1.bin")
-        _make_cache_state(session, asset2, "/path2.bin")
+        _make_reference(session, asset1, "/path1.bin")
+        _make_reference(session, asset2, "/path2.bin")
         session.commit()
 
         path_to_asset = {
             "/path1.bin": asset1.id,
             "/path2.bin": asset2.id,
         }
-        winners = get_cache_states_by_paths_and_asset_ids(session, path_to_asset)
+        winners = get_references_by_paths_and_asset_ids(session, path_to_asset)
 
         assert winners == {"/path1.bin", "/path2.bin"}
 
@@ -454,15 +485,15 @@ class TestGetCacheStatesByPathsAndAssetIds:
         asset1 = _make_asset(session, "hash1")
         asset2 = _make_asset(session, "hash2")
 
-        _make_cache_state(session, asset1, "/path1.bin")
+        _make_reference(session, asset1, "/path1.bin")
         session.commit()
 
         # Path exists but with different asset_id
         path_to_asset = {"/path1.bin": asset2.id}
-        winners = get_cache_states_by_paths_and_asset_ids(session, path_to_asset)
+        winners = get_references_by_paths_and_asset_ids(session, path_to_asset)
 
         assert winners == set()
 
     def test_empty_dict_returns_empty(self, session: Session):
-        winners = get_cache_states_by_paths_and_asset_ids(session, {})
+        winners = get_references_by_paths_and_asset_ids(session, {})
         assert winners == set()

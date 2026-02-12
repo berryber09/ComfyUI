@@ -52,6 +52,7 @@ class ExtractedMetadata:
 
     # Tier 1: Filesystem (always available)
     filename: str = ""
+    file_path: str = ""  # Full absolute path to the file
     content_length: int = 0
     content_type: str | None = None
     format: str = ""  # file extension without dot
@@ -76,12 +77,14 @@ class ExtractedMetadata:
     resolve_url: str | None = None
 
     def to_user_metadata(self) -> dict[str, Any]:
-        """Convert to user_metadata dict for AssetInfo.user_metadata JSON field."""
+        """Convert to user_metadata dict for AssetReference.user_metadata JSON field."""
         data: dict[str, Any] = {
             "filename": self.filename,
             "content_length": self.content_length,
             "format": self.format,
         }
+        if self.file_path:
+            data["file_path"] = self.file_path
         if self.content_type:
             data["content_type"] = self.content_type
 
@@ -119,14 +122,14 @@ class ExtractedMetadata:
 
         return data
 
-    def to_meta_rows(self, asset_info_id: str) -> list[dict]:
-        """Convert to asset_info_meta rows for typed/indexed querying."""
+    def to_meta_rows(self, reference_id: str) -> list[dict]:
+        """Convert to asset_reference_meta rows for typed/indexed querying."""
         rows: list[dict] = []
 
         def add_str(key: str, val: str | None, ordinal: int = 0) -> None:
             if val:
                 rows.append({
-                    "asset_info_id": asset_info_id,
+                    "asset_reference_id": reference_id,
                     "key": key,
                     "ordinal": ordinal,
                     "val_str": val[:2048] if len(val) > 2048 else val,
@@ -138,7 +141,7 @@ class ExtractedMetadata:
         def add_num(key: str, val: int | float | None) -> None:
             if val is not None:
                 rows.append({
-                    "asset_info_id": asset_info_id,
+                    "asset_reference_id": reference_id,
                     "key": key,
                     "ordinal": 0,
                     "val_str": None,
@@ -150,7 +153,7 @@ class ExtractedMetadata:
         def add_bool(key: str, val: bool | None) -> None:
             if val is not None:
                 rows.append({
-                    "asset_info_id": asset_info_id,
+                    "asset_reference_id": reference_id,
                     "key": key,
                     "ordinal": 0,
                     "val_str": None,
@@ -168,7 +171,8 @@ class ExtractedMetadata:
         # Tier 2
         add_str("base_model", self.base_model)
         add_str("air", self.air)
-        add_bool("has_preview_images", self.has_preview_images if self.has_preview_images else None)
+        has_previews = self.has_preview_images if self.has_preview_images else None
+        add_bool("has_preview_images", has_previews)
 
         # trained_words as multiple rows with ordinals
         if self.trained_words:
@@ -191,7 +195,9 @@ class ExtractedMetadata:
         return rows
 
 
-def _read_safetensors_header(path: str, max_size: int = MAX_SAFETENSORS_HEADER_SIZE) -> dict[str, Any] | None:
+def _read_safetensors_header(
+    path: str, max_size: int = MAX_SAFETENSORS_HEADER_SIZE
+) -> dict[str, Any] | None:
     """Read only the JSON header from a safetensors file.
 
     This is very fast - reads 8 bytes for header length, then the JSON header.
@@ -220,7 +226,9 @@ def _read_safetensors_header(path: str, max_size: int = MAX_SAFETENSORS_HEADER_S
         return None
 
 
-def _extract_safetensors_metadata(header: dict[str, Any], meta: ExtractedMetadata) -> None:
+def _extract_safetensors_metadata(
+    header: dict[str, Any], meta: ExtractedMetadata
+) -> None:
     """Extract metadata from safetensors header __metadata__ section.
 
     Modifies meta in-place.
@@ -230,7 +238,11 @@ def _extract_safetensors_metadata(header: dict[str, Any], meta: ExtractedMetadat
         return
 
     # Common model metadata
-    meta.base_model = st_meta.get("ss_base_model_version") or st_meta.get("modelspec.base_model") or st_meta.get("base_model")
+    meta.base_model = (
+        st_meta.get("ss_base_model_version")
+        or st_meta.get("modelspec.base_model")
+        or st_meta.get("base_model")
+    )
 
     # Trained words / trigger words
     trained_words = st_meta.get("ss_tag_frequency")
@@ -304,8 +316,8 @@ def extract_file_metadata(
     meta = ExtractedMetadata()
 
     # Tier 1: Filesystem metadata
-    # Use relative_filename if provided (for backward compatibility with existing behavior)
-    meta.filename = relative_filename if relative_filename else os.path.basename(abs_path)
+    meta.filename = relative_filename or os.path.basename(abs_path)
+    meta.file_path = abs_path
     _, ext = os.path.splitext(abs_path)
     meta.format = ext.lstrip(".").lower() if ext else ""
 
@@ -333,6 +345,6 @@ def extract_file_metadata(
             try:
                 _extract_safetensors_metadata(header, meta)
             except Exception as e:
-                logging.debug("Failed to extract safetensors metadata from %s: %s", abs_path, e)
+                logging.debug("Safetensors meta extract failed %s: %s", abs_path, e)
 
     return meta

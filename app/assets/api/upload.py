@@ -95,7 +95,7 @@ async def parse_multipart_upload(
             file_client_name = (field.filename or "").strip()
 
             if provided_hash and provided_hash_exists is True:
-                # If client supplied a hash that we know exists, drain but do not write to disk
+                # Hash exists - drain file but don't write to disk
                 try:
                     while True:
                         chunk = await field.read_chunk(8 * 1024 * 1024)

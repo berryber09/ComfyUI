@@ -43,10 +43,10 @@ UUID_RE = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA
 
 
 def get_query_dict(request: web.Request) -> dict[str, Any]:
-    """
-    Gets a dictionary of query parameters from the request.
+    """Gets a dictionary of query parameters from the request.
 
-    'request.query' is a MultiMapping[str], needs to be converted to a dictionary to be validated by Pydantic.
+    request.query is a MultiMapping[str], needs to be converted to a dict
+    to be validated by Pydantic.
     """
     query_dict = {
         key: request.query.getall(key)
@@ -58,7 +58,8 @@ def get_query_dict(request: web.Request) -> dict[str, Any]:
 
 
 # Note to any custom node developers reading this code:
-# The assets system is not yet fully implemented, do not rely on the code in /app/assets remaining the same.
+# The assets system is not yet fully implemented,
+# do not rely on the code in /app/assets remaining the same.
 
 
 def register_assets_system(
@@ -80,6 +81,7 @@ def _build_error_response(
 
 def _build_validation_error_response(code: str, ve: ValidationError) -> web.Response:
     import json
+
     errors = json.loads(ve.json())
     return _build_error_response(400, code, "Validation failed.", {"errors": errors})
 
@@ -142,15 +144,15 @@ async def list_assets_route(request: web.Request) -> web.Response:
 
     summaries = [
         schemas_out.AssetSummary(
-            id=item.info.id,
-            name=item.info.name,
+            id=item.ref.id,
+            name=item.ref.name,
             asset_hash=item.asset.hash if item.asset else None,
             size=int(item.asset.size_bytes) if item.asset else None,
             mime_type=item.asset.mime_type if item.asset else None,
             tags=item.tags,
-            created_at=item.info.created_at,
-            updated_at=item.info.updated_at,
-            last_access_time=item.info.last_access_time,
+            created_at=item.ref.created_at,
+            updated_at=item.ref.updated_at,
+            last_access_time=item.ref.last_access_time,
         )
         for item in result.items
     ]
@@ -168,40 +170,40 @@ async def get_asset_route(request: web.Request) -> web.Response:
     """
     GET request to get an asset's info as JSON.
     """
-    asset_info_id = str(uuid.UUID(request.match_info["id"]))
+    reference_id = str(uuid.UUID(request.match_info["id"]))
     try:
         result = get_asset_detail(
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
         if not result:
             return _build_error_response(
                 404,
                 "ASSET_NOT_FOUND",
-                f"AssetInfo {asset_info_id} not found",
-                {"id": asset_info_id},
+                f"AssetReference {reference_id} not found",
+                {"id": reference_id},
             )
 
         payload = schemas_out.AssetDetail(
-            id=result.info.id,
-            name=result.info.name,
+            id=result.ref.id,
+            name=result.ref.name,
             asset_hash=result.asset.hash if result.asset else None,
             size=int(result.asset.size_bytes) if result.asset else None,
             mime_type=result.asset.mime_type if result.asset else None,
             tags=result.tags,
-            user_metadata=result.info.user_metadata or {},
-            preview_id=result.info.preview_id,
-            created_at=result.info.created_at,
-            last_access_time=result.info.last_access_time,
+            user_metadata=result.ref.user_metadata or {},
+            preview_id=result.ref.preview_id,
+            created_at=result.ref.created_at,
+            last_access_time=result.ref.last_access_time,
         )
     except ValueError as e:
         return _build_error_response(
-            404, "ASSET_NOT_FOUND", str(e), {"id": asset_info_id}
+            404, "ASSET_NOT_FOUND", str(e), {"id": reference_id}
         )
     except Exception:
         logging.exception(
-            "get_asset failed for asset_info_id=%s, owner_id=%s",
-            asset_info_id,
+            "get_asset failed for reference_id=%s, owner_id=%s",
+            reference_id,
             USER_MANAGER.get_request_user_id(request),
         )
         return _build_error_response(500, "INTERNAL", "Unexpected server error.")
@@ -216,7 +218,7 @@ async def download_asset_content(request: web.Request) -> web.Response:
 
     try:
         result = resolve_asset_for_download(
-            asset_info_id=str(uuid.UUID(request.match_info["id"])),
+            reference_id=str(uuid.UUID(request.match_info["id"])),
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
         abs_path = result.abs_path
@@ -232,16 +234,14 @@ async def download_asset_content(request: web.Request) -> web.Response:
         )
 
     quoted = (filename or "").replace("\r", "").replace("\n", "").replace('"', "'")
-    cd = f"{disposition}; filename=\"{quoted}\"; filename*=UTF-8''{urllib.parse.quote(quoted)}"
+    encoded = urllib.parse.quote(quoted)
+    cd = f"{disposition}; filename=\"{quoted}\"; filename*=UTF-8''{encoded}"
 
     file_size = os.path.getsize(abs_path)
+    size_mb = file_size / (1024 * 1024)
     logging.info(
-        "download_asset_content: path=%s, size=%d bytes (%.2f MB), content_type=%s, filename=%s",
-        abs_path,
-        file_size,
-        file_size / (1024 * 1024),
-        content_type,
-        filename,
+        "download_asset_content: path=%s, size=%d bytes (%.2f MB), type=%s, name=%s",
+        abs_path, file_size, size_mb, content_type, filename,
     )
 
     async def stream_file_chunks():
@@ -288,16 +288,16 @@ async def create_asset_from_hash_route(request: web.Request) -> web.Response:
         )
 
     payload_out = schemas_out.AssetCreated(
-        id=result.info.id,
-        name=result.info.name,
+        id=result.ref.id,
+        name=result.ref.name,
         asset_hash=result.asset.hash,
         size=int(result.asset.size_bytes),
         mime_type=result.asset.mime_type,
         tags=result.tags,
-        user_metadata=result.info.user_metadata or {},
-        preview_id=result.info.preview_id,
-        created_at=result.info.created_at,
-        last_access_time=result.info.last_access_time,
+        user_metadata=result.ref.user_metadata or {},
+        preview_id=result.ref.preview_id,
+        created_at=result.ref.created_at,
+        last_access_time=result.ref.last_access_time,
         created_new=result.created_new,
     )
     return web.json_response(payload_out.model_dump(mode="json"), status=201)
@@ -340,7 +340,7 @@ async def upload_asset(request: web.Request) -> web.Response:
             )
 
     try:
-        # Fast path: if a valid provided hash exists, create AssetInfo without writing anything
+        # Fast path: hash exists, create AssetReference without writing anything
         if spec.hash and parsed.provided_hash_exists is True:
             result = create_from_hash(
                 hash_str=spec.hash,
@@ -391,16 +391,16 @@ async def upload_asset(request: web.Request) -> web.Response:
         return _build_error_response(500, "INTERNAL", "Unexpected server error.")
 
     payload = schemas_out.AssetCreated(
-        id=result.info.id,
-        name=result.info.name,
+        id=result.ref.id,
+        name=result.ref.name,
         asset_hash=result.asset.hash,
         size=int(result.asset.size_bytes),
         mime_type=result.asset.mime_type,
         tags=result.tags,
-        user_metadata=result.info.user_metadata or {},
-        preview_id=result.info.preview_id,
-        created_at=result.info.created_at,
-        last_access_time=result.info.last_access_time,
+        user_metadata=result.ref.user_metadata or {},
+        preview_id=result.ref.preview_id,
+        created_at=result.ref.created_at,
+        last_access_time=result.ref.last_access_time,
         created_new=result.created_new,
     )
     status = 201 if result.created_new else 200
@@ -409,7 +409,7 @@ async def upload_asset(request: web.Request) -> web.Response:
 
 @ROUTES.put(f"/api/assets/{{id:{UUID_RE}}}")
 async def update_asset_route(request: web.Request) -> web.Response:
-    asset_info_id = str(uuid.UUID(request.match_info["id"]))
+    reference_id = str(uuid.UUID(request.match_info["id"]))
     try:
         body = schemas_in.UpdateAssetBody.model_validate(await request.json())
     except ValidationError as ve:
@@ -421,27 +421,27 @@ async def update_asset_route(request: web.Request) -> web.Response:
 
     try:
         result = update_asset_metadata(
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             name=body.name,
             user_metadata=body.user_metadata,
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
         payload = schemas_out.AssetUpdated(
-            id=result.info.id,
-            name=result.info.name,
+            id=result.ref.id,
+            name=result.ref.name,
             asset_hash=result.asset.hash if result.asset else None,
             tags=result.tags,
-            user_metadata=result.info.user_metadata or {},
-            updated_at=result.info.updated_at,
+            user_metadata=result.ref.user_metadata or {},
+            updated_at=result.ref.updated_at,
         )
     except (ValueError, PermissionError) as ve:
         return _build_error_response(
-            404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id}
+            404, "ASSET_NOT_FOUND", str(ve), {"id": reference_id}
         )
     except Exception:
         logging.exception(
-            "update_asset failed for asset_info_id=%s, owner_id=%s",
-            asset_info_id,
+            "update_asset failed for reference_id=%s, owner_id=%s",
+            reference_id,
             USER_MANAGER.get_request_user_id(request),
         )
         return _build_error_response(500, "INTERNAL", "Unexpected server error.")
@@ -450,7 +450,7 @@ async def update_asset_route(request: web.Request) -> web.Response:
 
 @ROUTES.delete(f"/api/assets/{{id:{UUID_RE}}}")
 async def delete_asset_route(request: web.Request) -> web.Response:
-    asset_info_id = str(uuid.UUID(request.match_info["id"]))
+    reference_id = str(uuid.UUID(request.match_info["id"]))
     delete_content_param = request.query.get("delete_content")
     delete_content = (
         True
@@ -460,21 +460,21 @@ async def delete_asset_route(request: web.Request) -> web.Response:
 
     try:
         deleted = delete_asset_reference(
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             owner_id=USER_MANAGER.get_request_user_id(request),
             delete_content_if_orphan=delete_content,
         )
     except Exception:
         logging.exception(
-            "delete_asset_reference failed for asset_info_id=%s, owner_id=%s",
-            asset_info_id,
+            "delete_asset_reference failed for reference_id=%s, owner_id=%s",
+            reference_id,
             USER_MANAGER.get_request_user_id(request),
         )
         return _build_error_response(500, "INTERNAL", "Unexpected server error.")
 
     if not deleted:
         return _build_error_response(
-            404, "ASSET_NOT_FOUND", f"AssetInfo {asset_info_id} not found."
+            404, "ASSET_NOT_FOUND", f"AssetReference {reference_id} not found."
         )
     return web.Response(status=204)
 
@@ -490,8 +490,12 @@ async def get_tags(request: web.Request) -> web.Response:
         query = schemas_in.TagsListQuery.model_validate(query_map)
     except ValidationError as e:
         import json
+
         return _build_error_response(
-            400, "INVALID_QUERY", "Invalid query parameters", {"errors": json.loads(e.json())}
+            400,
+            "INVALID_QUERY",
+            "Invalid query parameters",
+            {"errors": json.loads(e.json())},
         )
 
     rows, total = list_tags(
@@ -515,7 +519,7 @@ async def get_tags(request: web.Request) -> web.Response:
 
 @ROUTES.post(f"/api/assets/{{id:{UUID_RE}}}/tags")
 async def add_asset_tags(request: web.Request) -> web.Response:
-    asset_info_id = str(uuid.UUID(request.match_info["id"]))
+    reference_id = str(uuid.UUID(request.match_info["id"]))
     try:
         json_payload = await request.json()
         data = schemas_in.TagsAdd.model_validate(json_payload)
@@ -533,7 +537,7 @@ async def add_asset_tags(request: web.Request) -> web.Response:
 
     try:
         result = apply_tags(
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             tags=data.tags,
             origin="manual",
             owner_id=USER_MANAGER.get_request_user_id(request),
@@ -545,12 +549,12 @@ async def add_asset_tags(request: web.Request) -> web.Response:
         )
     except (ValueError, PermissionError) as ve:
         return _build_error_response(
-            404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id}
+            404, "ASSET_NOT_FOUND", str(ve), {"id": reference_id}
         )
     except Exception:
         logging.exception(
-            "add_tags_to_asset failed for asset_info_id=%s, owner_id=%s",
-            asset_info_id,
+            "add_tags_to_asset failed for reference_id=%s, owner_id=%s",
+            reference_id,
             USER_MANAGER.get_request_user_id(request),
         )
         return _build_error_response(500, "INTERNAL", "Unexpected server error.")
@@ -560,7 +564,7 @@ async def add_asset_tags(request: web.Request) -> web.Response:
 
 @ROUTES.delete(f"/api/assets/{{id:{UUID_RE}}}/tags")
 async def delete_asset_tags(request: web.Request) -> web.Response:
-    asset_info_id = str(uuid.UUID(request.match_info["id"]))
+    reference_id = str(uuid.UUID(request.match_info["id"]))
     try:
         json_payload = await request.json()
         data = schemas_in.TagsRemove.model_validate(json_payload)
@@ -578,7 +582,7 @@ async def delete_asset_tags(request: web.Request) -> web.Response:
 
     try:
         result = remove_tags(
-            asset_info_id=asset_info_id,
+            reference_id=reference_id,
             tags=data.tags,
             owner_id=USER_MANAGER.get_request_user_id(request),
         )
@@ -589,12 +593,12 @@ async def delete_asset_tags(request: web.Request) -> web.Response:
         )
     except ValueError as ve:
         return _build_error_response(
-            404, "ASSET_NOT_FOUND", str(ve), {"id": asset_info_id}
+            404, "ASSET_NOT_FOUND", str(ve), {"id": reference_id}
         )
     except Exception:
         logging.exception(
-            "remove_tags_from_asset failed for asset_info_id=%s, owner_id=%s",
-            asset_info_id,
+            "remove_tags_from_asset failed for reference_id=%s, owner_id=%s",
+            reference_id,
             USER_MANAGER.get_request_user_id(request),
         )
         return _build_error_response(500, "INTERNAL", "Unexpected server error.")
@@ -683,11 +687,11 @@ async def cancel_seed(request: web.Request) -> web.Response:
 
 @ROUTES.post("/api/assets/prune")
 async def mark_missing_assets(request: web.Request) -> web.Response:
-    """Mark assets as missing when their cache states point to files outside all known root prefixes.
+    """Mark assets as missing when outside all known root prefixes.
 
-    This is a non-destructive soft-delete operation. Assets and their metadata
-    are preserved, but cache states are flagged as missing. They can be restored
-    if the file reappears in a future scan.
+    This is a non-destructive soft-delete operation. Assets and metadata
+    are preserved, but references are flagged as missing. They can be
+    restored if the file reappears in a future scan.
 
     Returns:
         200 OK with count of marked assets

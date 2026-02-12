@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import os
 import uuid
 from dataclasses import dataclass
@@ -10,17 +9,16 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from sqlalchemy.orm import Session
 
 from app.assets.database.queries import (
-    bulk_insert_asset_infos_ignore_conflicts,
     bulk_insert_assets,
-    bulk_insert_cache_states_ignore_conflicts,
+    bulk_insert_references_ignore_conflicts,
     bulk_insert_tags_and_meta,
     delete_assets_by_ids,
-    get_asset_info_ids_by_ids,
-    get_cache_states_by_paths_and_asset_ids,
     get_existing_asset_ids,
+    get_reference_ids_by_ids,
+    get_references_by_paths_and_asset_ids,
     get_unreferenced_unhashed_asset_ids,
-    mark_cache_states_missing_outside_prefixes,
-    restore_cache_states_by_paths,
+    mark_references_missing_outside_prefixes,
+    restore_references_by_paths,
 )
 from app.assets.helpers import get_utc_now
 
@@ -52,49 +50,26 @@ class AssetRow(TypedDict):
     created_at: datetime
 
 
-class CacheStateRow(TypedDict):
-    """Row data for inserting a CacheState."""
+class ReferenceRow(TypedDict):
+    """Row data for inserting an AssetReference."""
 
+    id: str
     asset_id: str
     file_path: str
     mtime_ns: int
-
-
-class AssetInfoRow(TypedDict):
-    """Row data for inserting an AssetInfo."""
-
-    id: str
     owner_id: str
     name: str
-    asset_id: str
     preview_id: str | None
     user_metadata: dict[str, Any] | None
     created_at: datetime
     updated_at: datetime
     last_access_time: datetime
-
-
-class AssetInfoRowInternal(TypedDict):
-    """Internal row data for AssetInfo with extra tracking fields."""
-
-    id: str
-    owner_id: str
-    name: str
-    asset_id: str
-    preview_id: str | None
-    user_metadata: dict[str, Any] | None
-    created_at: datetime
-    updated_at: datetime
-    last_access_time: datetime
-    _tags: list[str]
-    _filename: str
-    _extracted_metadata: ExtractedMetadata | None
 
 
 class TagRow(TypedDict):
     """Row data for inserting a Tag."""
 
-    asset_info_id: str
+    asset_reference_id: str
     tag_name: str
     origin: str
     added_at: datetime
@@ -103,7 +78,7 @@ class TagRow(TypedDict):
 class MetadataRow(TypedDict):
     """Row data for inserting asset metadata."""
 
-    asset_info_id: str
+    asset_reference_id: str
     key: str
     ordinal: int
     val_str: str | None
@@ -116,9 +91,9 @@ class MetadataRow(TypedDict):
 class BulkInsertResult:
     """Result of bulk asset insertion."""
 
-    inserted_infos: int
-    won_states: int
-    lost_states: int
+    inserted_refs: int
+    won_paths: int
+    lost_paths: int
 
 
 def batch_insert_seed_assets(
@@ -138,29 +113,28 @@ def batch_insert_seed_assets(
 
     This function orchestrates:
     1. Insert seed Assets (hash=NULL)
-    2. Claim cache states with ON CONFLICT DO NOTHING
+    2. Claim references with ON CONFLICT DO NOTHING on file_path
     3. Query to find winners (paths where our asset_id was inserted)
     4. Delete Assets for losers (path already claimed by another asset)
-    5. Insert AssetInfo for winners
-    6. Insert tags and metadata for successfully inserted AssetInfos
+    5. Insert tags and metadata for successfully inserted references
 
     Returns:
-        BulkInsertResult with inserted_infos, won_states, lost_states
+        BulkInsertResult with inserted_refs, won_paths, lost_paths
     """
     if not specs:
-        return BulkInsertResult(inserted_infos=0, won_states=0, lost_states=0)
+        return BulkInsertResult(inserted_refs=0, won_paths=0, lost_paths=0)
 
     current_time = get_utc_now()
     asset_rows: list[AssetRow] = []
-    cache_state_rows: list[CacheStateRow] = []
+    reference_rows: list[ReferenceRow] = []
     path_to_asset_id: dict[str, str] = {}
-    asset_id_to_info: dict[str, AssetInfoRowInternal] = {}
+    asset_id_to_ref_data: dict[str, dict] = {}
     absolute_path_list: list[str] = []
 
     for spec in specs:
         absolute_path = os.path.abspath(spec["abs_path"])
         asset_id = str(uuid.uuid4())
-        asset_info_id = str(uuid.uuid4())
+        reference_id = str(uuid.uuid4())
         absolute_path_list.append(absolute_path)
         path_to_asset_id[absolute_path] = asset_id
 
@@ -174,13 +148,7 @@ def batch_insert_seed_assets(
                 "created_at": current_time,
             }
         )
-        cache_state_rows.append(
-            {
-                "asset_id": asset_id,
-                "file_path": absolute_path,
-                "mtime_ns": spec["mtime_ns"],
-            }
-        )
+
         # Build user_metadata from extracted metadata or fallback to filename
         extracted_metadata = spec.get("metadata")
         if extracted_metadata:
@@ -190,35 +158,43 @@ def batch_insert_seed_assets(
         else:
             user_metadata = None
 
-        asset_id_to_info[asset_id] = {
-            "id": asset_info_id,
-            "owner_id": owner_id,
-            "name": spec["info_name"],
-            "asset_id": asset_id,
-            "preview_id": None,
-            "user_metadata": user_metadata,
-            "created_at": current_time,
-            "updated_at": current_time,
-            "last_access_time": current_time,
-            "_tags": spec["tags"],
-            "_filename": spec["fname"],
-            "_extracted_metadata": extracted_metadata,
+        reference_rows.append(
+            {
+                "id": reference_id,
+                "asset_id": asset_id,
+                "file_path": absolute_path,
+                "mtime_ns": spec["mtime_ns"],
+                "owner_id": owner_id,
+                "name": spec["info_name"],
+                "preview_id": None,
+                "user_metadata": user_metadata,
+                "created_at": current_time,
+                "updated_at": current_time,
+                "last_access_time": current_time,
+            }
+        )
+
+        asset_id_to_ref_data[asset_id] = {
+            "reference_id": reference_id,
+            "tags": spec["tags"],
+            "filename": spec["fname"],
+            "extracted_metadata": extracted_metadata,
         }
 
     bulk_insert_assets(session, asset_rows)
 
-    # Filter cache states to only those whose assets were actually inserted
+    # Filter reference rows to only those whose assets were actually inserted
     # (assets with duplicate hashes are silently dropped by ON CONFLICT DO NOTHING)
     inserted_asset_ids = get_existing_asset_ids(
-        session, [r["asset_id"] for r in cache_state_rows]
+        session, [r["asset_id"] for r in reference_rows]
     )
-    cache_state_rows = [
-        r for r in cache_state_rows if r["asset_id"] in inserted_asset_ids
+    reference_rows = [
+        r for r in reference_rows if r["asset_id"] in inserted_asset_ids
     ]
 
-    bulk_insert_cache_states_ignore_conflicts(session, cache_state_rows)
-    restore_cache_states_by_paths(session, absolute_path_list)
-    winning_paths = get_cache_states_by_paths_and_asset_ids(session, path_to_asset_id)
+    bulk_insert_references_ignore_conflicts(session, reference_rows)
+    restore_references_by_paths(session, absolute_path_list)
+    winning_paths = get_references_by_paths_and_asset_ids(session, path_to_asset_id)
 
     all_paths_set = set(absolute_path_list)
     losing_paths = all_paths_set - winning_paths
@@ -229,44 +205,34 @@ def batch_insert_seed_assets(
 
     if not winning_paths:
         return BulkInsertResult(
-            inserted_infos=0,
-            won_states=0,
-            lost_states=len(losing_paths),
+            inserted_refs=0,
+            won_paths=0,
+            lost_paths=len(losing_paths),
         )
 
-    winner_info_rows = [
-        asset_id_to_info[path_to_asset_id[path]] for path in winning_paths
+    # Get reference IDs for winners
+    winning_ref_ids = [
+        asset_id_to_ref_data[path_to_asset_id[path]]["reference_id"]
+        for path in winning_paths
     ]
-    database_info_rows: list[AssetInfoRow] = [
-        {
-            "id": info_row["id"],
-            "owner_id": info_row["owner_id"],
-            "name": info_row["name"],
-            "asset_id": info_row["asset_id"],
-            "preview_id": info_row["preview_id"],
-            "user_metadata": info_row["user_metadata"],
-            "created_at": info_row["created_at"],
-            "updated_at": info_row["updated_at"],
-            "last_access_time": info_row["last_access_time"],
-        }
-        for info_row in winner_info_rows
-    ]
-    bulk_insert_asset_infos_ignore_conflicts(session, database_info_rows)
-
-    all_info_ids = [info_row["id"] for info_row in winner_info_rows]
-    inserted_info_ids = get_asset_info_ids_by_ids(session, all_info_ids)
+    inserted_ref_ids = get_reference_ids_by_ids(session, winning_ref_ids)
 
     tag_rows: list[TagRow] = []
     metadata_rows: list[MetadataRow] = []
-    if inserted_info_ids:
-        for info_row in winner_info_rows:
-            info_id = info_row["id"]
-            if info_id not in inserted_info_ids:
+
+    if inserted_ref_ids:
+        for path in winning_paths:
+            asset_id = path_to_asset_id[path]
+            ref_data = asset_id_to_ref_data[asset_id]
+            ref_id = ref_data["reference_id"]
+
+            if ref_id not in inserted_ref_ids:
                 continue
-            for tag in info_row["_tags"]:
+
+            for tag in ref_data["tags"]:
                 tag_rows.append(
                     {
-                        "asset_info_id": info_id,
+                        "asset_reference_id": ref_id,
                         "tag_name": tag,
                         "origin": "automatic",
                         "added_at": current_time,
@@ -274,17 +240,17 @@ def batch_insert_seed_assets(
                 )
 
             # Use extracted metadata for meta rows if available
-            extracted_metadata = info_row.get("_extracted_metadata")
+            extracted_metadata = ref_data.get("extracted_metadata")
             if extracted_metadata:
-                metadata_rows.extend(extracted_metadata.to_meta_rows(info_id))
-            elif info_row["_filename"]:
+                metadata_rows.extend(extracted_metadata.to_meta_rows(ref_id))
+            elif ref_data["filename"]:
                 # Fallback: just store filename
                 metadata_rows.append(
                     {
-                        "asset_info_id": info_id,
+                        "asset_reference_id": ref_id,
                         "key": "filename",
                         "ordinal": 0,
-                        "val_str": info_row["_filename"],
+                        "val_str": ref_data["filename"],
                         "val_num": None,
                         "val_bool": None,
                         "val_json": None,
@@ -294,40 +260,36 @@ def batch_insert_seed_assets(
     bulk_insert_tags_and_meta(session, tag_rows=tag_rows, meta_rows=metadata_rows)
 
     return BulkInsertResult(
-        inserted_infos=len(inserted_info_ids),
-        won_states=len(winning_paths),
-        lost_states=len(losing_paths),
+        inserted_refs=len(inserted_ref_ids),
+        won_paths=len(winning_paths),
+        lost_paths=len(losing_paths),
     )
 
 
 def mark_assets_missing_outside_prefixes(
     session: Session, valid_prefixes: list[str]
 ) -> int:
-    """Mark cache states as missing when outside valid prefixes.
+    """Mark references as missing when outside valid prefixes.
 
-    This is a non-destructive operation that soft-deletes cache states
+    This is a non-destructive operation that soft-deletes references
     by setting is_missing=True. User metadata is preserved and assets
     can be restored if the file reappears in a future scan.
-
-    Note: This does NOT delete
-    unreferenced unhashed assets. Those are preserved so user metadata
-    remains intact even when base directories change.
 
     Args:
         session: Database session
         valid_prefixes: List of absolute directory prefixes that are valid
 
     Returns:
-        Number of cache states marked as missing
+        Number of references marked as missing
     """
-    return mark_cache_states_missing_outside_prefixes(session, valid_prefixes)
+    return mark_references_missing_outside_prefixes(session, valid_prefixes)
 
 
 def cleanup_unreferenced_assets(session: Session) -> int:
-    """Hard-delete unhashed assets with no active cache states.
+    """Hard-delete unhashed assets with no active references.
 
     This is a destructive operation intended for explicit cleanup.
-    Only deletes assets where hash=None and all cache states are missing.
+    Only deletes assets where hash=None and all references are missing.
 
     Returns:
         Number of assets deleted

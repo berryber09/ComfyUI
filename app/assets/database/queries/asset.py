@@ -82,7 +82,7 @@ def bulk_insert_assets(
     session: Session,
     rows: list[dict],
 ) -> None:
-    """Bulk insert Asset rows. Each dict should have: id, hash, size_bytes, mime_type, created_at."""
+    """Bulk insert Asset rows with ON CONFLICT DO NOTHING on hash."""
     if not rows:
         return
     ins = sqlite.insert(Asset).on_conflict_do_nothing(index_elements=[Asset.hash])
@@ -101,3 +101,39 @@ def get_existing_asset_ids(
         select(Asset.id).where(Asset.id.in_(asset_ids))
     ).fetchall()
     return {row[0] for row in rows}
+
+
+def update_asset_hash_and_mime(
+    session: Session,
+    asset_id: str,
+    asset_hash: str | None = None,
+    mime_type: str | None = None,
+) -> bool:
+    """Update asset hash and/or mime_type. Returns True if asset was found."""
+    asset = session.get(Asset, asset_id)
+    if not asset:
+        return False
+    if asset_hash is not None:
+        asset.hash = asset_hash
+    if mime_type is not None:
+        asset.mime_type = mime_type
+    return True
+
+
+def reassign_asset_references(
+    session: Session,
+    from_asset_id: str,
+    to_asset_id: str,
+    reference_id: str,
+) -> None:
+    """Reassign a reference from one asset to another.
+
+    Used when merging a stub asset into an existing asset with the same hash.
+    """
+    from app.assets.database.models import AssetReference
+
+    ref = session.get(AssetReference, reference_id)
+    if ref:
+        ref.asset_id = to_asset_id
+
+    session.flush()
