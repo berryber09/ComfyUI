@@ -327,7 +327,6 @@ class GLContext:
         if GLContext._initialized:
             logger.debug("GLContext.__init__: already initialized, skipping")
             return
-        GLContext._initialized = True
 
         logger.debug("GLContext.__init__: starting initialization")
 
@@ -343,6 +342,7 @@ class GLContext:
         self._egl_surface = None
         self._osmesa_ctx = None
         self._osmesa_buffer = None
+        self._vao = None
 
         # Try backends in order: GLFW → EGL → OSMesa
         errors = []
@@ -409,7 +409,6 @@ class GLContext:
 
         # Create VAO (required for core profile, but OSMesa may use compat profile)
         logger.debug("GLContext.__init__: creating VAO")
-        self._vao = None
         try:
             vao = gl.glGenVertexArrays(1)
             gl.glBindVertexArray(vao)
@@ -435,6 +434,7 @@ class GLContext:
         vendor = vendor.decode() if vendor else "Unknown"
         version = version.decode() if version else "Unknown"
 
+        GLContext._initialized = True
         logger.info(f"GLSL context initialized in {elapsed:.1f}ms ({self._backend}) - {renderer} ({vendor}), GL {version}")
 
     def make_current(self):
