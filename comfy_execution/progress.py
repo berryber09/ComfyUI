@@ -164,21 +164,7 @@ class WebUIProgressHandler(ProgressHandler):
         if self.server_instance is None:
             return
 
-        # Only send info for non-pending nodes
-        active_nodes = {
-            node_id: {
-                "value": state["value"],
-                "max": state["max"],
-                "state": state["state"].value,
-                "node_id": node_id,
-                "prompt_id": prompt_id,
-                "display_node_id": self.registry.dynprompt.get_display_node_id(node_id),
-                "parent_node_id": self.registry.dynprompt.get_parent_node_id(node_id),
-                "real_node_id": self.registry.dynprompt.get_real_node_id(node_id),
-            }
-            for node_id, state in nodes.items()
-            if state["state"] != NodeState.Pending
-        }
+        active_nodes = self.registry.get_serialized_state()
 
         # Send a combined progress_state message with all node states
         # Include client_id to ensure message is only sent to the initiating client
@@ -313,6 +299,24 @@ class ProgressRegistry:
         for handler in self.handlers.values():
             if handler.enabled:
                 handler.finish_handler(node_id, entry, self.prompt_id)
+
+    def get_serialized_state(self) -> Dict[str, dict]:
+        """Return current node progress as a dict suitable for WS progress_state."""
+        active: Dict[str, dict] = {}
+        for nid, state in self.nodes.items():
+            if state["state"] == NodeState.Pending:
+                continue
+            active[nid] = {
+                "value": state["value"],
+                "max": state["max"],
+                "state": state["state"].value,
+                "node_id": nid,
+                "prompt_id": self.prompt_id,
+                "display_node_id": self.dynprompt.get_display_node_id(nid),
+                "parent_node_id": self.dynprompt.get_parent_node_id(nid),
+                "real_node_id": self.dynprompt.get_real_node_id(nid),
+            }
+        return active
 
     def reset_handlers(self) -> None:
         """Reset all handlers"""

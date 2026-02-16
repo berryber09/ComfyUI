@@ -242,6 +242,10 @@ class PromptServer():
         self.routes = routes
         self.last_node_id = None
         self.client_id = None
+        self.current_prompt_id = None
+        self.current_outputs_to_execute = None
+        self.current_cached_nodes = None
+        self.current_executed_nodes = None
 
         self.on_prompt_handlers = []
 
@@ -264,9 +268,38 @@ class PromptServer():
             try:
                 # Send initial state to the new client
                 await self.send("status", {"status": self.get_queue_info(), "sid": sid}, sid)
-                # On reconnect if we are the currently executing client send the current node
-                if self.client_id == sid and self.last_node_id is not None:
-                    await self.send("executing", { "node": self.last_node_id }, sid)
+                # On reconnect if we are the currently executing client, replay catch-up events
+                if self.client_id == sid and self.current_prompt_id is not None:
+                    await self.send("execution_start", {
+                        "prompt_id": self.current_prompt_id,
+                        "timestamp": int(time.time() * 1000),
+                        "outputs_to_execute": self.current_outputs_to_execute or [],
+                        "executed_node_ids": list(self.current_executed_nodes) if self.current_executed_nodes else [],
+                    }, sid)
+
+                    if self.current_cached_nodes:
+                        await self.send("execution_cached", {
+                            "nodes": self.current_cached_nodes,
+                            "prompt_id": self.current_prompt_id,
+                            "timestamp": int(time.time() * 1000),
+                        }, sid)
+
+                    from comfy_execution.progress import get_progress_state
+                    progress = get_progress_state()
+                    if progress.prompt_id == self.current_prompt_id:
+                        active_nodes = progress.get_serialized_state()
+                        if active_nodes:
+                            await self.send("progress_state", {
+                                "prompt_id": self.current_prompt_id,
+                                "nodes": active_nodes,
+                            }, sid)
+
+                    if self.last_node_id is not None:
+                        await self.send("executing", {
+                            "node": self.last_node_id,
+                            "display_node": self.last_node_id,
+                            "prompt_id": self.current_prompt_id,
+                        }, sid)
 
                 # Flag to track if we've received the first message
                 first_message = True

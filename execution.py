@@ -701,6 +701,8 @@ class PromptExecutor:
         else:
             self.server.client_id = None
 
+        self.server.current_prompt_id = prompt_id
+
         self.status_messages = []
         self.add_message("execution_start", { "prompt_id": prompt_id}, broadcast=False)
 
@@ -722,10 +724,13 @@ class PromptExecutor:
             self.add_message("execution_cached",
                           { "nodes": cached_nodes, "prompt_id": prompt_id},
                           broadcast=False)
+            self.server.current_cached_nodes = cached_nodes
             pending_subgraph_results = {}
             pending_async_nodes = {} # TODO - Unify this with pending_subgraph_results
             ui_node_outputs = {}
             executed = set()
+            self.server.current_executed_nodes = executed
+            self.server.current_outputs_to_execute = list(execute_outputs)
             execution_list = ExecutionList(dynamic_prompt, self.caches.outputs)
             current_outputs = self.caches.outputs.all_node_ids()
             for node_id in list(execute_outputs):
@@ -762,6 +767,10 @@ class PromptExecutor:
                 "meta": meta_outputs,
             }
             self.server.last_node_id = None
+            self.server.current_prompt_id = None
+            self.server.current_outputs_to_execute = None
+            self.server.current_cached_nodes = None
+            self.server.current_executed_nodes = None
             if comfy.model_management.DISABLE_SMART_MEMORY:
                 comfy.model_management.unload_all_models()
 
