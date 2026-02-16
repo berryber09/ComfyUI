@@ -20,6 +20,8 @@ class WebcamCapture(nodes.LoadImage):
     FUNCTION = "load_capture"
 
     CATEGORY = "image"
+    DESCRIPTION = "Capture an image from a connected webcam with optional width and height settings."
+    SHORT_DESCRIPTION = "Capture an image from a webcam."
 
     def load_capture(self, image, **kwargs):
         return super().load_image(folder_paths.get_annotated_filepath(image))

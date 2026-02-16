@@ -54,6 +54,8 @@ class TencentTextToModelNode(IO.ComfyNode):
             node_id="TencentTextToModelNode",
             display_name="Hunyuan3D: Text to Model",
             category="api node/3d/Tencent",
+            description="Generate 3D models from text prompts using Hunyuan3D Pro with configurable face count and geometry options.",
+            short_description="Generate 3D models from text using Hunyuan3D Pro.",
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -168,6 +170,8 @@ class TencentImageToModelNode(IO.ComfyNode):
             node_id="TencentImageToModelNode",
             display_name="Hunyuan3D: Image(s) to Model",
             category="api node/3d/Tencent",
+            description="Generate 3D models from images using Hunyuan3D Pro with optional multi-view inputs and configurable geometry.",
+            short_description="Generate 3D models from images using Hunyuan3D Pro.",
             inputs=[
                 IO.Combo.Input(
                     "model",

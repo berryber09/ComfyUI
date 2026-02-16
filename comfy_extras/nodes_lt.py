@@ -18,6 +18,8 @@ class EmptyLTXVLatentVideo(io.ComfyNode):
         return io.Schema(
             node_id="EmptyLTXVLatentVideo",
             category="latent/video/ltxv",
+            description="Creates an empty LTXV video latent tensor with the specified dimensions and batch size.",
+            short_description="Creates an empty LTXV video latent tensor.",
             inputs=[
                 io.Int.Input("width", default=768, min=64, max=nodes.MAX_RESOLUTION, step=32),
                 io.Int.Input("height", default=512, min=64, max=nodes.MAX_RESOLUTION, step=32),
@@ -42,6 +44,8 @@ class LTXVImgToVideo(io.ComfyNode):
         return io.Schema(
             node_id="LTXVImgToVideo",
             category="conditioning/video_models",
+            description="Encodes an image through a VAE and sets up conditioning for LTXV image-to-video generation with adjustable strength.",
+            short_description="Sets up LTXV image-to-video conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -87,6 +91,8 @@ class LTXVImgToVideoInplace(io.ComfyNode):
         return io.Schema(
             node_id="LTXVImgToVideoInplace",
             category="conditioning/video_models",
+            description="Encodes an image through a VAE and injects it into an existing latent for in-place LTXV image-to-video conditioning.",
+            short_description="In-place LTXV image-to-video latent conditioning.",
             inputs=[
                 io.Vae.Input("vae"),
                 io.Image.Input("image"),
@@ -171,6 +177,8 @@ class LTXVAddGuide(io.ComfyNode):
         return io.Schema(
             node_id="LTXVAddGuide",
             category="conditioning/video_models",
+            description="Adds a guiding image or video to LTXV conditioning at a specified frame index to control video generation.",
+            short_description="Adds a guiding image or video to LTXV conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -335,6 +343,8 @@ class LTXVCropGuides(io.ComfyNode):
         return io.Schema(
             node_id="LTXVCropGuides",
             category="conditioning/video_models",
+            description="Removes appended keyframe guide latents from an LTXV latent and resets keyframe indices in the conditioning.",
+            short_description="Removes keyframe guide latents from LTXV conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -373,6 +383,8 @@ class LTXVConditioning(io.ComfyNode):
         return io.Schema(
             node_id="LTXVConditioning",
             category="conditioning/video_models",
+            description="Sets the frame rate on LTXV positive and negative conditioning for video generation.",
+            short_description="Sets frame rate on LTXV conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -397,6 +409,8 @@ class ModelSamplingLTXV(io.ComfyNode):
         return io.Schema(
             node_id="ModelSamplingLTXV",
             category="advanced/model",
+            description="Configures LTXV model sampling by computing a shift parameter from max_shift, base_shift, and latent token count.",
+            short_description="Configures LTXV model sampling shift parameters.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("max_shift", default=2.05, min=0.0, max=100.0, step=0.01),
@@ -442,6 +456,8 @@ class LTXVScheduler(io.ComfyNode):
         return io.Schema(
             node_id="LTXVScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule for LTXV sampling with configurable shift parameters, stretch, and terminal value.",
+            short_description="Generates a sigma schedule for LTXV sampling.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=10000),
                 io.Float.Input("max_shift", default=2.05, min=0.0, max=100.0, step=0.01),
@@ -546,6 +562,8 @@ class LTXVPreprocess(io.ComfyNode):
         return io.Schema(
             node_id="LTXVPreprocess",
             category="image",
+            description="Applies H.264 video compression preprocessing to images to improve LTXV generation quality.",
+            short_description="Applies video compression preprocessing for LTXV.",
             inputs=[
                 io.Image.Input("image"),
                 io.Int.Input(
@@ -574,6 +592,8 @@ class LTXVConcatAVLatent(io.ComfyNode):
         return io.Schema(
             node_id="LTXVConcatAVLatent",
             category="latent/video/ltxv",
+            description="Concatenates separate video and audio latents into a combined audio-video latent for LTXV processing.",
+            short_description="Concatenates video and audio latents for LTXV.",
             inputs=[
                 io.Latent.Input("video_latent"),
                 io.Latent.Input("audio_latent"),
@@ -609,7 +629,8 @@ class LTXVSeparateAVLatent(io.ComfyNode):
         return io.Schema(
             node_id="LTXVSeparateAVLatent",
             category="latent/video/ltxv",
-            description="LTXV Separate AV Latent",
+            description="Separates a combined audio-video latent into individual video and audio latents.",
+            short_description=None,
             inputs=[
                 io.Latent.Input("av_latent"),
             ],

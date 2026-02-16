@@ -20,6 +20,8 @@ class Blend(io.ComfyNode):
         return io.Schema(
             node_id="ImageBlend",
             category="image/postprocessing",
+            description="Blends two images together using a selectable blend mode and adjustable blend factor.",
+            short_description="Blends two images using a selected blend mode.",
             inputs=[
                 io.Image.Input("image1"),
                 io.Image.Input("image2"),
@@ -77,6 +79,8 @@ class Blur(io.ComfyNode):
         return io.Schema(
             node_id="ImageBlur",
             category="image/postprocessing",
+            description="Applies a Gaussian blur to an image with configurable radius and sigma.",
+            short_description="Applies Gaussian blur to an image.",
             inputs=[
                 io.Image.Input("image"),
                 io.Int.Input("blur_radius", default=1, min=1, max=31, step=1),
@@ -112,6 +116,8 @@ class Quantize(io.ComfyNode):
         return io.Schema(
             node_id="ImageQuantize",
             category="image/postprocessing",
+            description="Reduces the number of colors in an image with optional dithering.",
+            short_description="",
             inputs=[
                 io.Image.Input("image"),
                 io.Int.Input("colors", default=256, min=1, max=256, step=1),
@@ -177,6 +183,8 @@ class Sharpen(io.ComfyNode):
         return io.Schema(
             node_id="ImageSharpen",
             category="image/postprocessing",
+            description="Sharpens an image using an unsharp mask with configurable radius, sigma, and strength.",
+            short_description="Sharpens an image using unsharp mask.",
             inputs=[
                 io.Image.Input("image"),
                 io.Int.Input("sharpen_radius", default=1, min=1, max=31, step=1),
@@ -221,6 +229,8 @@ class ImageScaleToTotalPixels(io.ComfyNode):
         return io.Schema(
             node_id="ImageScaleToTotalPixels",
             category="image/upscaling",
+            description="Scales an image to a target total megapixel count while preserving aspect ratio, with configurable resolution stepping.",
+            short_description="Scales an image to a target megapixel count.",
             inputs=[
                 io.Image.Input("image"),
                 io.Combo.Input("upscale_method", options=cls.upscale_methods),
@@ -430,6 +440,7 @@ class ResizeImageMaskNode(io.ComfyNode):
             node_id="ResizeImageMaskNode",
             display_name="Resize Image/Mask",
             description="Resize an image or mask using various scaling methods.",
+            short_description=None,
             category="transform",
             search_aliases=["resize", "resize image", "resize mask", "scale", "scale image", "scale mask", "image resize", "change size", "dimensions", "shrink", "enlarge"],
             inputs=[
@@ -565,6 +576,8 @@ class BatchImagesNode(io.ComfyNode):
             node_id="BatchImagesNode",
             display_name="Batch Images",
             category="image",
+            description="Combines multiple images into a single batch, resizing them to match the first image's dimensions.",
+            short_description="Combines multiple images into a single batch.",
             search_aliases=["batch", "image batch", "batch images", "combine images", "merge images", "stack images"],
             inputs=[
                 io.Autogrow.Input("images", template=autogrow_template)
@@ -587,6 +600,8 @@ class BatchMasksNode(io.ComfyNode):
             search_aliases=["combine masks", "stack masks", "merge masks"],
             display_name="Batch Masks",
             category="mask",
+            description="Combines multiple masks into a single batch, resizing them to match the first mask's dimensions.",
+            short_description="Combines multiple masks into a single batch.",
             inputs=[
                 io.Autogrow.Input("masks", template=autogrow_template)
             ],
@@ -608,6 +623,8 @@ class BatchLatentsNode(io.ComfyNode):
             search_aliases=["combine latents", "stack latents", "merge latents"],
             display_name="Batch Latents",
             category="latent",
+            description="Combines multiple latent tensors into a single batch, reshaping them to match the first latent's dimensions.",
+            short_description="Combines multiple latents into a single batch.",
             inputs=[
                 io.Autogrow.Input("latents", template=autogrow_template)
             ],
@@ -632,6 +649,8 @@ class BatchImagesMasksLatentsNode(io.ComfyNode):
             search_aliases=["combine batch", "merge batch", "stack inputs"],
             display_name="Batch Images/Masks/Latents",
             category="util",
+            description="Combines multiple images, masks, or latents into a single batch, automatically detecting the input type.",
+            short_description="Batches images, masks, or latents together.",
             inputs=[
                 io.Autogrow.Input("inputs", template=autogrow_template)
             ],

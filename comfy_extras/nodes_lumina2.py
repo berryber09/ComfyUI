@@ -10,6 +10,8 @@ class RenormCFG(io.ComfyNode):
         return io.Schema(
             node_id="RenormCFG",
             category="advanced/model",
+            description="Applies renormalized classifier-free guidance with configurable truncation threshold and renormalization strength to control CFG output magnitude.",
+            short_description="Applies renormalized classifier-free guidance with truncation.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("cfg_trunc", default=100, min=0.0, max=100.0, step=0.01),
@@ -84,6 +86,7 @@ class CLIPTextEncodeLumina2(io.ComfyNode):
             category="conditioning",
             description="Encodes a system prompt and a user prompt using a CLIP model into an embedding "
                         "that can be used to guide the diffusion model towards generating specific images.",
+            short_description="Encodes system and user prompts via CLIP for Lumina2.",
             inputs=[
                 io.Combo.Input(
                     "system_prompt",

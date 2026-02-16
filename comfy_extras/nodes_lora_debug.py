@@ -32,6 +32,7 @@ class LoraLoaderBypass:
 
     CATEGORY = "loaders"
     DESCRIPTION = "Apply LoRA in bypass mode. Unlike regular LoRA, this doesn't modify model weights - instead it injects the LoRA computation during forward pass. Useful for training scenarios."
+    SHORT_DESCRIPTION = "Applies LoRA via forward pass injection, not weight modification."
     EXPERIMENTAL = True
 
     def load_lora(self, model, clip, lora_name, strength_model, strength_clip):
@@ -62,6 +63,8 @@ class LoraLoaderBypassModelOnly(LoraLoaderBypass):
                               "strength_model": ("FLOAT", {"default": 1.0, "min": -100.0, "max": 100.0, "step": 0.01}),
                               }}
     RETURN_TYPES = ("MODEL",)
+    DESCRIPTION = "Apply LoRA in bypass mode to only the diffusion model without modifying base weights or affecting CLIP."
+    SHORT_DESCRIPTION = "Apply bypass LoRA to model only, no CLIP."
     FUNCTION = "load_lora_model_only"
 
     def load_lora_model_only(self, model, lora_name, strength_model):

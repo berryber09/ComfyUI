@@ -14,6 +14,7 @@ class wanBlockSwap(io.ComfyNode):
             node_id="wanBlockSwap",
             category="",
             description="NOP",
+            short_description=None,
             inputs=[
                 io.Model.Input("model"),
             ],

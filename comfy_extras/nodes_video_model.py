@@ -16,6 +16,8 @@ class ImageOnlyCheckpointLoader:
     FUNCTION = "load_checkpoint"
 
     CATEGORY = "loaders/video_models"
+    DESCRIPTION = "Load an image-only checkpoint (such as SVD) and return the model, CLIP vision, and VAE components."
+    SHORT_DESCRIPTION = "Load an image-only video model checkpoint."
 
     def load_checkpoint(self, ckpt_name, output_vae=True, output_clip=True):
         ckpt_path = folder_paths.get_full_path_or_raise("checkpoints", ckpt_name)
@@ -42,6 +44,8 @@ class SVD_img2vid_Conditioning:
     FUNCTION = "encode"
 
     CATEGORY = "conditioning/video_models"
+    DESCRIPTION = "Generate conditioning for SVD image-to-video by encoding an init image with CLIP vision and VAE, with motion and FPS controls."
+    SHORT_DESCRIPTION = "Generate SVD img2vid conditioning from an image."
 
     def encode(self, clip_vision, init_image, vae, width, height, video_frames, motion_bucket_id, fps, augmentation_level):
         output = clip_vision.encode_image(init_image)
@@ -66,6 +70,8 @@ class VideoLinearCFGGuidance:
     FUNCTION = "patch"
 
     CATEGORY = "sampling/video_models"
+    DESCRIPTION = "Apply linear CFG guidance scaling across video frames, ramping from a minimum CFG to the full scale."
+    SHORT_DESCRIPTION = "Apply linear CFG scaling across video frames."
 
     def patch(self, model, min_cfg):
         def linear_cfg(args):
@@ -90,6 +96,8 @@ class VideoTriangleCFGGuidance:
     FUNCTION = "patch"
 
     CATEGORY = "sampling/video_models"
+    DESCRIPTION = "Apply triangle-wave CFG guidance scaling across video frames, peaking at the center and tapering to min at edges."
+    SHORT_DESCRIPTION = "Apply triangle-wave CFG scaling across video frames."
 
     def patch(self, model, min_cfg):
         def linear_cfg(args):
@@ -109,6 +117,8 @@ class VideoTriangleCFGGuidance:
 
 class ImageOnlyCheckpointSave(comfy_extras.nodes_model_merging.CheckpointSave):
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Save a video model checkpoint with model, CLIP vision, and VAE components to a safetensors file."
+    SHORT_DESCRIPTION = "Save a video model checkpoint to a file."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -139,6 +149,8 @@ class ConditioningSetAreaPercentageVideo:
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Set a 3D conditioning area for video models using percentage-based spatial and temporal dimensions with position offsets."
+    SHORT_DESCRIPTION = "Set a 3D conditioning area for video models."
 
     def append(self, conditioning, width, height, temporal, x, y, z, strength):
         c = node_helpers.conditioning_set_values(conditioning, {"area": ("percentage", temporal, height, width, z, y, x),

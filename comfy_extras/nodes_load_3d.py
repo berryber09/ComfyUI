@@ -31,6 +31,8 @@ class Load3D(IO.ComfyNode):
             node_id="Load3D",
             display_name="Load 3D & Animation",
             category="3d",
+            description="Loads a 3D model file and renders it to produce an image, mask, normal map, camera info, recording video, and 3D file output.",
+            short_description="Loads and renders a 3D model file.",
             is_experimental=True,
             inputs=[
                 IO.Combo.Input("model_file", options=sorted(files), upload=IO.UploadType.model),
@@ -81,6 +83,8 @@ class Preview3D(IO.ComfyNode):
             search_aliases=["view mesh", "3d viewer"],
             display_name="Preview 3D & Animation",
             category="3d",
+            description="Previews a 3D model or file in the UI with optional camera info and background image overlay.",
+            short_description="Previews a 3D model in the UI.",
             is_experimental=True,
             is_output_node=True,
             inputs=[

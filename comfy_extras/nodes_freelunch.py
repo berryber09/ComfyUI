@@ -30,6 +30,8 @@ class FreeU(IO.ComfyNode):
         return IO.Schema(
             node_id="FreeU",
             category="model_patches/unet",
+            description="Applies FreeU v1 to a UNet model, boosting backbone features and filtering skip connections using Fourier transforms for improved quality.",
+            short_description="Applies FreeU v1 backbone boost and skip filtering.",
             inputs=[
                 IO.Model.Input("model"),
                 IO.Float.Input("b1", default=1.1, min=0.0, max=10.0, step=0.01),
@@ -77,6 +79,8 @@ class FreeU_V2(IO.ComfyNode):
         return IO.Schema(
             node_id="FreeU_V2",
             category="model_patches/unet",
+            description="Applies FreeU v2 to a UNet model with adaptive backbone scaling based on hidden state magnitude and Fourier skip filtering.",
+            short_description="Applies FreeU v2 with adaptive scaling.",
             inputs=[
                 IO.Model.Input("model"),
                 IO.Float.Input("b1", default=1.3, min=0.0, max=10.0, step=0.01),

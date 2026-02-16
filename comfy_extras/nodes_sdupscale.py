@@ -10,6 +10,8 @@ class SD_4XUpscale_Conditioning(io.ComfyNode):
         return io.Schema(
             node_id="SD_4XUpscale_Conditioning",
             category="conditioning/upscale_diffusion",
+            description="Prepares conditioning for the Stable Diffusion 4x upscale model by resizing the input image and attaching it with noise augmentation to positive and negative conditioning.",
+            short_description="Prepare conditioning for SD 4x upscale model.",
             inputs=[
                 io.Image.Input("images"),
                 io.Conditioning.Input("positive"),

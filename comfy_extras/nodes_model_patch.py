@@ -230,6 +230,8 @@ class ModelPatchLoader:
     EXPERIMENTAL = True
 
     CATEGORY = "advanced/loaders"
+    DESCRIPTION = "Load a model patch file such as a controlnet or style reference patch for use with compatible model nodes."
+    SHORT_DESCRIPTION = "Load a model patch file for controlnet or style."
 
     def load_model_patch(self, name):
         model_patch_path = folder_paths.get_full_path_or_raise("model_patches", name)
@@ -456,6 +458,8 @@ class QwenImageDiffsynthControlnet:
     EXPERIMENTAL = True
 
     CATEGORY = "advanced/loaders/qwen"
+    DESCRIPTION = "Apply a DiffSynth-style controlnet patch to a Qwen Image model using a VAE-encoded control image."
+    SHORT_DESCRIPTION = "Apply DiffSynth controlnet to a Qwen Image model."
 
     def diffsynth_controlnet(self, model, model_patch, vae, image=None, strength=1.0, inpaint_image=None, mask=None):
         model_patched = model.clone()
@@ -489,6 +493,8 @@ class ZImageFunControlnet(QwenImageDiffsynthControlnet):
                 "optional": {"image": ("IMAGE",), "inpaint_image": ("IMAGE",), "mask": ("MASK",)}}
 
     CATEGORY = "advanced/loaders/zimage"
+    DESCRIPTION = "Apply a Z-Image Fun controlnet patch to a model with optional control image, inpaint image, and mask inputs."
+    SHORT_DESCRIPTION = "Apply Z-Image Fun controlnet with optional inpainting."
 
 class UsoStyleProjectorPatch:
     def __init__(self, model_patch, encoded_image):
@@ -525,6 +531,8 @@ class USOStyleReference:
     EXPERIMENTAL = True
 
     CATEGORY = "advanced/model_patches/flux"
+    DESCRIPTION = "Apply a USO style reference patch to a Flux model using multi-layer SigLIP features from CLIP vision output."
+    SHORT_DESCRIPTION = "Apply USO style reference to a Flux model."
 
     def apply_patch(self, model, model_patch, clip_vision_output):
         encoded_image = torch.stack((clip_vision_output.all_hidden_states[:, -20], clip_vision_output.all_hidden_states[:, -11], clip_vision_output.penultimate_hidden_states))

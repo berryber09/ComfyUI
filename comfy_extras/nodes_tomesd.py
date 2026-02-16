@@ -152,6 +152,8 @@ class TomePatchModel(io.ComfyNode):
         return io.Schema(
             node_id="TomePatchModel",
             category="model_patches/unet",
+            description="Applies Token Merging (ToMe) to the model, reducing the number of tokens in self-attention by merging similar ones to speed up inference.",
+            short_description="Token Merging (ToMe) for faster inference.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("ratio", default=0.3, min=0.0, max=1.0, step=0.01),

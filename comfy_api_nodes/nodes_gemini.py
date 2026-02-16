@@ -254,6 +254,7 @@ class GeminiNode(IO.ComfyNode):
             description="Generate text responses with Google's Gemini AI model. "
             "You can provide multiple types of inputs (text, images, audio, video) "
             "as context for generating more relevant and meaningful responses.",
+            short_description="Generate text responses with Google's Gemini AI.",
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -480,6 +481,7 @@ class GeminiInputFiles(IO.ComfyNode):
             "The files will be read by the Gemini model when generating a response. "
             "The contents of the text file count toward the token limit. "
             "🛈 TIP: Can be chained together with other Gemini Input File nodes.",
+            short_description="Load and prepare input files for Gemini LLM nodes.",
             inputs=[
                 IO.Combo.Input(
                     "file",
@@ -534,6 +536,7 @@ class GeminiImage(IO.ComfyNode):
             display_name="Nano Banana (Google Gemini Image)",
             category="api node/image/Gemini",
             description="Edit images synchronously via Google API.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -665,6 +668,7 @@ class GeminiImage2(IO.ComfyNode):
             display_name="Nano Banana Pro (Google Gemini Image)",
             category="api node/image/Gemini",
             description="Generate or edit images synchronously via Google Vertex API.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",

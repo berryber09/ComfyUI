@@ -22,6 +22,8 @@ class UpscaleModelLoader(io.ComfyNode):
             node_id="UpscaleModelLoader",
             display_name="Load Upscale Model",
             category="loaders",
+            description="Loads an image upscale model (such as ESRGAN or RealESRGAN) from a file for use with the image upscaling node.",
+            short_description="Load an image upscale model from file.",
             inputs=[
                 io.Combo.Input("model_name", options=folder_paths.get_filename_list("upscale_models")),
             ],
@@ -54,6 +56,8 @@ class ImageUpscaleWithModel(io.ComfyNode):
             display_name="Upscale Image (using Model)",
             category="image/upscaling",
             search_aliases=["upscale", "upscaler", "upsc", "enlarge image", "super resolution", "hires", "superres", "increase resolution"],
+            description="Upscales an image using a loaded upscale model with automatic tiling to manage memory usage at higher resolutions.",
+            short_description="Upscale image using a loaded upscale model.",
             inputs=[
                 io.UpscaleModel.Input("upscale_model"),
                 io.Image.Input("image"),

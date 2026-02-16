@@ -19,6 +19,8 @@ class LTXVLatentUpsampler:
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "upsample_latent"
     CATEGORY = "latent/video"
+    DESCRIPTION = "Upsample an LTXV video latent by a factor of 2 using a dedicated latent upscale model."
+    SHORT_DESCRIPTION = "Upsample an LTXV video latent by 2x."
     EXPERIMENTAL = True
 
     def upsample_latent(

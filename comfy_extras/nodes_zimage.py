@@ -11,6 +11,8 @@ class TextEncodeZImageOmni(io.ComfyNode):
         return io.Schema(
             node_id="TextEncodeZImageOmni",
             category="advanced/conditioning",
+            description="Encodes text and optional reference images into conditioning for ZImage Omni models, supporting both CLIP vision and VAE-based image encoding.",
+            short_description="Encodes text and images for ZImage Omni models.",
             is_experimental=True,
             inputs=[
                 io.Clip.Input("clip"),

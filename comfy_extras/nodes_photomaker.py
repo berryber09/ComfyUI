@@ -124,6 +124,8 @@ class PhotoMakerLoader(io.ComfyNode):
         return io.Schema(
             node_id="PhotoMakerLoader",
             category="_for_testing/photomaker",
+            description="Loads a PhotoMaker model from a safetensors file for identity-preserving image generation.",
+            short_description="Load a PhotoMaker model from file.",
             inputs=[
                 io.Combo.Input("photomaker_model_name", options=folder_paths.get_filename_list("photomaker")),
             ],
@@ -150,6 +152,8 @@ class PhotoMakerEncode(io.ComfyNode):
         return io.Schema(
             node_id="PhotoMakerEncode",
             category="_for_testing/photomaker",
+            description="Encodes a reference image and text prompt using PhotoMaker to produce identity-preserving conditioning for image generation.",
+            short_description="Encode image and text with PhotoMaker.",
             inputs=[
                 io.Photomaker.Input("photomaker"),
                 io.Image.Input("image"),

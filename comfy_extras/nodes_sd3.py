@@ -15,6 +15,7 @@ class TripleCLIPLoader(io.ComfyNode):
             node_id="TripleCLIPLoader",
             category="advanced/loaders",
             description="[Recipes]\n\nsd3: clip-l, clip-g, t5",
+            short_description=None,
             inputs=[
                 io.Combo.Input("clip_name1", options=folder_paths.get_filename_list("text_encoders")),
                 io.Combo.Input("clip_name2", options=folder_paths.get_filename_list("text_encoders")),
@@ -42,6 +43,8 @@ class EmptySD3LatentImage(io.ComfyNode):
         return io.Schema(
             node_id="EmptySD3LatentImage",
             category="latent/sd3",
+            description="Creates an empty SD3 latent image tensor with the specified width, height, and batch size.",
+            short_description="Creates an empty SD3 latent image tensor.",
             inputs=[
                 io.Int.Input("width", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input("height", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=16),
@@ -67,6 +70,8 @@ class CLIPTextEncodeSD3(io.ComfyNode):
             node_id="CLIPTextEncodeSD3",
             search_aliases=["sd3 prompt"],
             category="advanced/conditioning",
+            description="Encodes separate CLIP-L, CLIP-G, and T5-XXL text prompts into SD3 conditioning with optional empty padding.",
+            short_description="Encodes multi-encoder text prompts for SD3.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("clip_l", multiline=True, dynamic_prompts=True),
@@ -114,6 +119,8 @@ class ControlNetApplySD3(io.ComfyNode):
             node_id="ControlNetApplySD3",
             display_name="Apply Controlnet with VAE",
             category="conditioning/controlnet",
+            description="Applies a ControlNet to SD3 conditioning using a VAE-encoded control image with adjustable strength and start/end percentages.",
+            short_description="Applies ControlNet with VAE to SD3 conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -177,6 +184,7 @@ class SkipLayerGuidanceSD3(io.ComfyNode):
             node_id="SkipLayerGuidanceSD3",
             category="advanced/guidance",
             description="Generic version of SkipLayerGuidance node that can be used on every DiT model.",
+            short_description="Skip layer guidance applicable to any DiT model.",
             inputs=[
                 io.Model.Input("model"),
                 io.String.Input("layers", default="7, 8, 9", multiline=False),

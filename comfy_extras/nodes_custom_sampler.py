@@ -18,6 +18,8 @@ class BasicScheduler(io.ComfyNode):
         return io.Schema(
             node_id="BasicScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule from a model using a selected scheduler algorithm, step count, and denoise strength.",
+            short_description="Generate sigma schedule from model and scheduler.",
             inputs=[
                 io.Model.Input("model"),
                 io.Combo.Input("scheduler", options=comfy.samplers.SCHEDULER_NAMES),
@@ -48,6 +50,8 @@ class KarrasScheduler(io.ComfyNode):
         return io.Schema(
             node_id="KarrasScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule using the Karras noise schedule with configurable sigma range and rho parameter.",
+            short_description="Generate sigmas using Karras noise schedule.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=10000),
                 io.Float.Input("sigma_max", default=14.614642, min=0.0, max=5000.0, step=0.01, round=False),
@@ -70,6 +74,8 @@ class ExponentialScheduler(io.ComfyNode):
         return io.Schema(
             node_id="ExponentialScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule using an exponential noise schedule with configurable sigma range.",
+            short_description="Generate sigmas using exponential noise schedule.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=10000),
                 io.Float.Input("sigma_max", default=14.614642, min=0.0, max=5000.0, step=0.01, round=False),
@@ -91,6 +97,8 @@ class PolyexponentialScheduler(io.ComfyNode):
         return io.Schema(
             node_id="PolyexponentialScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule using a polyexponential noise schedule with configurable sigma range and rho parameter.",
+            short_description="Generate sigmas using polyexponential noise schedule.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=10000),
                 io.Float.Input("sigma_max", default=14.614642, min=0.0, max=5000.0, step=0.01, round=False),
@@ -113,6 +121,8 @@ class LaplaceScheduler(io.ComfyNode):
         return io.Schema(
             node_id="LaplaceScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule using a Laplace distribution-based noise schedule with configurable mu and beta parameters.",
+            short_description="Generate sigmas using Laplace distribution schedule.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=10000),
                 io.Float.Input("sigma_max", default=14.614642, min=0.0, max=5000.0, step=0.01, round=False),
@@ -137,6 +147,8 @@ class SDTurboScheduler(io.ComfyNode):
         return io.Schema(
             node_id="SDTurboScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule optimized for SD Turbo models with very few steps and adjustable denoise strength.",
+            short_description="Generate sigma schedule for SD Turbo models.",
             inputs=[
                 io.Model.Input("model"),
                 io.Int.Input("steps", default=1, min=1, max=10),
@@ -161,6 +173,8 @@ class BetaSamplingScheduler(io.ComfyNode):
         return io.Schema(
             node_id="BetaSamplingScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule using a beta distribution with configurable alpha and beta shape parameters.",
+            short_description="Generate sigmas using beta distribution schedule.",
             inputs=[
                 io.Model.Input("model"),
                 io.Int.Input("steps", default=20, min=1, max=10000),
@@ -183,6 +197,8 @@ class VPScheduler(io.ComfyNode):
         return io.Schema(
             node_id="VPScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule using the Variance Preserving (VP) SDE formulation with configurable beta and epsilon parameters.",
+            short_description="Generate sigmas using VP SDE schedule.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=10000),
                 io.Float.Input("beta_d", default=19.9, min=0.0, max=5000.0, step=0.01, round=False), #TODO: fix default values
@@ -205,6 +221,8 @@ class SplitSigmas(io.ComfyNode):
         return io.Schema(
             node_id="SplitSigmas",
             category="sampling/custom_sampling/sigmas",
+            description="Splits a sigma sequence into high and low portions at a specified step index for multi-pass sampling.",
+            short_description="Split sigmas into high and low at a step.",
             inputs=[
                 io.Sigmas.Input("sigmas"),
                 io.Int.Input("step", default=0, min=0, max=10000),
@@ -229,6 +247,8 @@ class SplitSigmasDenoise(io.ComfyNode):
         return io.Schema(
             node_id="SplitSigmasDenoise",
             category="sampling/custom_sampling/sigmas",
+            description="Splits a sigma sequence into high and low portions based on a denoise ratio for multi-pass sampling workflows.",
+            short_description="Split sigmas by denoise ratio.",
             inputs=[
                 io.Sigmas.Input("sigmas"),
                 io.Float.Input("denoise", default=1.0, min=0.0, max=1.0, step=0.01),
@@ -255,6 +275,8 @@ class FlipSigmas(io.ComfyNode):
         return io.Schema(
             node_id="FlipSigmas",
             category="sampling/custom_sampling/sigmas",
+            description="Reverses the order of a sigma sequence, useful for converting between ascending and descending noise schedules.",
+            short_description="Reverse the order of a sigma sequence.",
             inputs=[io.Sigmas.Input("sigmas")],
             outputs=[io.Sigmas.Output()]
         )
@@ -277,6 +299,8 @@ class SetFirstSigma(io.ComfyNode):
         return io.Schema(
             node_id="SetFirstSigma",
             category="sampling/custom_sampling/sigmas",
+            description="Overrides the first sigma value in a sequence with a custom value, allowing manual control of the initial noise level.",
+            short_description="Override the first sigma value in a sequence.",
             inputs=[
                 io.Sigmas.Input("sigmas"),
                 io.Float.Input("sigma", default=136.0, min=0.0, max=20000.0, step=0.001, round=False),
@@ -299,6 +323,8 @@ class ExtendIntermediateSigmas(io.ComfyNode):
             node_id="ExtendIntermediateSigmas",
             search_aliases=["interpolate sigmas"],
             category="sampling/custom_sampling/sigmas",
+            description="Interpolates additional intermediate sigma values between existing steps using selectable spacing within a specified sigma range.",
+            short_description="Interpolate additional sigma steps between existing values.",
             inputs=[
                 io.Sigmas.Input("sigmas"),
                 io.Int.Input("steps", default=2, min=1, max=100),
@@ -352,6 +378,8 @@ class SamplingPercentToSigma(io.ComfyNode):
         return io.Schema(
             node_id="SamplingPercentToSigma",
             category="sampling/custom_sampling/sigmas",
+            description="Converts a sampling percentage (0.0 to 1.0) to the corresponding sigma value using a model's noise schedule.",
+            short_description="Convert sampling percentage to sigma value.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("sampling_percent", default=0.0, min=0.0, max=1.0, step=0.0001),
@@ -380,6 +408,8 @@ class KSamplerSelect(io.ComfyNode):
         return io.Schema(
             node_id="KSamplerSelect",
             category="sampling/custom_sampling/samplers",
+            description="Selects a sampler algorithm by name from the list of available samplers and outputs the sampler object.",
+            short_description="Select a sampler algorithm by name.",
             inputs=[io.Combo.Input("sampler_name", options=comfy.samplers.SAMPLER_NAMES)],
             outputs=[io.Sampler.Output()]
         )
@@ -397,6 +427,8 @@ class SamplerDPMPP_3M_SDE(io.ComfyNode):
         return io.Schema(
             node_id="SamplerDPMPP_3M_SDE",
             category="sampling/custom_sampling/samplers",
+            description="Creates a DPM++ 3M SDE sampler with configurable eta, noise scale, and GPU or CPU noise generation.",
+            short_description="Create a DPM++ 3M SDE sampler.",
             inputs=[
                 io.Float.Input("eta", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
                 io.Float.Input("s_noise", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
@@ -422,6 +454,8 @@ class SamplerDPMPP_2M_SDE(io.ComfyNode):
         return io.Schema(
             node_id="SamplerDPMPP_2M_SDE",
             category="sampling/custom_sampling/samplers",
+            description="Creates a DPM++ 2M SDE sampler with configurable solver type, eta, noise scale, and noise device.",
+            short_description="Create a DPM++ 2M SDE sampler.",
             inputs=[
                 io.Combo.Input("solver_type", options=['midpoint', 'heun']),
                 io.Float.Input("eta", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
@@ -449,6 +483,8 @@ class SamplerDPMPP_SDE(io.ComfyNode):
         return io.Schema(
             node_id="SamplerDPMPP_SDE",
             category="sampling/custom_sampling/samplers",
+            description="Creates a DPM++ SDE sampler with configurable eta, noise scale, r parameter, and noise device.",
+            short_description="Create a DPM++ SDE sampler.",
             inputs=[
                 io.Float.Input("eta", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
                 io.Float.Input("s_noise", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
@@ -475,6 +511,8 @@ class SamplerDPMPP_2S_Ancestral(io.ComfyNode):
         return io.Schema(
             node_id="SamplerDPMPP_2S_Ancestral",
             category="sampling/custom_sampling/samplers",
+            description="Creates a DPM++ 2S Ancestral sampler with configurable eta and noise scale parameters.",
+            short_description="Create a DPM++ 2S Ancestral sampler.",
             inputs=[
                 io.Float.Input("eta", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
                 io.Float.Input("s_noise", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
@@ -495,6 +533,8 @@ class SamplerEulerAncestral(io.ComfyNode):
         return io.Schema(
             node_id="SamplerEulerAncestral",
             category="sampling/custom_sampling/samplers",
+            description="Creates an Euler Ancestral sampler with configurable eta and noise scale for stochastic sampling.",
+            short_description="Create an Euler Ancestral stochastic sampler.",
             inputs=[
                 io.Float.Input("eta", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
                 io.Float.Input("s_noise", default=1.0, min=0.0, max=100.0, step=0.01, round=False),
@@ -516,6 +556,8 @@ class SamplerEulerAncestralCFGPP(io.ComfyNode):
             node_id="SamplerEulerAncestralCFGPP",
             display_name="SamplerEulerAncestralCFG++",
             category="sampling/custom_sampling/samplers",
+            description="Creates an Euler Ancestral CFG++ sampler that applies classifier-free guidance with improved stability.",
+            short_description="Create an Euler Ancestral CFG++ sampler.",
             inputs=[
                 io.Float.Input("eta", default=1.0, min=0.0, max=1.0, step=0.01, round=False),
                 io.Float.Input("s_noise", default=1.0, min=0.0, max=10.0, step=0.01, round=False),
@@ -538,6 +580,8 @@ class SamplerLMS(io.ComfyNode):
         return io.Schema(
             node_id="SamplerLMS",
             category="sampling/custom_sampling/samplers",
+            description="Creates a Linear Multi-Step (LMS) sampler with a configurable order parameter.",
+            short_description="Create a Linear Multi-Step (LMS) sampler.",
             inputs=[io.Int.Input("order", default=4, min=1, max=100)],
             outputs=[io.Sampler.Output()]
         )
@@ -555,6 +599,8 @@ class SamplerDPMAdaptative(io.ComfyNode):
         return io.Schema(
             node_id="SamplerDPMAdaptative",
             category="sampling/custom_sampling/samplers",
+            description="Creates a DPM Adaptive sampler with configurable order, tolerances, PID coefficients, and stochastic noise parameters for adaptive step-size sampling.",
+            short_description="Create a DPM Adaptive step-size sampler.",
             inputs=[
                 io.Int.Input("order", default=3, min=2, max=3),
                 io.Float.Input("rtol", default=0.05, min=0.0, max=100.0, step=0.01, round=False),
@@ -586,6 +632,8 @@ class SamplerER_SDE(io.ComfyNode):
         return io.Schema(
             node_id="SamplerER_SDE",
             category="sampling/custom_sampling/samplers",
+            description="Creates an ER-SDE sampler supporting ER-SDE, reverse-time SDE, and ODE solver types with configurable stochastic strength and staging.",
+            short_description="Create an ER-SDE, reverse-time SDE, or ODE sampler.",
             inputs=[
                 io.Combo.Input("solver_type", options=["ER-SDE", "Reverse-time SDE", "ODE"]),
                 io.Int.Input("max_stage", default=3, min=1, max=3),
@@ -624,6 +672,8 @@ class SamplerSASolver(io.ComfyNode):
             node_id="SamplerSASolver",
             search_aliases=["sde"],
             category="sampling/custom_sampling/samplers",
+            description="Creates an SA-Solver sampler with configurable predictor/corrector orders, SDE region, and PECE mode for high-order diffusion sampling.",
+            short_description="Create an SA-Solver high-order diffusion sampler.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("eta", default=1.0, min=0.0, max=10.0, step=0.01, round=False),
@@ -684,7 +734,8 @@ class SamplerSEEDS2(io.ComfyNode):
                 "- solver_type=phi_2, r=1.0, eta=0.0\n\n"
                 "exp_heun_2_x0_sde\n"
                 "- solver_type=phi_2, r=1.0, eta=1.0, s_noise=1.0"
-            )
+            ),
+            short_description="SEEDS2 sampler with configurable solver and SDE settings.",
         )
 
     @classmethod
@@ -728,6 +779,8 @@ class SamplerCustom(io.ComfyNode):
         return io.Schema(
             node_id="SamplerCustom",
             category="sampling/custom_sampling",
+            description="Runs a complete custom sampling pass by combining a model, sampler, sigmas, and conditioning with optional noise injection.",
+            short_description="Run custom sampling with manual sampler and sigmas.",
             inputs=[
                 io.Model.Input("model"),
                 io.Boolean.Input("add_noise", default=True),
@@ -794,6 +847,8 @@ class BasicGuider(io.ComfyNode):
         return io.Schema(
             node_id="BasicGuider",
             category="sampling/custom_sampling/guiders",
+            description="Creates a basic guider that applies a single conditioning input to guide the diffusion model without classifier-free guidance.",
+            short_description="Create a single-conditioning guider without CFG.",
             inputs=[
                 io.Model.Input("model"),
                 io.Conditioning.Input("conditioning"),
@@ -815,6 +870,8 @@ class CFGGuider(io.ComfyNode):
         return io.Schema(
             node_id="CFGGuider",
             category="sampling/custom_sampling/guiders",
+            description="Creates a classifier-free guidance guider that combines positive and negative conditioning with an adjustable CFG scale.",
+            short_description="Create a CFG guider with positive/negative conditioning.",
             inputs=[
                 io.Model.Input("model"),
                 io.Conditioning.Input("positive"),
@@ -869,6 +926,8 @@ class DualCFGGuider(io.ComfyNode):
             node_id="DualCFGGuider",
             search_aliases=["dual prompt guidance"],
             category="sampling/custom_sampling/guiders",
+            description="Creates a dual classifier-free guidance guider that blends two conditioning inputs against a negative with independent CFG scales and regular or nested styles.",
+            short_description="Create a dual CFG guider with two conditionings.",
             inputs=[
                 io.Model.Input("model"),
                 io.Conditioning.Input("cond1"),
@@ -897,6 +956,8 @@ class DisableNoise(io.ComfyNode):
             node_id="DisableNoise",
             search_aliases=["zero noise"],
             category="sampling/custom_sampling/noise",
+            description="Produces a zero-noise source that disables noise injection, useful for deterministic sampling or img2img without added noise.",
+            short_description="Produce zero noise to disable noise injection.",
             inputs=[],
             outputs=[io.Noise.Output()]
         )
@@ -914,6 +975,8 @@ class RandomNoise(io.ComfyNode):
         return io.Schema(
             node_id="RandomNoise",
             category="sampling/custom_sampling/noise",
+            description="Produces a random noise source from a seed value for use in custom sampling workflows.",
+            short_description="Produce seeded random noise for sampling.",
             inputs=[io.Int.Input("noise_seed", default=0, min=0, max=0xffffffffffffffff, control_after_generate=True)],
             outputs=[io.Noise.Output()]
         )
@@ -931,6 +994,8 @@ class SamplerCustomAdvanced(io.ComfyNode):
         return io.Schema(
             node_id="SamplerCustomAdvanced",
             category="sampling/custom_sampling",
+            description="Runs an advanced custom sampling pass using separate noise, guider, sampler, and sigmas inputs for maximum control over the diffusion process.",
+            short_description="Run advanced custom sampling with separate components.",
             inputs=[
                 io.Noise.Input("noise"),
                 io.Guider.Input("guider"),
@@ -985,6 +1050,8 @@ class AddNoise(io.ComfyNode):
         return io.Schema(
             node_id="AddNoise",
             category="_for_testing/custom_sampling/noise",
+            description="Adds scaled noise to a latent image using the model's noise schedule and sigma values for manual noise injection.",
+            short_description="Add scaled noise to a latent image.",
             is_experimental=True,
             inputs=[
                 io.Model.Input("model"),
@@ -1035,6 +1102,8 @@ class ManualSigmas(io.ComfyNode):
             node_id="ManualSigmas",
             search_aliases=["custom noise schedule", "define sigmas"],
             category="_for_testing/custom_sampling",
+            description="Defines a custom sigma sequence by manually entering comma-separated numeric values as a text string.",
+            short_description="Define custom sigmas from comma-separated values.",
             is_experimental=True,
             inputs=[
                 io.String.Input("sigmas", default="1, 0.5", multiline=False)

@@ -32,6 +32,8 @@ class OptimalStepsScheduler(io.ComfyNode):
         return io.Schema(
             node_id="OptimalStepsScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates an optimized noise schedule with precomputed optimal sigma levels using log-linear interpolation.",
+            short_description="Optimal noise schedule with precomputed sigma levels.",
             inputs=[
                 io.Combo.Input("model_type", options=["FLUX", "Wan", "Chroma"]),
                 io.Int.Input("steps", default=20, min=3, max=1000),

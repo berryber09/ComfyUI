@@ -11,6 +11,8 @@ class TorchCompileModel(io.ComfyNode):
         return io.Schema(
             node_id="TorchCompileModel",
             category="_for_testing",
+            description="Applies torch.compile to the model using a selectable backend for optimized inference performance.",
+            short_description="Optimize model inference with torch.compile.",
             inputs=[
                 io.Model.Input("model"),
                 io.Combo.Input(

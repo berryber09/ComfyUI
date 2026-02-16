@@ -11,6 +11,8 @@ class AudioEncoderLoader(io.ComfyNode):
         return io.Schema(
             node_id="AudioEncoderLoader",
             category="loaders",
+            description="Loads an audio encoder model from a checkpoint file for encoding audio into embeddings.",
+            short_description="Loads an audio encoder model from a checkpoint.",
             inputs=[
                 io.Combo.Input(
                     "audio_encoder_name",
@@ -36,6 +38,8 @@ class AudioEncoderEncode(io.ComfyNode):
         return io.Schema(
             node_id="AudioEncoderEncode",
             category="conditioning",
+            description="Encodes audio into embeddings using a loaded audio encoder model.",
+            short_description=None,
             inputs=[
                 io.AudioEncoder.Input("audio_encoder"),
                 io.Audio.Input("audio"),

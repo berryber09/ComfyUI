@@ -14,6 +14,8 @@ class EmptyChromaRadianceLatentImage(io.ComfyNode):
         return io.Schema(
             node_id="EmptyChromaRadianceLatentImage",
             category="latent/chroma_radiance",
+            description="Creates an empty Chroma Radiance latent image tensor with the specified width, height, and batch size.",
+            short_description="Creates an empty Chroma Radiance latent image.",
             inputs=[
                 io.Int.Input(id="width", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input(id="height", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=16),
@@ -35,6 +37,7 @@ class ChromaRadianceOptions(io.ComfyNode):
             node_id="ChromaRadianceOptions",
             category="model_patches/chroma_radiance",
             description="Allows setting advanced options for the Chroma Radiance model.",
+            short_description=None,
             inputs=[
                 io.Model.Input(id="model"),
                 io.Boolean.Input(

@@ -46,6 +46,8 @@ class SamplerLCMUpscale(io.ComfyNode):
         return io.Schema(
             node_id="SamplerLCMUpscale",
             category="sampling/custom_sampling/samplers",
+            description="Sampler that progressively upscales the latent during LCM sampling steps, combining denoising with gradual resolution increase.",
+            short_description="LCM sampler with progressive latent upscaling.",
             inputs=[
                 io.Float.Input("scale_ratio", default=1.0, min=0.1, max=20.0, step=0.01),
                 io.Int.Input("scale_steps", default=-1, min=-1, max=1000, step=1),
@@ -93,6 +95,8 @@ class SamplerEulerCFGpp(io.ComfyNode):
             node_id="SamplerEulerCFGpp",
             display_name="SamplerEulerCFG++",
             category="_for_testing",  # "sampling/custom_sampling/samplers"
+            description="Euler sampler variant using the CFG++ formulation, which modifies the denoising direction using unconditional predictions for improved guidance.",
+            short_description="Euler sampler using CFG++ guidance formulation.",
             inputs=[
                 io.Combo.Input("version", options=["regular", "alternative"]),
             ],

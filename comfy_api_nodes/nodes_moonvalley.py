@@ -166,6 +166,7 @@ class MoonvalleyImg2VideoNode(IO.ComfyNode):
             display_name="Moonvalley Marey Image to Video",
             category="api node/video/Moonvalley Marey",
             description="Moonvalley Marey Image to Video Node",
+            short_description=None,
             inputs=[
                 IO.Image.Input(
                     "image",
@@ -290,7 +291,8 @@ class MoonvalleyVideo2VideoNode(IO.ComfyNode):
             node_id="MoonvalleyVideo2VideoNode",
             display_name="Moonvalley Marey Video to Video",
             category="api node/video/Moonvalley Marey",
-            description="",
+            description="Transform an input video into a new video using a text prompt and motion or pose control.",
+            short_description="Transform video using text prompt with motion or pose control.",
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -415,7 +417,8 @@ class MoonvalleyTxt2VideoNode(IO.ComfyNode):
             node_id="MoonvalleyTxt2VideoNode",
             display_name="Moonvalley Marey Text to Video",
             category="api node/video/Moonvalley Marey",
-            description="",
+            description="Generate a video from a text prompt using the Moonvalley Marey model.",
+            short_description="Generate video from a text prompt using Moonvalley Marey.",
             inputs=[
                 IO.String.Input(
                     "prompt",

@@ -74,6 +74,7 @@ class HitPawGeneralImageEnhance(IO.ComfyNode):
             category="api node/image/HitPaw",
             description="Upscale low-resolution images to super-resolution, eliminate artifacts and noise. "
             f"Maximum output: {MAX_MP_GENERATIVE} megapixels.",
+            short_description="Upscale images to super-resolution, removing artifacts and noise.",
             inputs=[
                 IO.Combo.Input("model", options=["generative_portrait", "generative"]),
                 IO.Image.Input("image"),
@@ -205,6 +206,7 @@ class HitPawVideoEnhance(IO.ComfyNode):
             category="api node/video/HitPaw",
             description="Upscale low-resolution videos to high resolution, eliminate artifacts and noise. "
             "Prices shown are per second of video.",
+            short_description="Upscale videos to high resolution, removing artifacts and noise.",
             inputs=[
                 IO.DynamicCombo.Input("model", options=model_options),
                 IO.Video.Input("video"),

@@ -175,6 +175,7 @@ class WanTextToImageApi(IO.ComfyNode):
             display_name="Wan Text to Image",
             category="api node/image/Wan",
             description="Generates an image based on a text prompt.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -298,6 +299,7 @@ class WanImageToImageApi(IO.ComfyNode):
             category="api node/image/Wan",
             description="Generates an image from one or two input images and a text prompt. "
             "The output image is currently fixed at 1.6 MP, and its aspect ratio matches the input image(s).",
+            short_description="Generate an image from input images and a text prompt.",
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -424,6 +426,7 @@ class WanTextToVideoApi(IO.ComfyNode):
             display_name="Wan Text to Video",
             category="api node/video/Wan",
             description="Generates a video based on a text prompt.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -603,6 +606,7 @@ class WanImageToVideoApi(IO.ComfyNode):
             display_name="Wan Image to Video",
             category="api node/video/Wan",
             description="Generates a video from the first frame and a text prompt.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -779,6 +783,7 @@ class WanReferenceVideoApi(IO.ComfyNode):
             category="api node/video/Wan",
             description="Use the character and voice from input videos, combined with a prompt, "
             "to generate a new video that maintains character consistency.",
+            short_description="Generate character-consistent video from reference videos and prompt.",
             inputs=[
                 IO.Combo.Input("model", options=["wan2.6-r2v"]),
                 IO.String.Input(

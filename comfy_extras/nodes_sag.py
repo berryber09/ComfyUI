@@ -114,6 +114,8 @@ class SelfAttentionGuidance(io.ComfyNode):
             node_id="SelfAttentionGuidance",
             display_name="Self-Attention Guidance",
             category="_for_testing",
+            description="Applies Self-Attention Guidance (SAG) which uses attention maps to create adversarially blurred images and computes a guidance signal that enhances fine details.",
+            short_description="Self-Attention Guidance for enhanced detail.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("scale", default=0.5, min=-2.0, max=5.0, step=0.01),

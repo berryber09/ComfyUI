@@ -25,6 +25,8 @@ class ImageCrop(IO.ComfyNode):
             search_aliases=["trim"],
             display_name="Image Crop",
             category="image/transform",
+            description="Crops a rectangular region from an image at the specified position and dimensions.",
+            short_description="Crops a region from an image.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
@@ -54,6 +56,8 @@ class RepeatImageBatch(IO.ComfyNode):
             node_id="RepeatImageBatch",
             search_aliases=["duplicate image", "clone image"],
             category="image/batch",
+            description="Repeats an image a specified number of times to create a batch of identical images.",
+            short_description="Repeats an image to create a batch.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Int.Input("amount", default=1, min=1, max=4096),
@@ -76,6 +80,8 @@ class ImageFromBatch(IO.ComfyNode):
             node_id="ImageFromBatch",
             search_aliases=["select image", "pick from batch", "extract image"],
             category="image/batch",
+            description="Selects a contiguous range of images from a batch starting at a given index.",
+            short_description="Selects images from a batch by index.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Int.Input("batch_index", default=0, min=0, max=4095),
@@ -102,6 +108,8 @@ class ImageAddNoise(IO.ComfyNode):
             node_id="ImageAddNoise",
             search_aliases=["film grain"],
             category="image",
+            description="Adds random noise to an image with adjustable strength, useful for film grain effects.",
+            short_description="Adds random noise to an image.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Int.Input(
@@ -134,6 +142,8 @@ class SaveAnimatedWEBP(IO.ComfyNode):
         return IO.Schema(
             node_id="SaveAnimatedWEBP",
             category="image/animation",
+            description="Saves a sequence of images as an animated WEBP file with configurable FPS, quality, and compression.",
+            short_description="Saves images as an animated WEBP file.",
             inputs=[
                 IO.Image.Input("images"),
                 IO.String.Input("filename_prefix", default="ComfyUI"),
@@ -171,6 +181,8 @@ class SaveAnimatedPNG(IO.ComfyNode):
         return IO.Schema(
             node_id="SaveAnimatedPNG",
             category="image/animation",
+            description="Saves a sequence of images as an animated PNG (APNG) file with configurable FPS and compression level.",
+            short_description="Saves images as an animated PNG file.",
             inputs=[
                 IO.Image.Input("images"),
                 IO.String.Input("filename_prefix", default="ComfyUI"),
@@ -207,6 +219,7 @@ class ImageStitch(IO.ComfyNode):
             description="Stitches image2 to image1 in the specified direction.\n"
             "If image2 is not provided, returns image1 unchanged.\n"
             "Optional spacing can be added between images.",
+            short_description="Joins two images together in a specified direction.",
             category="image/transform",
             inputs=[
                 IO.Image.Input("image1"),
@@ -379,6 +392,8 @@ class ResizeAndPadImage(IO.ComfyNode):
             node_id="ResizeAndPadImage",
             search_aliases=["fit to size"],
             category="image/transform",
+            description="Resizes an image to fit within target dimensions while preserving aspect ratio, then pads with a solid color to fill the target size.",
+            short_description="Resizes an image to fit and pads the remainder.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Int.Input("target_width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
@@ -430,6 +445,7 @@ class SaveSVGNode(IO.ComfyNode):
             node_id="SaveSVGNode",
             search_aliases=["export vector", "save vector graphics"],
             description="Save SVG files on disk.",
+            short_description=None,
             category="image/save",
             inputs=[
                 IO.SVG.Input("svg"),
@@ -502,7 +518,7 @@ class GetImageSize(IO.ComfyNode):
             node_id="GetImageSize",
             search_aliases=["dimensions", "resolution", "image info"],
             display_name="Get Image Size",
-            description="Returns width and height of the image, and passes it through unchanged.",
+            description="Returns the width, height, and batch size of an image.",
             category="image",
             inputs=[
                 IO.Image.Input("image"),
@@ -537,6 +553,8 @@ class ImageRotate(IO.ComfyNode):
             node_id="ImageRotate",
             search_aliases=["turn", "flip orientation"],
             category="image/transform",
+            description="Rotates an image by 90, 180, or 270 degrees.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.Combo.Input("rotation", options=["none", "90 degrees", "180 degrees", "270 degrees"]),
@@ -567,6 +585,8 @@ class ImageFlip(IO.ComfyNode):
             node_id="ImageFlip",
             search_aliases=["mirror", "reflect"],
             category="image/transform",
+            description="Flips an image horizontally or vertically.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.Combo.Input("flip_method", options=["x-axis: vertically", "y-axis: horizontally"]),
@@ -593,6 +613,8 @@ class ImageScaleToMaxDimension(IO.ComfyNode):
         return IO.Schema(
             node_id="ImageScaleToMaxDimension",
             category="image/upscaling",
+            description="Scales an image so its largest dimension matches the specified size while preserving aspect ratio.",
+            short_description="Scales image to a target max dimension size.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Combo.Input(

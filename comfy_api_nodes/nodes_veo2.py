@@ -46,6 +46,7 @@ class VeoVideoGenerationNode(IO.ComfyNode):
             display_name="Google Veo 2 Video Generation",
             category="api node/video/Veo",
             description="Generates videos from text prompts using Google's Veo 2 API",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -264,6 +265,7 @@ class Veo3VideoGenerationNode(VeoVideoGenerationNode):
             display_name="Google Veo 3 Video Generation",
             category="api node/video/Veo",
             description="Generates videos from text prompts using Google's Veo 3 API",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -377,6 +379,7 @@ class Veo3FirstLastFrameNode(IO.ComfyNode):
             display_name="Google Veo 3 First-Last-Frame to Video",
             category="api node/video/Veo",
             description="Generate video using prompt and first and last frames.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",

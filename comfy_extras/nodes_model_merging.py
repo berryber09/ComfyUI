@@ -22,6 +22,8 @@ class ModelMergeSimple:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Merge two diffusion models using a simple ratio to blend all weights uniformly."
+    SHORT_DESCRIPTION = "Merge two models with a uniform blend ratio."
 
     def merge(self, model1, model2, ratio):
         m = model1.clone()
@@ -41,6 +43,8 @@ class ModelSubtract:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Subtract one diffusion model's weights from another with an adjustable multiplier for extracting differences."
+    SHORT_DESCRIPTION = "Subtract model weights with adjustable multiplier."
 
     def merge(self, model1, model2, multiplier):
         m = model1.clone()
@@ -59,6 +63,8 @@ class ModelAdd:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Add the weights of one diffusion model on top of another."
+    SHORT_DESCRIPTION = None
 
     def merge(self, model1, model2):
         m = model1.clone()
@@ -79,6 +85,8 @@ class CLIPMergeSimple:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Merge two CLIP text encoder models using a simple ratio to blend all weights uniformly."
+    SHORT_DESCRIPTION = "Merge two CLIP models with a uniform blend ratio."
 
     def merge(self, clip1, clip2, ratio):
         m = clip1.clone()
@@ -102,6 +110,8 @@ class CLIPSubtract:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Subtract one CLIP model's weights from another with an adjustable multiplier for extracting differences."
+    SHORT_DESCRIPTION = "Subtract CLIP weights with adjustable multiplier."
 
     def merge(self, clip1, clip2, multiplier):
         m = clip1.clone()
@@ -124,6 +134,8 @@ class CLIPAdd:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Add the weights of one CLIP model on top of another."
+    SHORT_DESCRIPTION = None
 
     def merge(self, clip1, clip2):
         m = clip1.clone()
@@ -148,6 +160,8 @@ class ModelMergeBlocks:
     FUNCTION = "merge"
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Merge two diffusion models with separate blend ratios for input, middle, and output blocks."
+    SHORT_DESCRIPTION = "Merge two models with per-block blend ratios."
 
     def merge(self, model1, model2, **kwargs):
         m = model1.clone()
@@ -228,6 +242,8 @@ def save_checkpoint(model, clip=None, vae=None, clip_vision=None, filename_prefi
 
 class CheckpointSave:
     SEARCH_ALIASES = ["save model", "export checkpoint", "merge save"]
+    DESCRIPTION = "Saves a model, CLIP, and VAE as a combined checkpoint file in safetensors format with optional workflow metadata."
+    SHORT_DESCRIPTION = "Saves model, CLIP, and VAE as a checkpoint."
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
 
@@ -262,6 +278,8 @@ class CLIPSave:
     OUTPUT_NODE = True
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Save a CLIP text encoder model to safetensors files, splitting by model component."
+    SHORT_DESCRIPTION = "Save a CLIP model to safetensors files."
 
     def save(self, clip, filename_prefix, prompt=None, extra_pnginfo=None):
         prompt_info = ""
@@ -319,6 +337,8 @@ class VAESave:
     OUTPUT_NODE = True
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Save a VAE model to a safetensors file."
+    SHORT_DESCRIPTION = None
 
     def save(self, vae, filename_prefix, prompt=None, extra_pnginfo=None):
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir)
@@ -354,6 +374,8 @@ class ModelSave:
     OUTPUT_NODE = True
 
     CATEGORY = "advanced/model_merging"
+    DESCRIPTION = "Save a diffusion model to a safetensors file."
+    SHORT_DESCRIPTION = None
 
     def save(self, model, filename_prefix, prompt=None, extra_pnginfo=None):
         save_checkpoint(model, filename_prefix=filename_prefix, output_dir=self.output_dir, prompt=prompt, extra_pnginfo=extra_pnginfo)

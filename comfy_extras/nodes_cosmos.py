@@ -14,6 +14,7 @@ class EmptyCosmosLatentVideo(io.ComfyNode):
         return io.Schema(
             node_id="EmptyCosmosLatentVideo",
             category="latent/video",
+            description="Creates an empty latent tensor sized for Cosmos video generation.",
             inputs=[
                 io.Int.Input("width", default=1280, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input("height", default=704, min=16, max=nodes.MAX_RESOLUTION, step=16),
@@ -46,6 +47,8 @@ class CosmosImageToVideoLatent(io.ComfyNode):
         return io.Schema(
             node_id="CosmosImageToVideoLatent",
             category="conditioning/inpaint",
+            description="Creates an inpainting video latent for Cosmos by encoding optional start and end images with a noise mask.",
+            short_description="Cosmos inpainting video latent from start/end images.",
             inputs=[
                 io.Vae.Input("vae"),
                 io.Int.Input("width", default=1280, min=16, max=nodes.MAX_RESOLUTION, step=16),
@@ -89,6 +92,8 @@ class CosmosPredict2ImageToVideoLatent(io.ComfyNode):
         return io.Schema(
             node_id="CosmosPredict2ImageToVideoLatent",
             category="conditioning/inpaint",
+            description="Creates an inpainting video latent for Cosmos Predict2 by encoding optional start and end images with Wan latent format processing.",
+            short_description="Cosmos Predict2 inpainting video latent from images.",
             inputs=[
                 io.Vae.Input("vae"),
                 io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16),

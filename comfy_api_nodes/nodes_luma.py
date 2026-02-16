@@ -46,6 +46,7 @@ class LumaReferenceNode(IO.ComfyNode):
             display_name="Luma Reference",
             category="api node/image/Luma",
             description="Holds an image and weight for use with Luma Generate Image node.",
+            short_description="Image and weight input for Luma generation.",
             inputs=[
                 IO.Image.Input(
                     "image",
@@ -85,6 +86,7 @@ class LumaConceptsNode(IO.ComfyNode):
             display_name="Luma Concepts",
             category="api node/video/Luma",
             description="Camera Concepts for use with Luma Text to Video and Luma Image to Video nodes.",
+            short_description="Camera concepts for Luma video generation nodes.",
             inputs=[
                 IO.Combo.Input(
                     "concept1",
@@ -134,6 +136,7 @@ class LumaImageGenerationNode(IO.ComfyNode):
             display_name="Luma Text to Image",
             category="api node/image/Luma",
             description="Generates images synchronously based on prompt and aspect ratio.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -278,6 +281,7 @@ class LumaImageModifyNode(IO.ComfyNode):
             display_name="Luma Image to Image",
             category="api node/image/Luma",
             description="Modifies images synchronously based on prompt and aspect ratio.",
+            short_description=None,
             inputs=[
                 IO.Image.Input(
                     "image",
@@ -371,6 +375,7 @@ class LumaTextToVideoGenerationNode(IO.ComfyNode):
             display_name="Luma Text to Video",
             category="api node/video/Luma",
             description="Generates videos synchronously based on prompt and output_size.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -472,6 +477,7 @@ class LumaImageToVideoGenerationNode(IO.ComfyNode):
             display_name="Luma Image to Video",
             category="api node/video/Luma",
             description="Generates videos synchronously based on prompt, input images, and output_size.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",

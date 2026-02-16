@@ -92,6 +92,8 @@ class LoraSave(io.ComfyNode):
             search_aliases=["export lora"],
             display_name="Extract and Save Lora",
             category="_for_testing",
+            description="Extracts LoRA weights from a model or text encoder diff using SVD decomposition and saves them as a safetensors file, supporting standard and full diff modes.",
+            short_description="Extract and save LoRA from model diff.",
             inputs=[
                 io.String.Input("filename_prefix", default="loras/ComfyUI_extracted_lora"),
                 io.Int.Input("rank", default=8, min=1, max=4096, step=1),

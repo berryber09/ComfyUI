@@ -10,6 +10,7 @@ class ReferenceLatent(io.ComfyNode):
             node_id="ReferenceLatent",
             category="advanced/conditioning/edit_models",
             description="This node sets the guiding latent for an edit model. If the model supports it you can chain multiple to set multiple reference images.",
+            short_description="Sets guiding latent for edit models with chaining support.",
             inputs=[
                 io.Conditioning.Input("conditioning"),
                 io.Latent.Input("latent", optional=True),

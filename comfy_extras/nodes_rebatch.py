@@ -11,6 +11,8 @@ class LatentRebatch(io.ComfyNode):
             node_id="RebatchLatents",
             display_name="Rebatch Latents",
             category="latent/batch",
+            description="Splits and recombines latent batches into a new batch size, handling noise masks and batch indices across differently sized inputs.",
+            short_description="Rebatch latents to a specified batch size.",
             is_input_list=True,
             inputs=[
                 io.Latent.Input("latents"),
@@ -114,6 +116,7 @@ class ImageRebatch(io.ComfyNode):
             node_id="RebatchImages",
             display_name="Rebatch Images",
             category="image/batch",
+            description="Splits and recombines image batches into a new specified batch size.",
             is_input_list=True,
             inputs=[
                 io.Image.Input("images"),

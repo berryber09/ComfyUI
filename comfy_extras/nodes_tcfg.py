@@ -35,6 +35,7 @@ class TCFG(io.ComfyNode):
             display_name="Tangential Damping CFG",
             category="advanced/guidance",
             description="TCFG – Tangential Damping CFG (2503.18137)\n\nRefine the uncond (negative) to align with the cond (positive) for improving quality.",
+            short_description="Aligns negative conditioning with positive for improved quality.",
             inputs=[
                 io.Model.Input("model"),
             ],

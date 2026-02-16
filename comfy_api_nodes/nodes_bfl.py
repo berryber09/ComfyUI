@@ -44,6 +44,7 @@ class FluxProUltraImageNode(IO.ComfyNode):
             display_name="Flux 1.1 [pro] Ultra Image",
             category="api node/image/BFL",
             description="Generates images using Flux Pro 1.1 Ultra via api based on prompt and resolution.",
+            short_description="Generate images with Flux Pro 1.1 Ultra API.",
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -154,13 +155,17 @@ class FluxProUltraImageNode(IO.ComfyNode):
 
 class FluxKontextProImageNode(IO.ComfyNode):
 
+    DESCRIPTION = "Edits images using Flux.1 Kontext [pro] via api based on prompt and aspect ratio."
+    SHORT_DESCRIPTION = "Edit images with Flux.1 Kontext [pro] API."
+
     @classmethod
     def define_schema(cls) -> IO.Schema:
         return IO.Schema(
             node_id=cls.NODE_ID,
             display_name=cls.DISPLAY_NAME,
             category="api node/image/BFL",
-            description="Edits images using Flux.1 Kontext [pro] via api based on prompt and aspect ratio.",
+            description=cls.DESCRIPTION,
+            short_description=cls.SHORT_DESCRIPTION,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -268,6 +273,7 @@ class FluxKontextProImageNode(IO.ComfyNode):
 class FluxKontextMaxImageNode(FluxKontextProImageNode):
 
     DESCRIPTION = "Edits images using Flux.1 Kontext [max] via api based on prompt and aspect ratio."
+    SHORT_DESCRIPTION = "Edit images with Flux.1 Kontext [max] API."
     BFL_PATH = "/proxy/bfl/flux-kontext-max/generate"
     NODE_ID = "FluxKontextMaxImageNode"
     DISPLAY_NAME = "Flux.1 Kontext [max] Image"
@@ -282,6 +288,7 @@ class FluxProExpandNode(IO.ComfyNode):
             display_name="Flux.1 Expand Image",
             category="api node/image/BFL",
             description="Outpaints image based on prompt.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.String.Input(
@@ -418,6 +425,7 @@ class FluxProFillNode(IO.ComfyNode):
             display_name="Flux.1 Fill Image",
             category="api node/image/BFL",
             description="Inpaints image based on mask and prompt.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.Mask.Input("mask"),
@@ -543,6 +551,7 @@ class Flux2ProImageNode(IO.ComfyNode):
             display_name=cls.DISPLAY_NAME,
             category="api node/image/BFL",
             description="Generates images synchronously based on prompt and resolution.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",

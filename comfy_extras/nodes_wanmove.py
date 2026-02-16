@@ -248,6 +248,8 @@ class WanMoveVisualizeTracks(io.ComfyNode):
         return io.Schema(
             node_id="WanMoveVisualizeTracks",
             category="conditioning/video_models",
+            description="Renders motion track paths and points as a visual overlay on video frames for preview and debugging.",
+            short_description="Visualize motion tracks as overlay on video frames.",
             inputs=[
                 io.Image.Input("images"),
                 io.Tracks.Input("tracks", optional=True),
@@ -284,6 +286,8 @@ class WanMoveTracksFromCoords(io.ComfyNode):
         return io.Schema(
             node_id="WanMoveTracksFromCoords",
             category="conditioning/video_models",
+            description="Converts JSON coordinate data and optional mask into a structured tracks object for Wan Move video generation.",
+            short_description="Convert JSON coordinates to Wan Move track data.",
             inputs=[
                 io.String.Input("track_coords", force_input=True, default="[]", optional=True),
                 io.Mask.Input("track_mask", optional=True),
@@ -326,6 +330,8 @@ class GenerateTracks(io.ComfyNode):
             node_id="GenerateTracks",
             search_aliases=["motion paths", "camera movement", "trajectory"],
             category="conditioning/video_models",
+            description="Generates motion track paths between start and end points with configurable interpolation, Bezier curves, and multi-track spread.",
+            short_description="Generate motion tracks between two points with interpolation.",
             inputs=[
                 io.Int.Input("width", default=832, min=16, max=4096, step=16),
                 io.Int.Input("height", default=480, min=16, max=4096, step=16),
@@ -435,6 +441,8 @@ class WanMoveConcatTrack(io.ComfyNode):
         return io.Schema(
             node_id="WanMoveConcatTrack",
             category="conditioning/video_models",
+            description="Concatenates two sets of motion tracks into a single combined tracks object along the track dimension.",
+            short_description="Concatenate two sets of motion tracks together.",
             inputs=[
                 io.Tracks.Input("tracks_1"),
                 io.Tracks.Input("tracks_2", optional=True),
@@ -464,6 +472,8 @@ class WanMoveTrackToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanMoveTrackToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan Move track-guided video generation by encoding a start image and applying trajectory-based latent feature replacement.",
+            short_description="Wan Move track-guided video conditioning from start image.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),

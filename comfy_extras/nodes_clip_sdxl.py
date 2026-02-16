@@ -10,6 +10,8 @@ class CLIPTextEncodeSDXLRefiner(io.ComfyNode):
         return io.Schema(
             node_id="CLIPTextEncodeSDXLRefiner",
             category="advanced/conditioning",
+            description="Encodes text for SDXL refiner models with aesthetic score and resolution conditioning parameters.",
+            short_description="Encodes text for SDXL refiner models.",
             inputs=[
                 io.Float.Input("ascore", default=6.0, min=0.0, max=1000.0, step=0.01),
                 io.Int.Input("width", default=1024, min=0, max=nodes.MAX_RESOLUTION),
@@ -31,6 +33,8 @@ class CLIPTextEncodeSDXL(io.ComfyNode):
         return io.Schema(
             node_id="CLIPTextEncodeSDXL",
             category="advanced/conditioning",
+            description="Encodes separate G and L text prompts for SDXL models with resolution and crop conditioning parameters.",
+            short_description="Encodes dual text prompts for SDXL models.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.Int.Input("width", default=1024, min=0, max=nodes.MAX_RESOLUTION),

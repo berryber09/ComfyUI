@@ -64,6 +64,7 @@ class StabilityStableImageUltraNode(IO.ComfyNode):
             display_name="Stability AI Stable Image Ultra",
             category="api node/image/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -197,6 +198,7 @@ class StabilityStableImageSD_3_5Node(IO.ComfyNode):
             display_name="Stability AI Stable Diffusion 3.5 Image",
             category="api node/image/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -352,6 +354,7 @@ class StabilityUpscaleConservativeNode(IO.ComfyNode):
             display_name="Stability AI Upscale Conservative",
             category="api node/image/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.String.Input(
@@ -454,6 +457,7 @@ class StabilityUpscaleCreativeNode(IO.ComfyNode):
             display_name="Stability AI Upscale Creative",
             category="api node/image/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.String.Input(
@@ -573,6 +577,7 @@ class StabilityUpscaleFastNode(IO.ComfyNode):
             display_name="Stability AI Upscale Fast",
             category="api node/image/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description="Quickly upscale an image to 4x its original size.",
             inputs=[
                 IO.Image.Input("image"),
             ],
@@ -625,6 +630,7 @@ class StabilityTextToAudio(IO.ComfyNode):
             display_name="Stability AI Text To Audio",
             category="api node/audio/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -701,6 +707,7 @@ class StabilityAudioToAudio(IO.ComfyNode):
             display_name="Stability AI Audio To Audio",
             category="api node/audio/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -794,6 +801,7 @@ class StabilityAudioInpaint(IO.ComfyNode):
             display_name="Stability AI Audio Inpaint",
             category="api node/audio/Stability AI",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",

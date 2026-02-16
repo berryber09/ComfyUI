@@ -16,6 +16,8 @@ class PreviewAny():
     OUTPUT_NODE = True
 
     CATEGORY = "utils"
+    DESCRIPTION = "Preview any input value as text, converting it to a JSON or string representation for display."
+    SHORT_DESCRIPTION = "Preview any input value as text."
     SEARCH_ALIASES = ["show output", "inspect", "debug", "print value", "show text"]
 
     def main(self, source=None):

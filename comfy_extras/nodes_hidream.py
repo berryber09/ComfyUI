@@ -13,6 +13,7 @@ class QuadrupleCLIPLoader(io.ComfyNode):
             node_id="QuadrupleCLIPLoader",
             category="advanced/loaders",
             description="[Recipes]\n\nhidream: long clip-l, long clip-g, t5xxl, llama_8b_3.1_instruct",
+            short_description=None,
             inputs=[
                 io.Combo.Input("clip_name1", options=folder_paths.get_filename_list("text_encoders")),
                 io.Combo.Input("clip_name2", options=folder_paths.get_filename_list("text_encoders")),
@@ -40,6 +41,8 @@ class CLIPTextEncodeHiDream(io.ComfyNode):
             node_id="CLIPTextEncodeHiDream",
             search_aliases=["hidream prompt"],
             category="advanced/conditioning",
+            description="Encodes separate CLIP-L, CLIP-G, T5-XXL, and Llama text prompts into HiDream conditioning.",
+            short_description="Encodes multi-encoder text prompts for HiDream.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("clip_l", multiline=True, dynamic_prompts=True),

@@ -10,6 +10,7 @@ class ColorToRGBInt(io.ComfyNode):
             display_name="Color to RGB Int",
             category="utils",
             description="Convert a color to a RGB integer value.",
+            short_description=None,
             inputs=[
                 io.Color.Input("color"),
             ],

@@ -30,6 +30,8 @@ class AlignYourStepsScheduler(io.ComfyNode):
             node_id="AlignYourStepsScheduler",
             search_aliases=["AYS scheduler"],
             category="sampling/custom_sampling/schedulers",
+            description="Generates an optimized noise schedule using the Align Your Steps method with log-linear interpolation.",
+            short_description="Optimized noise schedule using Align Your Steps.",
             inputs=[
                 io.Combo.Input("model_type", options=["SD1", "SDXL", "SVD"]),
                 io.Int.Input("steps", default=10, min=1, max=10000),

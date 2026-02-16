@@ -936,6 +936,8 @@ class TrainLoraNode(io.ComfyNode):
             node_id="TrainLoraNode",
             display_name="Train LoRA",
             category="training",
+            description="Trains a LoRA adapter on a diffusion model using provided latents and conditioning, with configurable optimizer, loss function, rank, and training parameters including bucket and bypass modes.",
+            short_description="Train a LoRA adapter on a diffusion model.",
             is_experimental=True,
             is_input_list=True,  # All inputs become lists
             inputs=[
@@ -1270,6 +1272,8 @@ class LoraModelLoader(io.ComfyNode):
             node_id="LoraModelLoader",
             display_name="Load LoRA Model",
             category="loaders",
+            description="Applies a trained LoRA model to a diffusion model with configurable strength for inference.",
+            short_description="Apply trained LoRA weights to a model.",
             is_experimental=True,
             inputs=[
                 io.Model.Input(
@@ -1322,6 +1326,8 @@ class SaveLoRA(io.ComfyNode):
             search_aliases=["export lora"],
             display_name="Save LoRA Weights",
             category="loaders",
+            description="Saves trained LoRA weights to a safetensors file with an optional step count in the filename.",
+            short_description="Save LoRA weights to safetensors file.",
             is_experimental=True,
             is_output_node=True,
             inputs=[
@@ -1366,6 +1372,8 @@ class LossGraphNode(io.ComfyNode):
             search_aliases=["training chart", "training visualization", "plot loss"],
             display_name="Plot Loss Graph",
             category="training",
+            description="Generates and displays a line graph visualization of training loss values over steps from a loss map produced by the Train LoRA node.",
+            short_description="Visualize training loss as a line graph.",
             is_experimental=True,
             is_output_node=True,
             inputs=[

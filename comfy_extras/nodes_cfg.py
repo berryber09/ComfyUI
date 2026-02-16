@@ -27,6 +27,8 @@ class CFGZeroStar(io.ComfyNode):
         return io.Schema(
             node_id="CFGZeroStar",
             category="advanced/guidance",
+            description="Applies CFG-Zero* post-CFG correction that computes an optimal scaling factor between conditional and unconditional predictions to reduce CFG artifacts.",
+            short_description="CFG-Zero* guidance correction to reduce artifacts.",
             inputs=[
                 io.Model.Input("model"),
             ],
@@ -54,6 +56,8 @@ class CFGNorm(io.ComfyNode):
         return io.Schema(
             node_id="CFGNorm",
             category="advanced/guidance",
+            description="Constrains the CFG-guided prediction norm to not exceed the conditional prediction norm, helping to prevent oversaturation at high CFG scales.",
+            short_description="Constrain CFG output norm to conditional prediction norm.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("strength", default=1.0, min=0.0, max=100.0, step=0.01),

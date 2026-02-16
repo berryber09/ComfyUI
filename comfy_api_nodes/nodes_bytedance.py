@@ -60,6 +60,7 @@ class ByteDanceImageNode(IO.ComfyNode):
             display_name="ByteDance Image",
             category="api node/image/ByteDance",
             description="Generate images using ByteDance models via api based on prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["seedream-3-0-t2i-250415"]),
                 IO.String.Input(
@@ -182,6 +183,7 @@ class ByteDanceSeedreamNode(IO.ComfyNode):
             display_name="ByteDance Seedream 4.5",
             category="api node/image/ByteDance",
             description="Unified text-to-image generation and precise single-sentence editing at up to 4K resolution.",
+            short_description="Text-to-image generation and editing up to 4K.",
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -380,6 +382,7 @@ class ByteDanceTextToVideoNode(IO.ComfyNode):
             display_name="ByteDance Text to Video",
             category="api node/video/ByteDance",
             description="Generate video using ByteDance models via api based on prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -505,6 +508,7 @@ class ByteDanceImageToVideoNode(IO.ComfyNode):
             display_name="ByteDance Image to Video",
             category="api node/video/ByteDance",
             description="Generate video using ByteDance models via api based on image and prompt",
+            short_description="Generate video from image and prompt via ByteDance API.",
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -639,6 +643,7 @@ class ByteDanceFirstLastFrameNode(IO.ComfyNode):
             display_name="ByteDance First-Last-Frame to Video",
             category="api node/video/ByteDance",
             description="Generate video using prompt and first and last frames.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",
@@ -784,6 +789,7 @@ class ByteDanceImageReferenceNode(IO.ComfyNode):
             display_name="ByteDance Reference Images to Video",
             category="api node/video/ByteDance",
             description="Generate video using prompt and reference images.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",

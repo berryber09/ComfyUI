@@ -15,6 +15,8 @@ class CLIPTextEncodeHunyuanDiT(io.ComfyNode):
         return io.Schema(
             node_id="CLIPTextEncodeHunyuanDiT",
             category="advanced/conditioning",
+            description="Encodes text using both BERT and mT5-XL tokenizers for Hunyuan DiT conditioning.",
+            short_description="Dual-tokenizer text encoding for Hunyuan DiT.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("bert", multiline=True, dynamic_prompts=True),
@@ -42,6 +44,8 @@ class EmptyHunyuanLatentVideo(io.ComfyNode):
             node_id="EmptyHunyuanLatentVideo",
             display_name="Empty HunyuanVideo 1.0 Latent",
             category="latent/video",
+            description="Creates an empty latent tensor sized for HunyuanVideo 1.0 video generation.",
+            short_description="Empty latent for HunyuanVideo 1.0 generation.",
             inputs=[
                 io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16),
@@ -67,6 +71,8 @@ class EmptyHunyuanVideo15Latent(EmptyHunyuanLatentVideo):
         schema = super().define_schema()
         schema.node_id = "EmptyHunyuanVideo15Latent"
         schema.display_name = "Empty HunyuanVideo 1.5 Latent"
+        schema.description = "Creates an empty latent tensor sized for HunyuanVideo 1.5 video generation with 16x spatial downscale."
+        schema.short_description = "Empty latent for HunyuanVideo 1.5 generation."
         return schema
 
     @classmethod
@@ -82,6 +88,8 @@ class HunyuanVideo15ImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="HunyuanVideo15ImageToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning and latent for HunyuanVideo 1.5 image-to-video generation with start image and CLIP vision support.",
+            short_description="HunyuanVideo 1.5 image-to-video conditioning setup.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -131,6 +139,9 @@ class HunyuanVideo15SuperResolution(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="HunyuanVideo15SuperResolution",
+            category="conditioning/video_models",
+            description="Sets up conditioning for HunyuanVideo 1.5 super-resolution upscaling of a latent with noise augmentation and optional image guidance.",
+            short_description="HunyuanVideo 1.5 super-resolution latent conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -177,6 +188,8 @@ class LatentUpscaleModelLoader(io.ComfyNode):
             node_id="LatentUpscaleModelLoader",
             display_name="Load Latent Upscale Model",
             category="loaders",
+            description="Loads a latent upscale model from disk, supporting HunyuanVideo 720p, 1080p, and other latent upsampler architectures.",
+            short_description="Load a latent upscale model from file.",
             inputs=[
                 io.Combo.Input("model_name", options=folder_paths.get_filename_list("latent_upscale_models")),
             ],
@@ -226,6 +239,8 @@ class HunyuanVideo15LatentUpscaleWithModel(io.ComfyNode):
             node_id="HunyuanVideo15LatentUpscaleWithModel",
             display_name="Hunyuan Video 15 Latent Upscale With Model",
             category="latent",
+            description="Upscales a video latent to a target resolution using a loaded latent upscale model and configurable upscale method.",
+            short_description="Upscale video latent using a latent upscale model.",
             inputs=[
                 io.LatentUpscaleModel.Input("model"),
                 io.Latent.Input("samples"),
@@ -275,6 +290,8 @@ class TextEncodeHunyuanVideo_ImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="TextEncodeHunyuanVideo_ImageToVideo",
             category="advanced/conditioning",
+            description="Encodes text with CLIP vision image embeddings for HunyuanVideo image-to-video conditioning using an interleaved template.",
+            short_description="Text and image encoding for HunyuanVideo image-to-video.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.ClipVisionOutput.Input("clip_vision_output"),
@@ -306,6 +323,8 @@ class HunyuanImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="HunyuanImageToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning and latent for Hunyuan image-to-video generation with selectable guidance type.",
+            short_description="Hunyuan image-to-video conditioning with guidance options.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Vae.Input("vae"),
@@ -357,6 +376,8 @@ class EmptyHunyuanImageLatent(io.ComfyNode):
         return io.Schema(
             node_id="EmptyHunyuanImageLatent",
             category="latent",
+            description="Creates an empty latent tensor sized for Hunyuan image generation.",
+            short_description="Empty latent for Hunyuan image generation.",
             inputs=[
                 io.Int.Input("width", default=2048, min=64, max=nodes.MAX_RESOLUTION, step=32),
                 io.Int.Input("height", default=2048, min=64, max=nodes.MAX_RESOLUTION, step=32),
@@ -380,6 +401,9 @@ class HunyuanRefinerLatent(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="HunyuanRefinerLatent",
+            category="conditioning/video_models",
+            description="Prepares conditioning for a Hunyuan refiner pass by concatenating the input latent with noise augmentation settings.",
+            short_description="Hunyuan refiner conditioning with noise augmentation.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),

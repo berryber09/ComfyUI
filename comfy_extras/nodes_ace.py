@@ -12,6 +12,8 @@ class TextEncodeAceStepAudio(io.ComfyNode):
         return io.Schema(
             node_id="TextEncodeAceStepAudio",
             category="conditioning",
+            description="Encodes tags and lyrics into conditioning for ACE-Step 1.0 audio generation with adjustable lyrics strength.",
+            short_description="Encodes tags and lyrics for ACE-Step 1.0 audio.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("tags", multiline=True, dynamic_prompts=True),
@@ -34,6 +36,8 @@ class TextEncodeAceStepAudio15(io.ComfyNode):
         return io.Schema(
             node_id="TextEncodeAceStepAudio1.5",
             category="conditioning",
+            description="Encodes tags, lyrics, and music parameters like BPM, key, and language into conditioning for ACE-Step 1.5 audio generation.",
+            short_description="Encodes text and music parameters for ACE-Step 1.5.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("tags", multiline=True, dynamic_prompts=True),
@@ -68,6 +72,8 @@ class EmptyAceStepLatentAudio(io.ComfyNode):
             node_id="EmptyAceStepLatentAudio",
             display_name="Empty Ace Step 1.0 Latent Audio",
             category="latent/audio",
+            description="Creates an empty latent audio tensor for ACE-Step 1.0 with a specified duration and batch size.",
+            short_description="Creates an empty ACE-Step 1.0 audio latent.",
             inputs=[
                 io.Float.Input("seconds", default=120.0, min=1.0, max=1000.0, step=0.1),
                 io.Int.Input(
@@ -91,6 +97,8 @@ class EmptyAceStep15LatentAudio(io.ComfyNode):
             node_id="EmptyAceStep1.5LatentAudio",
             display_name="Empty Ace Step 1.5 Latent Audio",
             category="latent/audio",
+            description="Creates an empty latent audio tensor for ACE-Step 1.5 with a specified duration and batch size.",
+            short_description="Creates an empty ACE-Step 1.5 audio latent.",
             inputs=[
                 io.Float.Input("seconds", default=120.0, min=1.0, max=1000.0, step=0.01),
                 io.Int.Input(
@@ -115,6 +123,7 @@ class ReferenceAudio(io.ComfyNode):
             category="advanced/conditioning/audio",
             is_experimental=True,
             description="This node sets the reference audio for ace step 1.5",
+            short_description=None,
             inputs=[
                 io.Conditioning.Input("conditioning"),
                 io.Latent.Input("latent", optional=True),

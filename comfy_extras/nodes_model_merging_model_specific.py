@@ -2,6 +2,8 @@ import comfy_extras.nodes_model_merging
 
 class ModelMergeSD1(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two SD1 models with per-block weight control over input, middle, and output blocks."
+    SHORT_DESCRIPTION = "Merge two SD1 models with per-block control."
     @classmethod
     def INPUT_TYPES(s):
         arg_dict = { "model1": ("MODEL",),
@@ -26,8 +28,15 @@ class ModelMergeSD1(comfy_extras.nodes_model_merging.ModelMergeBlocks):
         return {"required": arg_dict}
 
 
+class ModelMergeSD2(ModelMergeSD1):
+    DESCRIPTION = "Merge two SD2 models with per-block weight control over input, middle, and output blocks."
+    SHORT_DESCRIPTION = "Merge two SD2 models with per-block control."
+
+
 class ModelMergeSDXL(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two SDXL models with per-block weight control over input, middle, and output blocks."
+    SHORT_DESCRIPTION = "Merge two SDXL models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -54,6 +63,8 @@ class ModelMergeSDXL(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeSD3_2B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two SD3 2B models with per-block weight control over 24 joint blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two SD3 2B models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -78,6 +89,8 @@ class ModelMergeSD3_2B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeAuraflow(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two AuraFlow models with per-block weight control over double and single layers."
+    SHORT_DESCRIPTION = "Merge two AuraFlow models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -105,6 +118,8 @@ class ModelMergeAuraflow(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeFlux1(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Flux1 models with per-block weight control over 19 double blocks and 38 single blocks."
+    SHORT_DESCRIPTION = "Merge two Flux1 models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -131,6 +146,8 @@ class ModelMergeFlux1(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeSD35_Large(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two SD3.5 Large models with per-block weight control over 38 joint blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two SD3.5 Large models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -154,6 +171,8 @@ class ModelMergeSD35_Large(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeMochiPreview(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Mochi Preview models with per-block weight control over 48 blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two Mochi Preview models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -176,6 +195,8 @@ class ModelMergeMochiPreview(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeLTXV(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two LTXV models with per-block weight control over 28 transformer blocks."
+    SHORT_DESCRIPTION = "Merge two LTXV models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -198,6 +219,8 @@ class ModelMergeLTXV(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeCosmos7B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Cosmos 7B models with per-block weight control over 28 blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two Cosmos 7B models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -222,6 +245,8 @@ class ModelMergeCosmos7B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeCosmos14B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Cosmos 14B models with per-block weight control over 36 blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two Cosmos 14B models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -247,6 +272,7 @@ class ModelMergeCosmos14B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 class ModelMergeWAN2_1(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
     DESCRIPTION = "1.3B model has 30 blocks, 14B model has 40 blocks. Image to video model has the extra img_emb."
+    SHORT_DESCRIPTION = "WAN 2.1 model merging with block-level control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -270,6 +296,8 @@ class ModelMergeWAN2_1(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 class ModelMergeCosmosPredict2_2B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Cosmos Predict2 2B models with per-block weight control over 28 blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two Cosmos Predict2 2B models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -293,6 +321,8 @@ class ModelMergeCosmosPredict2_2B(comfy_extras.nodes_model_merging.ModelMergeBlo
 
 class ModelMergeCosmosPredict2_14B(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Cosmos Predict2 14B models with per-block weight control over 36 blocks and embedders."
+    SHORT_DESCRIPTION = "Merge two Cosmos Predict2 14B models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -316,6 +346,8 @@ class ModelMergeCosmosPredict2_14B(comfy_extras.nodes_model_merging.ModelMergeBl
 
 class ModelMergeQwenImage(comfy_extras.nodes_model_merging.ModelMergeBlocks):
     CATEGORY = "advanced/model_merging/model_specific"
+    DESCRIPTION = "Merge two Qwen Image models with per-block weight control over 60 transformer blocks."
+    SHORT_DESCRIPTION = "Merge two Qwen Image models with per-block control."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -339,7 +371,7 @@ class ModelMergeQwenImage(comfy_extras.nodes_model_merging.ModelMergeBlocks):
 
 NODE_CLASS_MAPPINGS = {
     "ModelMergeSD1": ModelMergeSD1,
-    "ModelMergeSD2": ModelMergeSD1, #SD1 and SD2 have the same blocks
+    "ModelMergeSD2": ModelMergeSD2, #SD1 and SD2 have the same blocks
     "ModelMergeSDXL": ModelMergeSDXL,
     "ModelMergeSD3_2B": ModelMergeSD3_2B,
     "ModelMergeAuraflow": ModelMergeAuraflow,

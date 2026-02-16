@@ -49,6 +49,8 @@ class LoadImageDataSetFromFolderNode(io.ComfyNode):
             node_id="LoadImageDataSetFromFolder",
             display_name="Load Image Dataset from Folder",
             category="dataset",
+            description="Loads all images from a selected input subfolder and outputs them as a list of image tensors.",
+            short_description="Loads images from a folder as a list.",
             is_experimental=True,
             inputs=[
                 io.Combo.Input(
@@ -86,6 +88,8 @@ class LoadImageTextDataSetFromFolderNode(io.ComfyNode):
             node_id="LoadImageTextDataSetFromFolder",
             display_name="Load Image and Text Dataset from Folder",
             category="dataset",
+            description="Loads paired images and text captions from a folder, matching each image with its corresponding text file.",
+            short_description="Loads paired images and text captions from folder.",
             is_experimental=True,
             inputs=[
                 io.Combo.Input(
@@ -208,6 +212,8 @@ class SaveImageDataSetToFolderNode(io.ComfyNode):
             node_id="SaveImageDataSetToFolder",
             display_name="Save Image Dataset to Folder",
             category="dataset",
+            description="Saves a list of images to a named folder in the output directory with configurable filename prefix.",
+            short_description="Saves image list to an output folder.",
             is_experimental=True,
             is_output_node=True,
             is_input_list=True,  # Receive images as list
@@ -247,6 +253,8 @@ class SaveImageTextDataSetToFolderNode(io.ComfyNode):
             node_id="SaveImageTextDataSetToFolder",
             display_name="Save Image and Text Dataset to Folder",
             category="dataset",
+            description="Saves paired images and text captions to a named folder in the output directory with configurable filename prefix.",
+            short_description="Saves paired images and text to output folder.",
             is_experimental=True,
             is_output_node=True,
             is_input_list=True,  # Receive both images and texts as lists
@@ -401,6 +409,8 @@ class ImageProcessingNode(io.ComfyNode):
         return io.Schema(
             node_id=cls.node_id,
             display_name=cls.display_name or cls.node_id,
+            description=getattr(cls, 'description', ''),
+            short_description=getattr(cls, 'short_description', ''),
             category="dataset/image",
             is_experimental=True,
             is_input_list=is_group,  # True for group, False for individual
@@ -550,6 +560,8 @@ class TextProcessingNode(io.ComfyNode):
         return io.Schema(
             node_id=cls.node_id,
             display_name=cls.display_name or cls.node_id,
+            description=getattr(cls, 'description', ''),
+            short_description=getattr(cls, 'short_description', ''),
             category="dataset/text",
             is_experimental=True,
             is_input_list=is_group,  # True for group, False for individual
@@ -627,6 +639,7 @@ class ResizeImagesByShorterEdgeNode(ImageProcessingNode):
     node_id = "ResizeImagesByShorterEdge"
     display_name = "Resize Images by Shorter Edge"
     description = "Resize images so that the shorter edge matches the specified length while preserving aspect ratio."
+    short_description = "Resizes images by shorter edge preserving aspect ratio."
     extra_inputs = [
         io.Int.Input(
             "shorter_edge",
@@ -655,6 +668,7 @@ class ResizeImagesByLongerEdgeNode(ImageProcessingNode):
     node_id = "ResizeImagesByLongerEdge"
     display_name = "Resize Images by Longer Edge"
     description = "Resize images so that the longer edge matches the specified length while preserving aspect ratio."
+    short_description = "Resizes images by longer edge preserving aspect ratio."
     extra_inputs = [
         io.Int.Input(
             "longer_edge",
@@ -686,6 +700,7 @@ class CenterCropImagesNode(ImageProcessingNode):
     node_id = "CenterCropImages"
     display_name = "Center Crop Images"
     description = "Center crop all images to the specified dimensions."
+    short_description = None
     extra_inputs = [
         io.Int.Input("width", default=512, min=1, max=8192, tooltip="Crop width."),
         io.Int.Input("height", default=512, min=1, max=8192, tooltip="Crop height."),
@@ -708,6 +723,7 @@ class RandomCropImagesNode(ImageProcessingNode):
     description = (
         "Randomly crop all images to the specified dimensions (for data augmentation)."
     )
+    short_description = None
     extra_inputs = [
         io.Int.Input("width", default=512, min=1, max=8192, tooltip="Crop width."),
         io.Int.Input("height", default=512, min=1, max=8192, tooltip="Crop height."),
@@ -734,6 +750,7 @@ class NormalizeImagesNode(ImageProcessingNode):
     node_id = "NormalizeImages"
     display_name = "Normalize Images"
     description = "Normalize images using mean and standard deviation."
+    short_description = None
     extra_inputs = [
         io.Float.Input(
             "mean",
@@ -760,6 +777,7 @@ class AdjustBrightnessNode(ImageProcessingNode):
     node_id = "AdjustBrightness"
     display_name = "Adjust Brightness"
     description = "Adjust brightness of all images."
+    short_description = None
     extra_inputs = [
         io.Float.Input(
             "factor",
@@ -779,6 +797,7 @@ class AdjustContrastNode(ImageProcessingNode):
     node_id = "AdjustContrast"
     display_name = "Adjust Contrast"
     description = "Adjust contrast of all images."
+    short_description = None
     extra_inputs = [
         io.Float.Input(
             "factor",
@@ -798,6 +817,7 @@ class ShuffleDatasetNode(ImageProcessingNode):
     node_id = "ShuffleDataset"
     display_name = "Shuffle Image Dataset"
     description = "Randomly shuffle the order of images in the dataset."
+    short_description = None
     is_group_process = True  # Requires full list to shuffle
     extra_inputs = [
         io.Int.Input(
@@ -821,6 +841,8 @@ class ShuffleImageTextDatasetNode(io.ComfyNode):
             node_id="ShuffleImageTextDataset",
             display_name="Shuffle Image-Text Dataset",
             category="dataset/image",
+            description="Randomly shuffles paired image and text lists together using a seed, preserving their correspondence.",
+            short_description="Shuffles paired image-text lists together.",
             is_experimental=True,
             is_input_list=True,
             inputs=[
@@ -863,6 +885,7 @@ class TextToLowercaseNode(TextProcessingNode):
     node_id = "TextToLowercase"
     display_name = "Text to Lowercase"
     description = "Convert all texts to lowercase."
+    short_description = None
 
     @classmethod
     def _process(cls, text):
@@ -873,6 +896,7 @@ class TextToUppercaseNode(TextProcessingNode):
     node_id = "TextToUppercase"
     display_name = "Text to Uppercase"
     description = "Convert all texts to uppercase."
+    short_description = None
 
     @classmethod
     def _process(cls, text):
@@ -883,6 +907,7 @@ class TruncateTextNode(TextProcessingNode):
     node_id = "TruncateText"
     display_name = "Truncate Text"
     description = "Truncate all texts to a maximum length."
+    short_description = None
     extra_inputs = [
         io.Int.Input(
             "max_length", default=77, min=1, max=10000, tooltip="Maximum text length."
@@ -898,6 +923,7 @@ class AddTextPrefixNode(TextProcessingNode):
     node_id = "AddTextPrefix"
     display_name = "Add Text Prefix"
     description = "Add a prefix to all texts."
+    short_description = None
     extra_inputs = [
         io.String.Input("prefix", default="", tooltip="Prefix to add."),
     ]
@@ -911,6 +937,7 @@ class AddTextSuffixNode(TextProcessingNode):
     node_id = "AddTextSuffix"
     display_name = "Add Text Suffix"
     description = "Add a suffix to all texts."
+    short_description = None
     extra_inputs = [
         io.String.Input("suffix", default="", tooltip="Suffix to add."),
     ]
@@ -924,6 +951,7 @@ class ReplaceTextNode(TextProcessingNode):
     node_id = "ReplaceText"
     display_name = "Replace Text"
     description = "Replace text in all texts."
+    short_description = None
     extra_inputs = [
         io.String.Input("find", default="", tooltip="Text to find."),
         io.String.Input("replace", default="", tooltip="Text to replace with."),
@@ -938,6 +966,7 @@ class StripWhitespaceNode(TextProcessingNode):
     node_id = "StripWhitespace"
     display_name = "Strip Whitespace"
     description = "Strip leading and trailing whitespace from all texts."
+    short_description = None
 
     @classmethod
     def _process(cls, text):
@@ -953,6 +982,7 @@ class ImageDeduplicationNode(ImageProcessingNode):
     node_id = "ImageDeduplication"
     display_name = "Image Deduplication"
     description = "Remove duplicate or very similar images from the dataset."
+    short_description = None
     is_group_process = True  # Requires full list to compare images
     extra_inputs = [
         io.Float.Input(
@@ -1023,6 +1053,7 @@ class ImageGridNode(ImageProcessingNode):
     node_id = "ImageGrid"
     display_name = "Image Grid"
     description = "Arrange multiple images into a grid layout."
+    short_description = None
     is_group_process = True  # Requires full list to create grid
     is_output_list = False  # Outputs single grid image
     extra_inputs = [
@@ -1097,6 +1128,7 @@ class MergeImageListsNode(ImageProcessingNode):
     node_id = "MergeImageLists"
     display_name = "Merge Image Lists"
     description = "Concatenate multiple image lists into one."
+    short_description = None
     is_group_process = True  # Receives images as list
 
     @classmethod
@@ -1114,6 +1146,7 @@ class MergeTextListsNode(TextProcessingNode):
     node_id = "MergeTextLists"
     display_name = "Merge Text Lists"
     description = "Concatenate multiple text lists into one."
+    short_description = None
     is_group_process = True  # Receives texts as list
 
     @classmethod
@@ -1137,6 +1170,8 @@ class ResolutionBucket(io.ComfyNode):
             node_id="ResolutionBucket",
             display_name="Resolution Bucket",
             category="dataset",
+            description="Groups latents and conditioning by resolution into batched buckets for efficient training with mixed aspect ratios.",
+            short_description="Groups latents by resolution into training buckets.",
             is_experimental=True,
             is_input_list=True,
             inputs=[
@@ -1230,6 +1265,8 @@ class MakeTrainingDataset(io.ComfyNode):
             search_aliases=["encode dataset"],
             display_name="Make Training Dataset",
             category="dataset",
+            description="Encodes images with a VAE and text captions with CLIP to create paired latent and conditioning training data.",
+            short_description="Encodes images and text into training data.",
             is_experimental=True,
             is_input_list=True,  # images and texts as lists
             inputs=[
@@ -1316,6 +1353,8 @@ class SaveTrainingDataset(io.ComfyNode):
             search_aliases=["export training data"],
             display_name="Save Training Dataset",
             category="dataset",
+            description="Saves encoded latent and conditioning training data to disk in sharded files with configurable shard size.",
+            short_description="Saves encoded training data to sharded files.",
             is_experimental=True,
             is_output_node=True,
             is_input_list=True,  # Receive lists
@@ -1417,6 +1456,8 @@ class LoadTrainingDataset(io.ComfyNode):
             search_aliases=["import dataset", "training data"],
             display_name="Load Training Dataset",
             category="dataset",
+            description="Loads a previously saved training dataset of latents and conditioning from sharded files on disk.",
+            short_description="Loads saved training dataset from disk.",
             is_experimental=True,
             inputs=[
                 io.String.Input(

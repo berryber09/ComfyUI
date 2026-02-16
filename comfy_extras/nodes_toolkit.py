@@ -15,6 +15,8 @@ class CreateList(io.ComfyNode):
             node_id="CreateList",
             display_name="Create List",
             category="logic",
+            description="Combines multiple inputs of the same type into a single output list for batch processing.",
+            short_description="Combines multiple inputs into a single list.",
             is_input_list=True,
             search_aliases=["Image Iterator", "Text Iterator", "Iterator"],
             inputs=[io.Autogrow.Input("inputs", template=template_autogrow)],

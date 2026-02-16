@@ -19,6 +19,8 @@ class EmptyLatentAudio(IO.ComfyNode):
             node_id="EmptyLatentAudio",
             display_name="Empty Latent Audio",
             category="latent/audio",
+            description="Creates an empty latent audio tensor with a specified duration and batch size for Stable Audio generation.",
+            short_description="Creates an empty latent audio tensor.",
             inputs=[
                 IO.Float.Input("seconds", default=47.6, min=1.0, max=1000.0, step=0.1),
                 IO.Int.Input(
@@ -43,6 +45,8 @@ class ConditioningStableAudio(IO.ComfyNode):
         return IO.Schema(
             node_id="ConditioningStableAudio",
             category="conditioning",
+            description="Sets the start time and total duration on Stable Audio positive and negative conditioning.",
+            short_description="Sets timing parameters on Stable Audio conditioning.",
             inputs=[
                 IO.Conditioning.Input("positive"),
                 IO.Conditioning.Input("negative"),
@@ -72,6 +76,8 @@ class VAEEncodeAudio(IO.ComfyNode):
             search_aliases=["audio to latent"],
             display_name="VAE Encode Audio",
             category="latent/audio",
+            description="Encodes an audio waveform into a latent representation using a VAE, resampling if needed.",
+            short_description="Encodes audio into latent via VAE.",
             inputs=[
                 IO.Audio.Input("audio"),
                 IO.Vae.Input("vae"),
@@ -115,6 +121,8 @@ class VAEDecodeAudio(IO.ComfyNode):
             search_aliases=["latent to audio"],
             display_name="VAE Decode Audio",
             category="latent/audio",
+            description="Decodes a latent representation back into an audio waveform using a VAE.",
+            short_description="Decodes latent into audio via VAE.",
             inputs=[
                 IO.Latent.Input("samples"),
                 IO.Vae.Input("vae"),
@@ -137,6 +145,8 @@ class VAEDecodeAudioTiled(IO.ComfyNode):
             search_aliases=["latent to audio"],
             display_name="VAE Decode Audio (Tiled)",
             category="latent/audio",
+            description="Decodes a latent representation into audio using tiled VAE decoding to reduce memory usage.",
+            short_description="Tiled VAE decoding of latent into audio.",
             inputs=[
                 IO.Latent.Input("samples"),
                 IO.Vae.Input("vae"),
@@ -159,6 +169,8 @@ class SaveAudio(IO.ComfyNode):
             search_aliases=["export flac"],
             display_name="Save Audio (FLAC)",
             category="audio",
+            description="Saves audio to disk in FLAC format with a configurable filename prefix.",
+            short_description="Saves audio to disk in FLAC format.",
             inputs=[
                 IO.Audio.Input("audio"),
                 IO.String.Input("filename_prefix", default="audio/ComfyUI"),
@@ -184,6 +196,8 @@ class SaveAudioMP3(IO.ComfyNode):
             search_aliases=["export mp3"],
             display_name="Save Audio (MP3)",
             category="audio",
+            description="Saves audio to disk in MP3 format with configurable quality and filename prefix.",
+            short_description="Saves audio to disk in MP3 format.",
             inputs=[
                 IO.Audio.Input("audio"),
                 IO.String.Input("filename_prefix", default="audio/ComfyUI"),
@@ -212,6 +226,8 @@ class SaveAudioOpus(IO.ComfyNode):
             search_aliases=["export opus"],
             display_name="Save Audio (Opus)",
             category="audio",
+            description="Saves audio to disk in Opus format with configurable quality and filename prefix.",
+            short_description="Saves audio to disk in Opus format.",
             inputs=[
                 IO.Audio.Input("audio"),
                 IO.String.Input("filename_prefix", default="audio/ComfyUI"),
@@ -240,6 +256,8 @@ class PreviewAudio(IO.ComfyNode):
             search_aliases=["play audio"],
             display_name="Preview Audio",
             category="audio",
+            description="Plays back audio in the UI for previewing.",
+            short_description=None,
             inputs=[
                 IO.Audio.Input("audio"),
             ],
@@ -300,6 +318,8 @@ class LoadAudio(IO.ComfyNode):
             search_aliases=["import audio", "open audio", "audio file"],
             display_name="Load Audio",
             category="audio",
+            description="Loads an audio or video file from disk and outputs the audio as a single Audio output.",
+            short_description="Loads an audio file from disk.",
             inputs=[
                 IO.Combo.Input("audio", upload=IO.UploadType.audio, options=sorted(files)),
             ],
@@ -338,6 +358,7 @@ class RecordAudio(IO.ComfyNode):
             search_aliases=["microphone input", "audio capture", "voice input"],
             display_name="Record Audio",
             category="audio",
+            description="Records audio from a microphone input and outputs the captured audio.",
             inputs=[
                 IO.Custom("AUDIO_RECORD").Input("audio"),
             ],
@@ -363,6 +384,7 @@ class TrimAudioDuration(IO.ComfyNode):
             search_aliases=["cut audio", "audio clip", "shorten audio"],
             display_name="Trim Audio Duration",
             description="Trim audio tensor into chosen time range.",
+            short_description=None,
             category="audio",
             inputs=[
                 IO.Audio.Input("audio"),
@@ -416,6 +438,7 @@ class SplitAudioChannels(IO.ComfyNode):
             search_aliases=["stereo to mono"],
             display_name="Split Audio Channels",
             description="Separates the audio into left and right channels.",
+            short_description=None,
             category="audio",
             inputs=[
                 IO.Audio.Input("audio"),
@@ -448,6 +471,7 @@ class JoinAudioChannels(IO.ComfyNode):
             node_id="JoinAudioChannels",
             display_name="Join Audio Channels",
             description="Joins left and right mono audio channels into a stereo audio.",
+            short_description=None,
             category="audio",
             inputs=[
                 IO.Audio.Input("audio_left"),
@@ -517,6 +541,7 @@ class AudioConcat(IO.ComfyNode):
             search_aliases=["join audio", "combine audio", "append audio"],
             display_name="Audio Concat",
             description="Concatenates the audio1 to audio2 in the specified direction.",
+            short_description=None,
             category="audio",
             inputs=[
                 IO.Audio.Input("audio1"),
@@ -565,6 +590,7 @@ class AudioMerge(IO.ComfyNode):
             search_aliases=["mix audio", "overlay audio", "layer audio"],
             display_name="Audio Merge",
             description="Combine two audio tracks by overlaying their waveforms.",
+            short_description=None,
             category="audio",
             inputs=[
                 IO.Audio.Input("audio1"),
@@ -626,6 +652,8 @@ class AudioAdjustVolume(IO.ComfyNode):
             search_aliases=["audio gain", "loudness", "audio level"],
             display_name="Audio Adjust Volume",
             category="audio",
+            description="Adjusts audio volume by a specified number of decibels.",
+            short_description=None,
             inputs=[
                 IO.Audio.Input("audio"),
                 IO.Int.Input(
@@ -662,6 +690,8 @@ class EmptyAudio(IO.ComfyNode):
             search_aliases=["blank audio"],
             display_name="Empty Audio",
             category="audio",
+            description="Creates a silent audio clip with configurable duration, sample rate, and channel count.",
+            short_description="Creates a silent audio clip.",
             inputs=[
                 IO.Float.Input(
                     "duration",

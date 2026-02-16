@@ -18,6 +18,8 @@ class EmptyLatentHunyuan3Dv2(IO.ComfyNode):
         return IO.Schema(
             node_id="EmptyLatentHunyuan3Dv2",
             category="latent/3d",
+            description="Creates an empty latent tensor for Hunyuan 3D v2 generation with configurable resolution and batch size.",
+            short_description="Empty latent for Hunyuan 3D v2 generation.",
             inputs=[
                 IO.Int.Input("resolution", default=3072, min=1, max=8192),
                 IO.Int.Input("batch_size", default=1, min=1, max=4096, tooltip="The number of latent images in the batch."),
@@ -41,6 +43,8 @@ class Hunyuan3Dv2Conditioning(IO.ComfyNode):
         return IO.Schema(
             node_id="Hunyuan3Dv2Conditioning",
             category="conditioning/video_models",
+            description="Creates positive and negative conditioning for Hunyuan 3D v2 from a CLIP vision output embedding.",
+            short_description="Conditioning from CLIP vision for Hunyuan 3D v2.",
             inputs=[
                 IO.ClipVisionOutput.Input("clip_vision_output"),
             ],
@@ -66,6 +70,8 @@ class Hunyuan3Dv2ConditioningMultiView(IO.ComfyNode):
         return IO.Schema(
             node_id="Hunyuan3Dv2ConditioningMultiView",
             category="conditioning/video_models",
+            description="Creates multi-view conditioning for Hunyuan 3D v2 from up to four directional CLIP vision outputs with positional encoding.",
+            short_description="Multi-view conditioning for Hunyuan 3D v2.",
             inputs=[
                 IO.ClipVisionOutput.Input("front", optional=True),
                 IO.ClipVisionOutput.Input("left", optional=True),
@@ -103,6 +109,8 @@ class VAEDecodeHunyuan3D(IO.ComfyNode):
         return IO.Schema(
             node_id="VAEDecodeHunyuan3D",
             category="latent/3d",
+            description="Decodes a Hunyuan 3D latent into a voxel grid using a VAE with configurable chunk size and octree resolution.",
+            short_description="Decodes Hunyuan 3D latent into voxels.",
             inputs=[
                 IO.Latent.Input("samples"),
                 IO.Vae.Input("vae"),
@@ -425,6 +433,8 @@ class VoxelToMeshBasic(IO.ComfyNode):
         return IO.Schema(
             node_id="VoxelToMeshBasic",
             category="3d",
+            description="Converts a voxel grid to a 3D mesh using basic cube-based surface extraction with adjustable threshold.",
+            short_description="Converts voxels to mesh using basic extraction.",
             inputs=[
                 IO.Voxel.Input("voxel"),
                 IO.Float.Input("threshold", default=0.6, min=-1.0, max=1.0, step=0.01),
@@ -454,6 +464,8 @@ class VoxelToMesh(IO.ComfyNode):
         return IO.Schema(
             node_id="VoxelToMesh",
             category="3d",
+            description="Converts a voxel grid to a 3D mesh using selectable surface net or basic algorithm with adjustable threshold.",
+            short_description="Converts voxels to mesh with algorithm selection.",
             inputs=[
                 IO.Voxel.Input("voxel"),
                 IO.Combo.Input("algorithm", options=["surface net", "basic"]),
@@ -621,6 +633,8 @@ class SaveGLB(IO.ComfyNode):
             display_name="Save 3D Model",
             search_aliases=["export 3d model", "save mesh"],
             category="3d",
+            description="Saves a 3D mesh or model file to disk in GLB format with optional workflow metadata embedding.",
+            short_description="Saves 3D mesh or model to GLB file.",
             is_output_node=True,
             inputs=[
                 IO.MultiType.Input(

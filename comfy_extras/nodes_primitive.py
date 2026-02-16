@@ -11,6 +11,8 @@ class String(io.ComfyNode):
             node_id="PrimitiveString",
             display_name="String",
             category="utils/primitive",
+            description="A primitive node that passes through a string value.",
+            short_description=None,
             inputs=[
                 io.String.Input("value"),
             ],
@@ -29,6 +31,8 @@ class StringMultiline(io.ComfyNode):
             node_id="PrimitiveStringMultiline",
             display_name="String (Multiline)",
             category="utils/primitive",
+            description="A primitive node that passes through a multiline string value.",
+            short_description=None,
             inputs=[
                 io.String.Input("value", multiline=True),
             ],
@@ -47,6 +51,8 @@ class Int(io.ComfyNode):
             node_id="PrimitiveInt",
             display_name="Int",
             category="utils/primitive",
+            description="A primitive node that passes through an integer value.",
+            short_description=None,
             inputs=[
                 io.Int.Input("value", min=-sys.maxsize, max=sys.maxsize, control_after_generate=True),
             ],
@@ -65,6 +71,8 @@ class Float(io.ComfyNode):
             node_id="PrimitiveFloat",
             display_name="Float",
             category="utils/primitive",
+            description="A primitive node that passes through a float value.",
+            short_description=None,
             inputs=[
                 io.Float.Input("value", min=-sys.maxsize, max=sys.maxsize, step=0.1),
             ],
@@ -83,6 +91,8 @@ class Boolean(io.ComfyNode):
             node_id="PrimitiveBoolean",
             display_name="Boolean",
             category="utils/primitive",
+            description="A primitive node that passes through a boolean value.",
+            short_description=None,
             inputs=[
                 io.Boolean.Input("value"),
             ],

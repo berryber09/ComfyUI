@@ -18,6 +18,7 @@ class SkipLayerGuidanceDiT(io.ComfyNode):
             node_id="SkipLayerGuidanceDiT",
             category="advanced/guidance",
             description="Generic version of SkipLayerGuidance node that can be used on every DiT model.",
+            short_description="Skip layer guidance applicable to any DiT model.",
             is_experimental=True,
             inputs=[
                 io.Model.Input("model"),
@@ -98,6 +99,7 @@ class SkipLayerGuidanceDiTSimple(io.ComfyNode):
             node_id="SkipLayerGuidanceDiTSimple",
             category="advanced/guidance",
             description="Simple version of the SkipLayerGuidanceDiT node that only modifies the uncond pass.",
+            short_description="Simplified skip layer guidance modifying only the uncond pass.",
             is_experimental=True,
             inputs=[
                 io.Model.Input("model"),

@@ -14,6 +14,8 @@ class Kandinsky5ImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="Kandinsky5ImageToVideo",
             category="conditioning/video_models",
+            description="Sets up Kandinsky 5 image-to-video generation by creating an empty video latent and optionally encoding a start image for conditioning.",
+            short_description="Sets up Kandinsky 5 image-to-video conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -73,6 +75,7 @@ class NormalizeVideoLatentStart(io.ComfyNode):
             node_id="NormalizeVideoLatentStart",
             category="conditioning/video_models",
             description="Normalizes the initial frames of a video latent to match the mean and standard deviation of subsequent reference frames. Helps reduce differences between the starting frames and the rest of the video.",
+            short_description="Normalizes initial video latent frames to match reference frames.",
             inputs=[
                 io.Latent.Input("latent"),
                 io.Int.Input("start_frame_count", default=4, min=1, max=nodes.MAX_RESOLUTION, step=1, tooltip="Number of latent frames to normalize, counted from the start"),
@@ -106,6 +109,8 @@ class CLIPTextEncodeKandinsky5(io.ComfyNode):
             node_id="CLIPTextEncodeKandinsky5",
             search_aliases=["kandinsky prompt"],
             category="advanced/conditioning/kandinsky5",
+            description="Encodes separate CLIP-L and Qwen 2.5 7B text prompts into Kandinsky 5 conditioning.",
+            short_description="Encodes CLIP-L and Qwen prompts for Kandinsky 5.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("clip_l", multiline=True, dynamic_prompts=True),

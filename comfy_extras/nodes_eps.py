@@ -19,6 +19,8 @@ class EpsilonScaling(io.ComfyNode):
         return io.Schema(
             node_id="Epsilon Scaling",
             category="model_patches/unet",
+            description="Applies epsilon scaling to mitigate exposure bias in diffusion models by scaling the predicted noise after CFG, improving sample quality.",
+            short_description="Scale predicted noise to reduce exposure bias.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input(
@@ -121,6 +123,7 @@ class TemporalScoreRescaling(io.ComfyNode):
                 "TSR - Temporal Score Rescaling (2510.01184)\n\n"
                 "Rescaling the model's score or noise to steer the sampling diversity.\n"
             ),
+            short_description="Rescales temporal scores to control sampling diversity.",
         )
 
     @classmethod

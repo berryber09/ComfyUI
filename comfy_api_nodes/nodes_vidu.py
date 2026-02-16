@@ -72,6 +72,7 @@ class ViduTextToVideoNode(IO.ComfyNode):
             display_name="Vidu Text To Video Generation",
             category="api node/video/Vidu",
             description="Generate video from a text prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq1"], tooltip="Model name"),
                 IO.String.Input(
@@ -168,6 +169,7 @@ class ViduImageToVideoNode(IO.ComfyNode):
             display_name="Vidu Image To Video Generation",
             category="api node/video/Vidu",
             description="Generate video from image and optional prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq1"], tooltip="Model name"),
                 IO.Image.Input(
@@ -270,6 +272,7 @@ class ViduReferenceVideoNode(IO.ComfyNode):
             display_name="Vidu Reference To Video Generation",
             category="api node/video/Vidu",
             description="Generate video from multiple images and a prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq1"], tooltip="Model name"),
                 IO.Image.Input(
@@ -383,6 +386,7 @@ class ViduStartEndToVideoNode(IO.ComfyNode):
             display_name="Vidu Start End To Video Generation",
             category="api node/video/Vidu",
             description="Generate a video from start and end frames and a prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq1"], tooltip="Model name"),
                 IO.Image.Input(
@@ -485,6 +489,7 @@ class Vidu2TextToVideoNode(IO.ComfyNode):
             display_name="Vidu2 Text-to-Video Generation",
             category="api node/video/Vidu",
             description="Generate video from a text prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq2"]),
                 IO.String.Input(
@@ -576,6 +581,7 @@ class Vidu2ImageToVideoNode(IO.ComfyNode):
             display_name="Vidu2 Image-to-Video Generation",
             category="api node/video/Vidu",
             description="Generate a video from an image and an optional prompt.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq2-pro-fast", "viduq2-pro", "viduq2-turbo"]),
                 IO.Image.Input(
@@ -704,6 +710,7 @@ class Vidu2ReferenceVideoNode(IO.ComfyNode):
             display_name="Vidu2 Reference-to-Video Generation",
             category="api node/video/Vidu",
             description="Generate a video from multiple reference images and a prompt.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq2"]),
                 IO.Autogrow.Input(
@@ -837,6 +844,7 @@ class Vidu2StartEndToVideoNode(IO.ComfyNode):
             display_name="Vidu2 Start/End Frame-to-Video Generation",
             category="api node/video/Vidu",
             description="Generate a video from a start frame, an end frame, and a prompt.",
+            short_description="Generate video from start frame, end frame, and prompt.",
             inputs=[
                 IO.Combo.Input("model", options=["viduq2-pro-fast", "viduq2-pro", "viduq2-turbo"]),
                 IO.Image.Input("first_frame"),
@@ -956,6 +964,7 @@ class ViduExtendVideoNode(IO.ComfyNode):
             display_name="Vidu Video Extension",
             category="api node/video/Vidu",
             description="Extend an existing video by generating additional frames.",
+            short_description=None,
             inputs=[
                 IO.DynamicCombo.Input(
                     "model",
@@ -1126,6 +1135,7 @@ class ViduMultiFrameVideoNode(IO.ComfyNode):
             display_name="Vidu Multi-Frame Video Generation",
             category="api node/video/Vidu",
             description="Generate a video with multiple keyframe transitions.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["viduq2-pro", "viduq2-turbo"]),
                 IO.Image.Input(
@@ -1272,6 +1282,7 @@ class Vidu3TextToVideoNode(IO.ComfyNode):
             display_name="Vidu Q3 Text-to-Video Generation",
             category="api node/video/Vidu",
             description="Generate video from a text prompt.",
+            short_description=None,
             inputs=[
                 IO.DynamicCombo.Input(
                     "model",
@@ -1380,6 +1391,7 @@ class Vidu3ImageToVideoNode(IO.ComfyNode):
             display_name="Vidu Q3 Image-to-Video Generation",
             category="api node/video/Vidu",
             description="Generate a video from an image and an optional prompt.",
+            short_description=None,
             inputs=[
                 IO.DynamicCombo.Input(
                     "model",

@@ -54,6 +54,8 @@ class PixverseTemplateNode(IO.ComfyNode):
             node_id="PixverseTemplateNode",
             display_name="PixVerse Template",
             category="api node/video/PixVerse",
+            description="Select a style template for PixVerse video generation.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("template", options=list(pixverse_templates.keys())),
             ],
@@ -76,6 +78,7 @@ class PixverseTextToVideoNode(IO.ComfyNode):
             display_name="PixVerse Text to Video",
             category="api node/video/PixVerse",
             description="Generates videos based on prompt and output_size.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -194,6 +197,7 @@ class PixverseImageToVideoNode(IO.ComfyNode):
             display_name="PixVerse Image to Video",
             category="api node/video/PixVerse",
             description="Generates videos based on prompt and output_size.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.String.Input(
@@ -312,6 +316,7 @@ class PixverseTransitionVideoNode(IO.ComfyNode):
             display_name="PixVerse Transition Video",
             category="api node/video/PixVerse",
             description="Generates videos based on prompt and output_size.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("first_frame"),
                 IO.Image.Input("last_frame"),

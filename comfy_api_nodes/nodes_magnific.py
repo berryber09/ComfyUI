@@ -242,6 +242,7 @@ class MagnificImageUpscalerPreciseV2Node(IO.ComfyNode):
             category="api node/image/Magnific",
             description="High-fidelity upscaling with fine control over sharpness, grain, and detail. "
             "Maximum output: 10060×10060 pixels.",
+            short_description="High-fidelity upscaling with sharpness, grain, and detail control.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Combo.Input("scale_factor", options=["2x", "4x", "8x", "16x"]),
@@ -401,6 +402,7 @@ class MagnificImageStyleTransferNode(IO.ComfyNode):
             display_name="Magnific Image Style Transfer",
             category="api node/image/Magnific",
             description="Transfer the style from a reference image to your input image.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image", tooltip="The image to apply style transfer to."),
                 IO.Image.Input("reference_image", tooltip="The reference image to extract style from."),
@@ -549,6 +551,7 @@ class MagnificImageRelightNode(IO.ComfyNode):
             display_name="Magnific Image Relight",
             category="api node/image/Magnific",
             description="Relight an image with lighting adjustments and optional reference-based light transfer.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image", tooltip="The image to relight."),
                 IO.String.Input(
@@ -787,6 +790,7 @@ class MagnificImageSkinEnhancerNode(IO.ComfyNode):
             display_name="Magnific Image Skin Enhancer",
             category="api node/image/Magnific",
             description="Skin enhancement for portraits with multiple processing modes.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image", tooltip="The portrait image to enhance."),
                 IO.Int.Input(

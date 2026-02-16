@@ -15,6 +15,8 @@ class Morphology(io.ComfyNode):
             search_aliases=["erode", "dilate"],
             display_name="ImageMorphology",
             category="image/postprocessing",
+            description="Applies morphological operations to an image using a configurable kernel size.",
+            short_description="",
             inputs=[
                 io.Image.Input("image"),
                 io.Combo.Input(
@@ -60,6 +62,8 @@ class ImageRGBToYUV(io.ComfyNode):
             node_id="ImageRGBToYUV",
             search_aliases=["color space conversion"],
             category="image/batch",
+            description="Converts an RGB image to YUV (YCbCr) color space, outputting separate Y, U, and V channel images.",
+            short_description="Convert RGB image to YUV color space.",
             inputs=[
                 io.Image.Input("image"),
             ],
@@ -82,6 +86,8 @@ class ImageYUVToRGB(io.ComfyNode):
             node_id="ImageYUVToRGB",
             search_aliases=["color space conversion"],
             category="image/batch",
+            description="Converts separate Y, U, and V (YCbCr) channel images back into a single RGB image.",
+            short_description="Convert YUV channels back to RGB image.",
             inputs=[
                 io.Image.Input("Y"),
                 io.Image.Input("U"),

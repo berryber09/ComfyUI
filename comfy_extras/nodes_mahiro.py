@@ -13,6 +13,7 @@ class Mahiro(io.ComfyNode):
             display_name="Mahiro CFG",
             category="_for_testing",
             description="Modify the guidance to scale more on the 'direction' of the positive prompt rather than the difference between the negative prompt.",
+            short_description="Scales guidance toward positive prompt direction over negative difference.",
             inputs=[
                 io.Model.Input("model"),
             ],

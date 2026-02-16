@@ -70,6 +70,7 @@ class CLIPTextEncode(ComfyNodeABC):
 
     CATEGORY = "conditioning"
     DESCRIPTION = "Encodes a text prompt using a CLIP model into an embedding that can be used to guide the diffusion model towards generating specific images."
+    SHORT_DESCRIPTION = "Encodes text prompts using CLIP for guiding diffusion models."
     SEARCH_ALIASES = ["text", "prompt", "text prompt", "positive prompt", "negative prompt", "encode text", "text encoder", "encode prompt"]
 
     def encode(self, clip, text):
@@ -87,6 +88,8 @@ class ConditioningCombine:
     FUNCTION = "combine"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Combines two conditioning inputs into one by appending them together."
+    SHORT_DESCRIPTION = None
     SEARCH_ALIASES = ["combine", "merge conditioning", "combine prompts", "merge prompts", "mix prompts", "add prompt"]
 
     def combine(self, conditioning_1, conditioning_2):
@@ -104,6 +107,8 @@ class ConditioningAverage :
     FUNCTION = "addWeighted"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Blends two conditioning inputs using a weighted average, allowing smooth interpolation between prompts based on a strength parameter."
+    SHORT_DESCRIPTION = "Blends two conditionings via weighted average interpolation."
 
     def addWeighted(self, conditioning_to, conditioning_from, conditioning_to_strength):
         out = []
@@ -143,6 +148,8 @@ class ConditioningConcat:
     FUNCTION = "concat"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Concatenates conditioning tokens from one conditioning onto another, extending the token sequence to combine their effects."
+    SHORT_DESCRIPTION = "Concatenates conditioning tokens to combine prompt effects."
 
     def concat(self, conditioning_to, conditioning_from):
         out = []
@@ -176,6 +183,8 @@ class ConditioningSetArea:
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Sets a rectangular area on conditioning using pixel coordinates, allowing the prompt to apply only to a specific region of the image."
+    SHORT_DESCRIPTION = "Restricts conditioning to a specific pixel-coordinate area."
 
     def append(self, conditioning, width, height, x, y, strength):
         c = node_helpers.conditioning_set_values(conditioning, {"area": (height // 8, width // 8, y // 8, x // 8),
@@ -197,6 +206,8 @@ class ConditioningSetAreaPercentage:
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Sets a rectangular area on conditioning using percentage-based coordinates, allowing the prompt to apply to a proportional region of the image."
+    SHORT_DESCRIPTION = "Restricts conditioning to a percentage-based area."
 
     def append(self, conditioning, width, height, x, y, strength):
         c = node_helpers.conditioning_set_values(conditioning, {"area": ("percentage", height, width, y, x),
@@ -214,6 +225,8 @@ class ConditioningSetAreaStrength:
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Sets the strength of a conditioning area."
+    SHORT_DESCRIPTION = None
 
     def append(self, conditioning, strength):
         c = node_helpers.conditioning_set_values(conditioning, {"strength": strength})
@@ -234,6 +247,8 @@ class ConditioningSetMask:
     FUNCTION = "append"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Applies a mask to conditioning so the prompt only affects the masked region, with adjustable strength and optional bounds-based area restriction."
+    SHORT_DESCRIPTION = "Applies a mask to limit conditioning to a region."
 
     def append(self, conditioning, mask, set_cond_area, strength):
         set_area_to_bounds = False
@@ -257,6 +272,8 @@ class ConditioningZeroOut:
     FUNCTION = "zero_out"
 
     CATEGORY = "advanced/conditioning"
+    DESCRIPTION = "Zeros out all conditioning tensors including pooled output, producing an empty unconditional embedding."
+    SHORT_DESCRIPTION = "Zeros out conditioning to produce an empty embedding."
 
     def zero_out(self, conditioning):
         c = []
@@ -283,6 +300,8 @@ class ConditioningSetTimestepRange:
     FUNCTION = "set_range"
 
     CATEGORY = "advanced/conditioning"
+    DESCRIPTION = "Sets the start and end timestep percentages for conditioning, controlling which portion of the sampling process it is active during."
+    SHORT_DESCRIPTION = "Limits conditioning to a specific timestep range."
 
     def set_range(self, conditioning, start, end):
         c = node_helpers.conditioning_set_values(conditioning, {"start_percent": start,
@@ -304,6 +323,7 @@ class VAEDecode:
 
     CATEGORY = "latent"
     DESCRIPTION = "Decodes latent images back into pixel space images."
+    SHORT_DESCRIPTION = None
     SEARCH_ALIASES = ["decode", "decode latent", "latent to image", "render latent"]
 
     def decode(self, vae, samples):
@@ -329,6 +349,8 @@ class VAEDecodeTiled:
     FUNCTION = "decode"
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Decodes latent images to pixel space using tiling to reduce memory usage, with configurable tile size, overlap, and temporal settings for video VAEs."
+    SHORT_DESCRIPTION = "Decodes latents to images using tiling for lower memory."
 
     def decode(self, vae, samples, tile_size, overlap=64, temporal_size=64, temporal_overlap=8):
         if tile_size < overlap * 4:
@@ -357,6 +379,8 @@ class VAEEncode:
     FUNCTION = "encode"
 
     CATEGORY = "latent"
+    DESCRIPTION = "Encodes pixel images into latent space using a VAE model."
+    SHORT_DESCRIPTION = None
     SEARCH_ALIASES = ["encode", "encode image", "image to latent"]
 
     def encode(self, vae, pixels):
@@ -376,6 +400,8 @@ class VAEEncodeTiled:
     FUNCTION = "encode"
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Encodes pixel images into latent space using tiling to reduce memory usage, with configurable tile size, overlap, and temporal settings for video VAEs."
+    SHORT_DESCRIPTION = "Encodes images to latents using tiling for lower memory."
 
     def encode(self, vae, pixels, tile_size, overlap, temporal_size=64, temporal_overlap=8):
         t = vae.encode_tiled(pixels, tile_x=tile_size, tile_y=tile_size, overlap=overlap, tile_t=temporal_size, overlap_t=temporal_overlap)
@@ -389,6 +415,8 @@ class VAEEncodeForInpaint:
     FUNCTION = "encode"
 
     CATEGORY = "latent/inpaint"
+    DESCRIPTION = "Encodes an image into latent space for inpainting by applying and optionally growing a mask, zeroing out masked pixel regions before encoding."
+    SHORT_DESCRIPTION = "Encodes images for inpainting with mask-aware encoding."
 
     def encode(self, vae, pixels, mask, grow_mask_by=6):
         downscale_ratio = vae.spacial_compression_encode()
@@ -438,6 +466,8 @@ class InpaintModelConditioning:
     FUNCTION = "encode"
 
     CATEGORY = "conditioning/inpaint"
+    DESCRIPTION = "Prepares conditioning for inpaint models by encoding the masked image and concatenating the latent and mask information into the positive and negative conditioning."
+    SHORT_DESCRIPTION = "Prepares inpaint model conditioning with mask-aware latents."
 
     def encode(self, positive, negative, pixels, vae, mask, noise_mask=True):
         x = (pixels.shape[1] // 8) * 8
@@ -492,6 +522,8 @@ class SaveLatent:
     OUTPUT_NODE = True
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Saves latent tensors to a safetensors file in the output directory with optional workflow metadata."
+    SHORT_DESCRIPTION = "Saves latent tensors to a safetensors file."
 
     def save(self, samples, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir)
@@ -537,6 +569,8 @@ class LoadLatent:
         return {"required": {"latent": [sorted(files), ]}, }
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Loads latent tensors from a previously saved safetensors file in the input directory."
+    SHORT_DESCRIPTION = "Loads latent tensors from a safetensors file."
 
     RETURN_TYPES = ("LATENT", )
     FUNCTION = "load"
@@ -576,6 +610,8 @@ class CheckpointLoader:
     FUNCTION = "load_checkpoint"
 
     CATEGORY = "advanced/loaders"
+    DESCRIPTION = "Loads a checkpoint using a separate model config file. Deprecated in favor of CheckpointLoaderSimple which auto-detects the config."
+    SHORT_DESCRIPTION = "Loads a checkpoint with a manual config file (deprecated)."
     DEPRECATED = True
 
     def load_checkpoint(self, config_name, ckpt_name):
@@ -599,6 +635,7 @@ class CheckpointLoaderSimple:
 
     CATEGORY = "loaders"
     DESCRIPTION = "Loads a diffusion model checkpoint, diffusion models are used to denoise latents."
+    SHORT_DESCRIPTION = "Loads a diffusion model checkpoint for denoising latents."
     SEARCH_ALIASES = ["load model", "checkpoint", "model loader", "load checkpoint", "ckpt", "model"]
 
     def load_checkpoint(self, ckpt_name):
@@ -623,6 +660,8 @@ class DiffusersLoader:
     FUNCTION = "load_checkpoint"
 
     CATEGORY = "advanced/loaders/deprecated"
+    DESCRIPTION = "Loads a diffusion model from the Hugging Face diffusers format, outputting the model, CLIP, and VAE components."
+    SHORT_DESCRIPTION = "Loads diffusers-format models into model, CLIP, and VAE."
 
     def load_checkpoint(self, model_path, output_vae=True, output_clip=True):
         for search_path in folder_paths.get_folder_paths("diffusers"):
@@ -644,6 +683,8 @@ class unCLIPCheckpointLoader:
     FUNCTION = "load_checkpoint"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads an unCLIP checkpoint, outputting the model, CLIP, VAE, and CLIP Vision components needed for image-guided generation."
+    SHORT_DESCRIPTION = "Loads unCLIP checkpoints with CLIP Vision output."
 
     def load_checkpoint(self, ckpt_name, output_vae=True, output_clip=True):
         ckpt_path = folder_paths.get_full_path_or_raise("checkpoints", ckpt_name)
@@ -660,6 +701,8 @@ class CLIPSetLastLayer:
     FUNCTION = "set_last_layer"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Sets which CLIP layer to use as the output. Earlier layers (more negative values) can produce different stylistic effects."
+    SHORT_DESCRIPTION = "Sets which CLIP layer to use as output."
 
     def set_last_layer(self, clip, stop_at_clip_layer):
         clip = clip.clone()
@@ -688,6 +731,7 @@ class LoraLoader:
 
     CATEGORY = "loaders"
     DESCRIPTION = "LoRAs are used to modify diffusion and CLIP models, altering the way in which latents are denoised such as applying styles. Multiple LoRA nodes can be linked together."
+    SHORT_DESCRIPTION = "Modifies diffusion and CLIP models using LoRA adjustments."
     SEARCH_ALIASES = ["lora", "load lora", "apply lora", "lora loader", "lora model"]
 
     def load_lora(self, model, clip, lora_name, strength_model, strength_clip):
@@ -718,6 +762,8 @@ class LoraLoaderModelOnly(LoraLoader):
                               }}
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "load_lora_model_only"
+    DESCRIPTION = "Loads a LoRA and applies it to the diffusion model only, without modifying the CLIP model."
+    SHORT_DESCRIPTION = "Applies a LoRA to the diffusion model only."
 
     def load_lora_model_only(self, model, lora_name, strength_model):
         return (self.load_lora(model, None, lora_name, strength_model, 0)[0],)
@@ -808,6 +854,8 @@ class VAELoader:
     FUNCTION = "load_vae"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a VAE model for encoding and decoding images to and from latent space, supporting full VAEs, tiny autoencoders (TAESD), and video VAEs."
+    SHORT_DESCRIPTION = "Loads a VAE model for image encoding and decoding."
 
     #TODO: scale factor?
     def load_vae(self, vae_name):
@@ -836,6 +884,8 @@ class ControlNetLoader:
     FUNCTION = "load_controlnet"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a ControlNet model from file for guiding image generation with structural conditioning."
+    SHORT_DESCRIPTION = "Loads a ControlNet model from file."
     SEARCH_ALIASES = ["controlnet", "control net", "cn", "load controlnet", "controlnet loader"]
 
     def load_controlnet(self, control_net_name):
@@ -855,6 +905,8 @@ class DiffControlNetLoader:
     FUNCTION = "load_controlnet"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a differential ControlNet model that requires a base diffusion model for initialization."
+    SHORT_DESCRIPTION = "Loads a differential ControlNet with a base model."
 
     def load_controlnet(self, model, control_net_name):
         controlnet_path = folder_paths.get_full_path_or_raise("controlnet", control_net_name)
@@ -875,6 +927,8 @@ class ControlNetApply:
 
     DEPRECATED = True
     CATEGORY = "conditioning/controlnet"
+    DESCRIPTION = "Applies a ControlNet to conditioning with an image hint and strength. Deprecated in favor of ControlNetApplyAdvanced."
+    SHORT_DESCRIPTION = "Applies ControlNet to conditioning (deprecated)."
 
     def apply_controlnet(self, conditioning, control_net, image, strength):
         if strength == 0:
@@ -913,6 +967,8 @@ class ControlNetApplyAdvanced:
     FUNCTION = "apply_controlnet"
 
     CATEGORY = "conditioning/controlnet"
+    DESCRIPTION = "Applies a ControlNet to both positive and negative conditioning with an image hint, adjustable strength, and start/end percentage controls for scheduling."
+    SHORT_DESCRIPTION = "Applies ControlNet with strength and timestep scheduling."
     SEARCH_ALIASES = ["controlnet", "apply controlnet", "use controlnet", "control net"]
 
     def apply_controlnet(self, positive, negative, control_net, image, strength, start_percent, end_percent, vae=None, extra_concat=[]):
@@ -954,6 +1010,8 @@ class UNETLoader:
     FUNCTION = "load_unet"
 
     CATEGORY = "advanced/loaders"
+    DESCRIPTION = "Loads a standalone diffusion model (UNET/DiT) with optional weight dtype selection including fp8 precision modes for lower memory usage."
+    SHORT_DESCRIPTION = "Loads a diffusion model with optional fp8 precision."
 
     def load_unet(self, unet_name, weight_dtype):
         model_options = {}
@@ -984,6 +1042,7 @@ class CLIPLoader:
     CATEGORY = "advanced/loaders"
 
     DESCRIPTION = "[Recipes]\n\nstable_diffusion: clip-l\nstable_cascade: clip-g\nsd3: t5 xxl/ clip-g / clip-l\nstable_audio: t5 base\nmochi: t5 xxl\ncosmos: old t5 xxl\nlumina2: gemma 2 2B\nwan: umt5 xxl\n hidream: llama-3.1 (Recommend) or t5\nomnigen2: qwen vl 2.5 3B"
+    SHORT_DESCRIPTION = "Loads a single CLIP model with architecture-specific recipes."
 
     def load_clip(self, clip_name, type="stable_diffusion", device="default"):
         clip_type = getattr(comfy.sd.CLIPType, type.upper(), comfy.sd.CLIPType.STABLE_DIFFUSION)
@@ -1012,6 +1071,7 @@ class DualCLIPLoader:
     CATEGORY = "advanced/loaders"
 
     DESCRIPTION = "[Recipes]\n\nsdxl: clip-l, clip-g\nsd3: clip-l, clip-g / clip-l, t5 / clip-g, t5\nflux: clip-l, t5\nhidream: at least one of t5 or llama, recommended t5 and llama\nhunyuan_image: qwen2.5vl 7b and byt5 small\nnewbie: gemma-3-4b-it, jina clip v2"
+    SHORT_DESCRIPTION = "Loads two CLIP models simultaneously with architecture recipes."
 
     def load_clip(self, clip_name1, clip_name2, type, device="default"):
         clip_type = getattr(comfy.sd.CLIPType, type.upper(), comfy.sd.CLIPType.STABLE_DIFFUSION)
@@ -1035,6 +1095,8 @@ class CLIPVisionLoader:
     FUNCTION = "load_clip"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a CLIP Vision model for encoding images into CLIP vision embeddings."
+    SHORT_DESCRIPTION = "Loads a CLIP Vision model for image encoding."
 
     def load_clip(self, clip_name):
         clip_path = folder_paths.get_full_path_or_raise("clip_vision", clip_name)
@@ -1054,6 +1116,8 @@ class CLIPVisionEncode:
     FUNCTION = "encode"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Encodes an image using a CLIP Vision model to produce a vision embedding, with optional center cropping."
+    SHORT_DESCRIPTION = "Encodes images into CLIP Vision embeddings."
 
     def encode(self, clip_vision, image, crop):
         crop_image = True
@@ -1071,6 +1135,8 @@ class StyleModelLoader:
     FUNCTION = "load_style_model"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a style model from file for applying visual styles to conditioning."
+    SHORT_DESCRIPTION = "Loads a style model from file."
 
     def load_style_model(self, style_model_name):
         style_model_path = folder_paths.get_full_path_or_raise("style_models", style_model_name)
@@ -1093,6 +1159,8 @@ class StyleModelApply:
     FUNCTION = "apply_stylemodel"
 
     CATEGORY = "conditioning/style_model"
+    DESCRIPTION = "Applies a style model to conditioning using a CLIP Vision output, with adjustable strength via multiply or attention bias modes."
+    SHORT_DESCRIPTION = "Applies a style model to conditioning with strength control."
 
     def apply_stylemodel(self, conditioning, style_model, clip_vision_output, strength, strength_type):
         cond = style_model.get_cond(clip_vision_output).flatten(start_dim=0, end_dim=1).unsqueeze(dim=0)
@@ -1153,6 +1221,8 @@ class unCLIPConditioning:
     FUNCTION = "apply_adm"
 
     CATEGORY = "conditioning"
+    DESCRIPTION = "Applies unCLIP image conditioning by adding CLIP vision embeddings to conditioning with adjustable strength and noise augmentation."
+    SHORT_DESCRIPTION = "Applies unCLIP image conditioning with vision embeddings."
 
     def apply_adm(self, conditioning, clip_vision_output, strength, noise_augmentation):
         if strength == 0:
@@ -1170,6 +1240,7 @@ class GLIGENLoader:
     FUNCTION = "load_gligen"
 
     CATEGORY = "loaders"
+    DESCRIPTION = "Loads a GLIGEN model for spatially-grounded text-to-image generation."
 
     def load_gligen(self, gligen_name):
         gligen_path = folder_paths.get_full_path_or_raise("gligen", gligen_name)
@@ -1192,6 +1263,8 @@ class GLIGENTextBoxApply:
     FUNCTION = "append"
 
     CATEGORY = "conditioning/gligen"
+    DESCRIPTION = "Applies GLIGEN text box conditioning to place a text-described object at a specific bounding box position in the generated image."
+    SHORT_DESCRIPTION = "Places a text-described object at a bounding box position."
 
     def append(self, conditioning_to, clip, gligen_textbox_model, text, width, height, x, y):
         c = []
@@ -1226,6 +1299,7 @@ class EmptyLatentImage:
 
     CATEGORY = "latent"
     DESCRIPTION = "Create a new batch of empty latent images to be denoised via sampling."
+    SHORT_DESCRIPTION = "Creates empty latent images for denoising via sampling."
     SEARCH_ALIASES = ["empty", "empty latent", "new latent", "create latent", "blank latent", "blank"]
 
     def generate(self, width, height, batch_size=1):
@@ -1246,6 +1320,8 @@ class LatentFromBatch:
     FUNCTION = "frombatch"
 
     CATEGORY = "latent/batch"
+    DESCRIPTION = "Extracts a contiguous range of samples from a latent batch by specifying a start index and length."
+    SHORT_DESCRIPTION = "Extracts a range of samples from a latent batch."
 
     def frombatch(self, samples, batch_index, length):
         s = samples.copy()
@@ -1279,6 +1355,8 @@ class RepeatLatentBatch:
     FUNCTION = "repeat"
 
     CATEGORY = "latent/batch"
+    DESCRIPTION = "Repeats a latent batch a specified number of times to create a larger batch."
+    SHORT_DESCRIPTION = "Duplicates latent batch samples a specified number of times."
 
     def repeat(self, samples, amount):
         s = samples.copy()
@@ -1311,6 +1389,8 @@ class LatentUpscale:
     FUNCTION = "upscale"
 
     CATEGORY = "latent"
+    DESCRIPTION = "Upscales latent representations to a target width and height using various interpolation methods, with optional cropping."
+    SHORT_DESCRIPTION = "Upscales latents to a target resolution."
 
     def upscale(self, samples, upscale_method, width, height, crop):
         if width == 0 and height == 0:
@@ -1344,6 +1424,7 @@ class LatentUpscaleBy:
     FUNCTION = "upscale"
 
     CATEGORY = "latent"
+    DESCRIPTION = "Upscales latent representations by a relative scale factor using various interpolation methods."
 
     def upscale(self, samples, upscale_method, scale_by):
         s = samples.copy()
@@ -1362,6 +1443,8 @@ class LatentRotate:
     FUNCTION = "rotate"
 
     CATEGORY = "latent/transform"
+    DESCRIPTION = "Rotates latent representations by 90, 180, or 270 degrees."
+    SHORT_DESCRIPTION = None
 
     def rotate(self, samples, rotation):
         s = samples.copy()
@@ -1388,6 +1471,8 @@ class LatentFlip:
     FUNCTION = "flip"
 
     CATEGORY = "latent/transform"
+    DESCRIPTION = "Flips latent representations vertically or horizontally."
+    SHORT_DESCRIPTION = None
 
     def flip(self, samples, flip_method):
         s = samples.copy()
@@ -1413,6 +1498,8 @@ class LatentComposite:
     FUNCTION = "composite"
 
     CATEGORY = "latent"
+    DESCRIPTION = "Composites one latent onto another at a specified position with optional feathered blending at the edges."
+    SHORT_DESCRIPTION = "Composites one latent onto another with feathering."
 
     def composite(self, samples_to, samples_from, x, y, composite_method="normal", feather=0):
         x =  x // 8
@@ -1462,6 +1549,8 @@ class LatentBlend:
     FUNCTION = "blend"
 
     CATEGORY = "_for_testing"
+    DESCRIPTION = "Blends two latent representations together using a blend factor, automatically resizing if dimensions differ."
+    SHORT_DESCRIPTION = "Blends two latents together using a blend factor."
 
     def blend(self, samples1, samples2, blend_factor:float, blend_mode: str="normal"):
 
@@ -1500,6 +1589,8 @@ class LatentCrop:
     FUNCTION = "crop"
 
     CATEGORY = "latent/transform"
+    DESCRIPTION = "Crops a latent representation to a specified width, height, and position."
+    SHORT_DESCRIPTION = None
 
     def crop(self, samples, width, height, x, y):
         s = samples.copy()
@@ -1530,6 +1621,8 @@ class SetLatentNoiseMask:
     FUNCTION = "set_mask"
 
     CATEGORY = "latent/inpaint"
+    DESCRIPTION = "Sets a noise mask on a latent so that sampling only adds noise within the masked region, used for inpainting workflows."
+    SHORT_DESCRIPTION = "Sets a noise mask on latent for inpainting."
 
     def set_mask(self, samples, mask):
         s = samples.copy()
@@ -1584,6 +1677,7 @@ class KSampler:
 
     CATEGORY = "sampling"
     DESCRIPTION = "Uses the provided model, positive and negative conditioning to denoise the latent image."
+    SHORT_DESCRIPTION = "Denoises latent images using model and conditioning inputs."
     SEARCH_ALIASES = ["sampler", "sample", "generate", "denoise", "diffuse", "txt2img", "img2img"]
 
     def sample(self, model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, denoise=1.0):
@@ -1613,6 +1707,8 @@ class KSamplerAdvanced:
     FUNCTION = "sample"
 
     CATEGORY = "sampling"
+    DESCRIPTION = "Advanced sampler with fine-grained control over noise addition, start/end steps, and whether to return with leftover noise for multi-pass sampling."
+    SHORT_DESCRIPTION = "Advanced sampler with step range and noise controls."
 
     def sample(self, model, add_noise, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, return_with_leftover_noise, denoise=1.0):
         force_full_denoise = True
@@ -1649,6 +1745,7 @@ class SaveImage:
 
     CATEGORY = "image"
     DESCRIPTION = "Saves the input images to your ComfyUI output directory."
+    SHORT_DESCRIPTION = None
     SEARCH_ALIASES = ["save", "save image", "export image", "output image", "write image", "download"]
 
     def save_images(self, images, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
@@ -1687,6 +1784,8 @@ class PreviewImage(SaveImage):
         self.compress_level = 1
 
     SEARCH_ALIASES = ["preview", "preview image", "show image", "view image", "display image", "image viewer"]
+    DESCRIPTION = "Previews images in the UI by saving them as temporary files that are not permanently stored."
+    SHORT_DESCRIPTION = "Previews images in the UI as temporary files."
 
     @classmethod
     def INPUT_TYPES(s):
@@ -1706,6 +1805,8 @@ class LoadImage:
                 }
 
     CATEGORY = "image"
+    DESCRIPTION = "Loads an image from the input directory, supporting animated formats and alpha channel extraction as a mask output."
+    SHORT_DESCRIPTION = "Loads an image file with optional alpha mask output."
     SEARCH_ALIASES = ["load image", "open image", "import image", "image input", "upload image", "read image", "image loader"]
 
     RETURN_TYPES = ("IMAGE", "MASK")
@@ -1787,6 +1888,8 @@ class LoadImageMask:
                 }
 
     CATEGORY = "mask"
+    DESCRIPTION = "Loads an image and extracts a specific color channel as a mask."
+    SHORT_DESCRIPTION = "Loads an image channel as a mask."
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "load_image"
@@ -1845,6 +1948,7 @@ class LoadImageOutput(LoadImage):
         }
 
     DESCRIPTION = "Load an image from the output folder. When the refresh button is clicked, the node will update the image list and automatically select the first image, allowing for easy iteration."
+    SHORT_DESCRIPTION = "Loads images from the output folder with auto-refresh."
     EXPERIMENTAL = True
     FUNCTION = "load_image"
 
@@ -1863,6 +1967,8 @@ class ImageScale:
     FUNCTION = "upscale"
 
     CATEGORY = "image/upscaling"
+    DESCRIPTION = "Scales an image to a target width and height using various interpolation methods, with optional center cropping."
+    SHORT_DESCRIPTION = "Scales images to a target width and height."
     SEARCH_ALIASES = ["resize", "resize image", "scale image", "image resize", "zoom", "zoom in", "change size"]
 
     def upscale(self, image, upscale_method, width, height, crop):
@@ -1891,6 +1997,8 @@ class ImageScaleBy:
     FUNCTION = "upscale"
 
     CATEGORY = "image/upscaling"
+    DESCRIPTION = "Scales an image by a relative factor using various interpolation methods."
+    SHORT_DESCRIPTION = None
 
     def upscale(self, image, upscale_method, scale_by):
         samples = image.movedim(-1,1)
@@ -1911,6 +2019,8 @@ class ImageInvert:
     FUNCTION = "invert"
 
     CATEGORY = "image"
+    DESCRIPTION = "Inverts image colors by subtracting each pixel value from 1.0."
+    SHORT_DESCRIPTION = None
 
     def invert(self, image):
         s = 1.0 - image
@@ -1927,6 +2037,8 @@ class ImageBatch:
     FUNCTION = "batch"
 
     CATEGORY = "image"
+    DESCRIPTION = "Batches two images together into a single batch, automatically resizing if dimensions differ. Deprecated in favor of the general-purpose Batch node."
+    SHORT_DESCRIPTION = "Batches two images together (deprecated)."
     DEPRECATED = True
 
     def batch(self, image1, image2):
@@ -1955,6 +2067,8 @@ class EmptyImage:
     FUNCTION = "generate"
 
     CATEGORY = "image"
+    DESCRIPTION = "Creates a batch of blank images filled with a specified color at the given dimensions."
+    SHORT_DESCRIPTION = "Creates blank images filled with a solid color."
 
     def generate(self, width, height, batch_size=1, color=0):
         r = torch.full([batch_size, height, width, 1], ((color >> 16) & 0xFF) / 0xFF)
@@ -1982,6 +2096,8 @@ class ImagePadForOutpaint:
     FUNCTION = "expand_image"
 
     CATEGORY = "image"
+    DESCRIPTION = "Pads an image on all sides for outpainting, generating a feathered mask that blends the original image edges into the new padded area."
+    SHORT_DESCRIPTION = "Pads images with feathered mask for outpainting."
 
     def expand_image(self, image, left, top, right, bottom, feathering):
         d1, d2, d3, d4 = image.size()

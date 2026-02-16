@@ -38,6 +38,8 @@ class PairConditioningSetProperties:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING")
     RETURN_NAMES = ("positive", "negative")
     CATEGORY = "advanced/hooks/cond pair"
+    DESCRIPTION = "Set properties like strength, mask, hooks, and timesteps on a positive/negative conditioning pair."
+    SHORT_DESCRIPTION = "Set properties on a positive/negative conditioning pair."
     FUNCTION = "set_properties"
 
     def set_properties(self, positive_NEW, negative_NEW,
@@ -73,6 +75,8 @@ class PairConditioningSetPropertiesAndCombine:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING")
     RETURN_NAMES = ("positive", "negative")
     CATEGORY = "advanced/hooks/cond pair"
+    DESCRIPTION = "Set properties on new conditioning pair and combine with existing positive/negative conditioning."
+    SHORT_DESCRIPTION = "Set properties on new cond pair, combine with existing."
     FUNCTION = "set_properties"
 
     def set_properties(self, positive, negative, positive_NEW, negative_NEW,
@@ -104,6 +108,8 @@ class ConditioningSetProperties:
     EXPERIMENTAL = True
     RETURN_TYPES = ("CONDITIONING",)
     CATEGORY = "advanced/hooks/cond single"
+    DESCRIPTION = "Set properties like strength, mask, hooks, and timesteps on a single conditioning input."
+    SHORT_DESCRIPTION = "Set properties on a single conditioning input."
     FUNCTION = "set_properties"
 
     def set_properties(self, cond_NEW,
@@ -136,6 +142,8 @@ class ConditioningSetPropertiesAndCombine:
     EXPERIMENTAL = True
     RETURN_TYPES = ("CONDITIONING",)
     CATEGORY = "advanced/hooks/cond single"
+    DESCRIPTION = "Set properties on new conditioning and combine it with an existing conditioning input."
+    SHORT_DESCRIPTION = "Set properties on new conditioning, combine with existing."
     FUNCTION = "set_properties"
 
     def set_properties(self, cond, cond_NEW,
@@ -164,6 +172,8 @@ class PairConditioningCombine:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING")
     RETURN_NAMES = ("positive", "negative")
     CATEGORY = "advanced/hooks/cond pair"
+    DESCRIPTION = "Combine two positive/negative conditioning pairs into a single pair."
+    SHORT_DESCRIPTION = None
     FUNCTION = "combine"
 
     def combine(self, positive_A, negative_A, positive_B, negative_B):
@@ -191,6 +201,8 @@ class PairConditioningSetDefaultAndCombine:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING")
     RETURN_NAMES = ("positive", "negative")
     CATEGORY = "advanced/hooks/cond pair"
+    DESCRIPTION = "Set default conditioning pair and combine it with existing positive/negative conditioning and optional hooks."
+    SHORT_DESCRIPTION = "Set default cond pair and combine with existing."
     FUNCTION = "set_default_and_combine"
 
     def set_default_and_combine(self, positive, negative, positive_DEFAULT, negative_DEFAULT,
@@ -217,6 +229,8 @@ class ConditioningSetDefaultAndCombine:
     EXPERIMENTAL = True
     RETURN_TYPES = ("CONDITIONING",)
     CATEGORY = "advanced/hooks/cond single"
+    DESCRIPTION = "Set default conditioning and combine it with existing conditioning input and optional hooks."
+    SHORT_DESCRIPTION = "Set default conditioning and combine with existing."
     FUNCTION = "set_default_and_combine"
 
     def set_default_and_combine(self, cond, cond_DEFAULT,
@@ -244,6 +258,8 @@ class SetClipHooks:
     EXPERIMENTAL = True
     RETURN_TYPES = ("CLIP",)
     CATEGORY = "advanced/hooks/clip"
+    DESCRIPTION = "Apply hooks to a CLIP model, optionally propagating them to conditioning outputs and enabling CLIP scheduling."
+    SHORT_DESCRIPTION = "Apply hooks to a CLIP model with scheduling options."
     FUNCTION = "apply_hooks"
 
     def apply_hooks(self, clip: CLIP, schedule_clip: bool, apply_to_conds: bool, hooks: comfy.hooks.HookGroup=None):
@@ -275,6 +291,8 @@ class ConditioningTimestepsRange:
     RETURN_TYPES = ("TIMESTEPS_RANGE", "TIMESTEPS_RANGE", "TIMESTEPS_RANGE")
     RETURN_NAMES = ("TIMESTEPS_RANGE", "BEFORE_RANGE", "AFTER_RANGE")
     CATEGORY = "advanced/hooks"
+    DESCRIPTION = "Define a timestep percentage range and output the range plus its complement before and after segments."
+    SHORT_DESCRIPTION = "Define a timestep range with before/after complements."
     FUNCTION = "create_range"
 
     def create_range(self, start_percent: float, end_percent: float):
@@ -308,6 +326,8 @@ class CreateHookLora:
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/create"
+    DESCRIPTION = "Create a LoRA hook with separate model and CLIP strength that can be scheduled on conditioning."
+    SHORT_DESCRIPTION = "Create a LoRA hook with model and CLIP strength."
     FUNCTION = "create_hook"
 
     def create_hook(self, lora_name: str, strength_model: float, strength_clip: float, prev_hooks: comfy.hooks.HookGroup=None):
@@ -353,6 +373,8 @@ class CreateHookLoraModelOnly(CreateHookLora):
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/create"
+    DESCRIPTION = "Create a LoRA hook that only affects the model (not CLIP) for scheduling on conditioning."
+    SHORT_DESCRIPTION = "Create a model-only LoRA hook."
     FUNCTION = "create_hook_model_only"
 
     def create_hook_model_only(self, lora_name: str, strength_model: float, prev_hooks: comfy.hooks.HookGroup=None):
@@ -383,6 +405,8 @@ class CreateHookModelAsLora:
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/create"
+    DESCRIPTION = "Create a hook from a full checkpoint treated as a LoRA, with separate model and CLIP strength controls."
+    SHORT_DESCRIPTION = "Create a hook from a checkpoint treated as LoRA."
     FUNCTION = "create_hook"
 
     def create_hook(self, ckpt_name: str, strength_model: float, strength_clip: float,
@@ -431,6 +455,8 @@ class CreateHookModelAsLoraModelOnly(CreateHookModelAsLora):
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/create"
+    DESCRIPTION = "Create a model-only hook from a full checkpoint treated as a LoRA, without affecting CLIP."
+    SHORT_DESCRIPTION = "Create a model-only hook from a checkpoint as LoRA."
     FUNCTION = "create_hook_model_only"
 
     def create_hook_model_only(self, ckpt_name: str, strength_model: float,
@@ -460,6 +486,8 @@ class SetHookKeyframes:
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/scheduling"
+    DESCRIPTION = "Assign keyframe schedules to hooks for controlling their strength over time during sampling."
+    SHORT_DESCRIPTION = "Assign keyframe schedules to hooks over time."
     FUNCTION = "set_hook_keyframes"
 
     def set_hook_keyframes(self, hooks: comfy.hooks.HookGroup, hook_kf: comfy.hooks.HookKeyframeGroup=None):
@@ -488,6 +516,8 @@ class CreateHookKeyframe:
     RETURN_TYPES = ("HOOK_KEYFRAMES",)
     RETURN_NAMES = ("HOOK_KF",)
     CATEGORY = "advanced/hooks/scheduling"
+    DESCRIPTION = "Create a single hook keyframe with a strength multiplier at a specific timestep percentage."
+    SHORT_DESCRIPTION = "Create a hook keyframe at a specific timestep."
     FUNCTION = "create_hook_keyframe"
 
     def create_hook_keyframe(self, strength_mult: float, start_percent: float, prev_hook_kf: comfy.hooks.HookKeyframeGroup=None):
@@ -523,6 +553,8 @@ class CreateHookKeyframesInterpolated:
     RETURN_TYPES = ("HOOK_KEYFRAMES",)
     RETURN_NAMES = ("HOOK_KF",)
     CATEGORY = "advanced/hooks/scheduling"
+    DESCRIPTION = "Generate multiple interpolated hook keyframes between start and end strength values over a timestep range."
+    SHORT_DESCRIPTION = "Generate interpolated hook keyframes over a timestep range."
     FUNCTION = "create_hook_keyframes"
 
     def create_hook_keyframes(self, strength_start: float, strength_end: float, interpolation: str,
@@ -568,6 +600,8 @@ class CreateHookKeyframesFromFloats:
     RETURN_TYPES = ("HOOK_KEYFRAMES",)
     RETURN_NAMES = ("HOOK_KF",)
     CATEGORY = "advanced/hooks/scheduling"
+    DESCRIPTION = "Create hook keyframes from a list of float values distributed evenly across a timestep percentage range."
+    SHORT_DESCRIPTION = "Create hook keyframes from a list of float values."
     FUNCTION = "create_hook_keyframes"
 
     def create_hook_keyframes(self, floats_strength: Union[float, list[float]],
@@ -639,6 +673,8 @@ class CombineHooks:
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/combine"
+    DESCRIPTION = "Combine two hook groups into one."
+    SHORT_DESCRIPTION = None
     FUNCTION = "combine_hooks"
 
     def combine_hooks(self,
@@ -666,6 +702,8 @@ class CombineHooksFour:
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/combine"
+    DESCRIPTION = "Combine up to four hook groups into one."
+    SHORT_DESCRIPTION = None
     FUNCTION = "combine_hooks"
 
     def combine_hooks(self,
@@ -699,6 +737,8 @@ class CombineHooksEight:
     EXPERIMENTAL = True
     RETURN_TYPES = ("HOOKS",)
     CATEGORY = "advanced/hooks/combine"
+    DESCRIPTION = "Combine up to eight hook groups into one."
+    SHORT_DESCRIPTION = None
     FUNCTION = "combine_hooks"
 
     def combine_hooks(self,

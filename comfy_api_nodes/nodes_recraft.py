@@ -180,6 +180,7 @@ class RecraftColorRGBNode(IO.ComfyNode):
             display_name="Recraft Color RGB",
             category="api node/image/Recraft",
             description="Create Recraft Color by choosing specific RGB values.",
+            short_description=None,
             inputs=[
                 IO.Int.Input("r", default=0, min=0, max=255, tooltip="Red value of color."),
                 IO.Int.Input("g", default=0, min=0, max=255, tooltip="Green value of color."),
@@ -206,6 +207,7 @@ class RecraftControlsNode(IO.ComfyNode):
             display_name="Recraft Controls",
             category="api node/image/Recraft",
             description="Create Recraft Controls for customizing Recraft generation.",
+            short_description=None,
             inputs=[
                 IO.Custom(RecraftIO.COLOR).Input("colors", optional=True),
                 IO.Custom(RecraftIO.COLOR).Input("background_color", optional=True),
@@ -230,6 +232,7 @@ class RecraftStyleV3RealisticImageNode(IO.ComfyNode):
             display_name="Recraft Style - Realistic Image",
             category="api node/image/Recraft",
             description="Select realistic_image style and optional substyle.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("substyle", options=get_v3_substyles(cls.RECRAFT_STYLE)),
             ],
@@ -254,7 +257,8 @@ class RecraftStyleV3DigitalIllustrationNode(RecraftStyleV3RealisticImageNode):
             node_id="RecraftStyleV3DigitalIllustration",
             display_name="Recraft Style - Digital Illustration",
             category="api node/image/Recraft",
-            description="Select realistic_image style and optional substyle.",
+            description="Select digital_illustration style and optional substyle.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("substyle", options=get_v3_substyles(cls.RECRAFT_STYLE)),
             ],
@@ -271,9 +275,10 @@ class RecraftStyleV3VectorIllustrationNode(RecraftStyleV3RealisticImageNode):
     def define_schema(cls):
         return IO.Schema(
             node_id="RecraftStyleV3VectorIllustrationNode",
-            display_name="Recraft Style - Realistic Image",
+            display_name="Recraft Style - Vector Illustration",
             category="api node/image/Recraft",
-            description="Select realistic_image style and optional substyle.",
+            description="Select vector_illustration style and optional substyle.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("substyle", options=get_v3_substyles(cls.RECRAFT_STYLE)),
             ],
@@ -292,7 +297,8 @@ class RecraftStyleV3LogoRasterNode(RecraftStyleV3RealisticImageNode):
             node_id="RecraftStyleV3LogoRaster",
             display_name="Recraft Style - Logo Raster",
             category="api node/image/Recraft",
-            description="Select realistic_image style and optional substyle.",
+            description="Select logo_raster style and optional substyle.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("substyle", options=get_v3_substyles(cls.RECRAFT_STYLE, include_none=False)),
             ],
@@ -310,6 +316,7 @@ class RecraftStyleInfiniteStyleLibrary(IO.ComfyNode):
             display_name="Recraft Style - Infinite Style Library",
             category="api node/image/Recraft",
             description="Select style based on preexisting UUID from Recraft's Infinite Style Library.",
+            short_description=None,
             inputs=[
                 IO.String.Input("style_id", default="", tooltip="UUID of style from Infinite Style Library."),
             ],
@@ -335,6 +342,7 @@ class RecraftCreateStyleNode(IO.ComfyNode):
             description="Create a custom style from reference images. "
             "Upload 1-5 images to use as style references. "
             "Total size of all images is limited to 5 MB.",
+            short_description="Create a custom style from 1-5 reference images.",
             inputs=[
                 IO.Combo.Input(
                     "style",
@@ -402,6 +410,7 @@ class RecraftTextToImageNode(IO.ComfyNode):
             display_name="Recraft Text to Image",
             category="api node/image/Recraft",
             description="Generates images synchronously based on prompt and resolution.",
+            short_description=None,
             inputs=[
                 IO.String.Input("prompt", multiline=True, default="", tooltip="Prompt for the image generation."),
                 IO.Combo.Input(
@@ -514,6 +523,7 @@ class RecraftImageToImageNode(IO.ComfyNode):
             display_name="Recraft Image to Image",
             category="api node/image/Recraft",
             description="Modify image based on prompt and strength.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.String.Input("prompt", multiline=True, default="", tooltip="Prompt for the image generation."),
@@ -632,6 +642,7 @@ class RecraftImageInpaintingNode(IO.ComfyNode):
             display_name="Recraft Image Inpainting",
             category="api node/image/Recraft",
             description="Modify image based on prompt and mask.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.Mask.Input("mask"),
@@ -734,6 +745,7 @@ class RecraftTextToVectorNode(IO.ComfyNode):
             display_name="Recraft Text to Vector",
             category="api node/image/Recraft",
             description="Generates SVG synchronously based on prompt and resolution.",
+            short_description=None,
             inputs=[
                 IO.String.Input("prompt", default="", tooltip="Prompt for the image generation.", multiline=True),
                 IO.Combo.Input("substyle", options=get_v3_substyles(RecraftStyleV3.vector_illustration)),
@@ -834,6 +846,7 @@ class RecraftVectorizeImageNode(IO.ComfyNode):
             display_name="Recraft Vectorize Image",
             category="api node/image/Recraft",
             description="Generates SVG synchronously from an input image.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
             ],
@@ -877,6 +890,7 @@ class RecraftReplaceBackgroundNode(IO.ComfyNode):
             display_name="Recraft Replace Background",
             category="api node/image/Recraft",
             description="Replace background on image, based on provided prompt.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
                 IO.String.Input("prompt", tooltip="Prompt for the image generation.", default="", multiline=True),
@@ -964,6 +978,7 @@ class RecraftRemoveBackgroundNode(IO.ComfyNode):
             display_name="Recraft Remove Background",
             category="api node/image/Recraft",
             description="Remove background from image, and return processed image and mask.",
+            short_description=None,
             inputs=[
                 IO.Image.Input("image"),
             ],
@@ -1012,8 +1027,9 @@ class RecraftCrispUpscaleNode(IO.ComfyNode):
             display_name="Recraft Crisp Upscale Image",
             category="api node/image/Recraft",
             description="Upscale image synchronously.\n"
-            "Enhances a given raster image using ‘crisp upscale’ tool, "
+            "Enhances a given raster image using 'crisp upscale' tool, "
             "increasing image resolution, making the image sharper and cleaner.",
+            short_description="Crisp upscale to sharpen and increase image resolution.",
             inputs=[
                 IO.Image.Input("image"),
             ],
@@ -1058,8 +1074,9 @@ class RecraftCreativeUpscaleNode(RecraftCrispUpscaleNode):
             display_name="Recraft Creative Upscale Image",
             category="api node/image/Recraft",
             description="Upscale image synchronously.\n"
-            "Enhances a given raster image using ‘creative upscale’ tool, "
+            "Enhances a given raster image using 'creative upscale' tool, "
             "boosting resolution with a focus on refining small details and faces.",
+            short_description="Creative upscale focusing on small details and faces.",
             inputs=[
                 IO.Image.Input("image"),
             ],

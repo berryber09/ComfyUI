@@ -17,6 +17,8 @@ class APG(io.ComfyNode):
             node_id="APG",
             display_name="Adaptive Projected Guidance",
             category="sampling/custom_sampling",
+            description="Applies Adaptive Projected Guidance to a model, decomposing CFG guidance into parallel and orthogonal components with optional momentum and norm thresholding for improved sampling quality.",
+            short_description="Decomposes CFG guidance with projection and normalization.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input(

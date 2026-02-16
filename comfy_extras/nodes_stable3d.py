@@ -28,6 +28,8 @@ class StableZero123_Conditioning(io.ComfyNode):
         return io.Schema(
             node_id="StableZero123_Conditioning",
             category="conditioning/3d_models",
+            description="Prepares conditioning for Stable Zero123 novel view synthesis by encoding an image with CLIP vision and VAE, combined with camera elevation and azimuth embeddings.",
+            short_description="Conditioning for Stable Zero123 novel view synthesis.",
             inputs=[
                 io.ClipVision.Input("clip_vision"),
                 io.Image.Input("init_image"),
@@ -66,6 +68,8 @@ class StableZero123_Conditioning_Batched(io.ComfyNode):
         return io.Schema(
             node_id="StableZero123_Conditioning_Batched",
             category="conditioning/3d_models",
+            description="Prepares batched conditioning for Stable Zero123 with incrementally changing elevation and azimuth angles across the batch for multi-view generation.",
+            short_description="Batched Stable Zero123 conditioning with angle increments.",
             inputs=[
                 io.ClipVision.Input("clip_vision"),
                 io.Image.Input("init_image"),
@@ -113,6 +117,8 @@ class SV3D_Conditioning(io.ComfyNode):
         return io.Schema(
             node_id="SV3D_Conditioning",
             category="conditioning/3d_models",
+            description="Prepares conditioning for SV3D multi-view video generation by encoding an image with CLIP vision and VAE, generating a full 360-degree azimuth orbit at a fixed elevation.",
+            short_description="Conditioning for SV3D 360-degree multi-view generation.",
             inputs=[
                 io.ClipVision.Input("clip_vision"),
                 io.Image.Input("init_image"),

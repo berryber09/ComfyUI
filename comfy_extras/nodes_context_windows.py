@@ -12,6 +12,7 @@ class ContextWindowsManualNode(io.ComfyNode):
             display_name="Context Windows (Manual)",
             category="context",
             description="Manually set context windows.",
+            short_description=None,
             inputs=[
                 io.Model.Input("model", tooltip="The model to apply context windows to during sampling."),
                 io.Int.Input("context_length", min=1, default=16, tooltip="The length of the context window."),
@@ -65,6 +66,7 @@ class WanContextWindowsManualNode(ContextWindowsManualNode):
         schema.node_id = "WanContextWindowsManual"
         schema.display_name = "WAN Context Windows (Manual)"
         schema.description = "Manually set context windows for WAN-like models (dim=2)."
+        schema.short_description = None
         schema.inputs = [
             io.Model.Input("model", tooltip="The model to apply context windows to during sampling."),
                 io.Int.Input("context_length", min=1, max=nodes.MAX_RESOLUTION, step=4, default=81, tooltip="The length of the context window."),

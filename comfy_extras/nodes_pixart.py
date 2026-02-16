@@ -10,6 +10,7 @@ class CLIPTextEncodePixArtAlpha(io.ComfyNode):
             search_aliases=["pixart prompt"],
             category="advanced/conditioning",
             description="Encodes text and sets the resolution conditioning for PixArt Alpha. Does not apply to PixArt Sigma.",
+            short_description="Encodes text with resolution conditioning for PixArt Alpha.",
             inputs=[
                 io.Int.Input("width", default=1024, min=0, max=nodes.MAX_RESOLUTION),
                 io.Int.Input("height", default=1024, min=0, max=nodes.MAX_RESOLUTION),

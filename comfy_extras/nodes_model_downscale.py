@@ -11,6 +11,8 @@ class PatchModelAddDownscale(io.ComfyNode):
             node_id="PatchModelAddDownscale",
             display_name="PatchModelAddDownscale (Kohya Deep Shrink)",
             category="model_patches/unet",
+            description="Patches the UNet to downscale internal feature maps at a specified block during a configurable sigma range, then upscale on output, implementing the Kohya Deep Shrink technique for faster generation.",
+            short_description="Kohya Deep Shrink: downscale UNet internals for speed.",
             inputs=[
                 io.Model.Input("model"),
                 io.Int.Input("block_number", default=3, min=1, max=32, step=1),

@@ -16,6 +16,8 @@ class PerturbedAttentionGuidance(io.ComfyNode):
         return io.Schema(
             node_id="PerturbedAttentionGuidance",
             category="model_patches/unet",
+            description="Applies Perturbed Attention Guidance (PAG) by replacing self-attention with identity in the middle block to compute a guidance signal that enhances structural coherence.",
+            short_description="Perturbed Attention Guidance for structural coherence.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("scale", default=3.0, min=0.0, max=100.0, step=0.01, round=0.01),

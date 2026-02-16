@@ -9,6 +9,8 @@ class CLIPTextEncodeControlnet(io.ComfyNode):
         return io.Schema(
             node_id="CLIPTextEncodeControlnet",
             category="_for_testing/conditioning",
+            description="Encodes text with CLIP and attaches the result as cross-attention controlnet conditioning to existing conditioning data.",
+            short_description="CLIP text encode for controlnet cross-attention conditioning.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.Conditioning.Input("conditioning"),
@@ -36,6 +38,8 @@ class T5TokenizerOptions(io.ComfyNode):
         return io.Schema(
             node_id="T5TokenizerOptions",
             category="_for_testing/conditioning",
+            description="Configures minimum padding and length options for T5-family tokenizers used in CLIP text encoding.",
+            short_description="Set T5 tokenizer padding and length options.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.Int.Input("min_padding", default=0, min=0, max=10000, step=1),

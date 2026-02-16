@@ -13,6 +13,8 @@ class CLIPTextEncodeFlux(io.ComfyNode):
         return io.Schema(
             node_id="CLIPTextEncodeFlux",
             category="advanced/conditioning/flux",
+            description="Encodes separate CLIP-L and T5-XXL text prompts with a guidance value into Flux conditioning.",
+            short_description="Encodes CLIP-L and T5-XXL prompts for Flux.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("clip_l", multiline=True, dynamic_prompts=True),
@@ -40,6 +42,8 @@ class EmptyFlux2LatentImage(io.ComfyNode):
             node_id="EmptyFlux2LatentImage",
             display_name="Empty Flux 2 Latent",
             category="latent",
+            description="Creates an empty Flux 2 latent image tensor with the specified width, height, and batch size.",
+            short_description="Creates an empty Flux 2 latent image tensor.",
             inputs=[
                 io.Int.Input("width", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input("height", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=16),
@@ -61,6 +65,8 @@ class FluxGuidance(io.ComfyNode):
         return io.Schema(
             node_id="FluxGuidance",
             category="advanced/conditioning/flux",
+            description="Sets the guidance strength value on Flux conditioning to control how closely generation follows the prompt.",
+            short_description="Sets guidance strength on Flux conditioning.",
             inputs=[
                 io.Conditioning.Input("conditioning"),
                 io.Float.Input("guidance", default=3.5, min=0.0, max=100.0, step=0.1),
@@ -85,6 +91,7 @@ class FluxDisableGuidance(io.ComfyNode):
             node_id="FluxDisableGuidance",
             category="advanced/conditioning/flux",
             description="This node completely disables the guidance embed on Flux and Flux like models",
+            short_description="Disables guidance embed on Flux and Flux-like models.",
             inputs=[
                 io.Conditioning.Input("conditioning"),
             ],
@@ -129,6 +136,7 @@ class FluxKontextImageScale(io.ComfyNode):
             node_id="FluxKontextImageScale",
             category="advanced/conditioning/flux",
             description="This node resizes the image to one that is more optimal for flux kontext.",
+            short_description="Resizes images to optimal dimensions for Flux Kontext.",
             inputs=[
                 io.Image.Input("image"),
             ],
@@ -156,6 +164,8 @@ class FluxKontextMultiReferenceLatentMethod(io.ComfyNode):
             node_id="FluxKontextMultiReferenceLatentMethod",
             display_name="Edit Model Reference Method",
             category="advanced/conditioning/flux",
+            description="Selects the method used for handling multiple reference latents in Flux Kontext edit models.",
+            short_description="Selects reference latent method for Flux Kontext.",
             inputs=[
                 io.Conditioning.Input("conditioning"),
                 io.Combo.Input(
@@ -214,6 +224,8 @@ class Flux2Scheduler(io.ComfyNode):
         return io.Schema(
             node_id="Flux2Scheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a sigma schedule for Flux 2 sampling based on step count and image resolution.",
+            short_description="Generates a sigma schedule for Flux 2 sampling.",
             inputs=[
                 io.Int.Input("steps", default=20, min=1, max=4096),
                 io.Int.Input("width", default=1024, min=16, max=nodes.MAX_RESOLUTION, step=1),

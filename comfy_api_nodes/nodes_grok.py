@@ -36,6 +36,7 @@ class GrokImageNode(IO.ComfyNode):
             display_name="Grok Image",
             category="api node/image/Grok",
             description="Generate images using Grok based on a text prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["grok-imagine-image-beta"]),
                 IO.String.Input(
@@ -137,6 +138,7 @@ class GrokImageEditNode(IO.ComfyNode):
             display_name="Grok Image Edit",
             category="api node/image/Grok",
             description="Modify an existing image based on a text prompt",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["grok-imagine-image-beta"]),
                 IO.Image.Input("image"),
@@ -226,6 +228,7 @@ class GrokVideoNode(IO.ComfyNode):
             display_name="Grok Video",
             category="api node/video/Grok",
             description="Generate video from a prompt or an image",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["grok-imagine-video-beta"]),
                 IO.String.Input(
@@ -334,6 +337,7 @@ class GrokVideoEditNode(IO.ComfyNode):
             display_name="Grok Video Edit",
             category="api node/video/Grok",
             description="Edit an existing video based on a text prompt.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["grok-imagine-video-beta"]),
                 IO.String.Input(

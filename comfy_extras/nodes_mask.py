@@ -52,6 +52,8 @@ class LatentCompositeMasked(IO.ComfyNode):
             node_id="LatentCompositeMasked",
             search_aliases=["overlay latent", "layer latent", "paste latent", "inpaint latent"],
             category="latent",
+            description="Composites a source latent onto a destination latent at a specified position with optional mask and resize support.",
+            short_description="Composites one latent onto another with masking.",
             inputs=[
                 IO.Latent.Input("destination"),
                 IO.Latent.Input("source"),
@@ -81,6 +83,8 @@ class ImageCompositeMasked(IO.ComfyNode):
             node_id="ImageCompositeMasked",
             search_aliases=["paste image", "overlay", "layer"],
             category="image",
+            description="Composites a source image onto a destination image at a specified position with optional mask and resize support.",
+            short_description="Composites one image onto another with masking.",
             inputs=[
                 IO.Image.Input("destination"),
                 IO.Image.Input("source"),
@@ -110,6 +114,8 @@ class MaskToImage(IO.ComfyNode):
             search_aliases=["convert mask"],
             display_name="Convert Mask to Image",
             category="mask",
+            description="Converts a single-channel mask into a three-channel grayscale image.",
+            short_description=None,
             inputs=[
                 IO.Mask.Input("mask"),
             ],
@@ -132,6 +138,7 @@ class ImageToMask(IO.ComfyNode):
             search_aliases=["extract channel", "channel to mask"],
             display_name="Convert Image to Mask",
             category="mask",
+            description="Extracts a selected color channel from an image as a mask.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Combo.Input("channel", options=["red", "green", "blue", "alpha"]),
@@ -155,6 +162,8 @@ class ImageColorToMask(IO.ComfyNode):
             node_id="ImageColorToMask",
             search_aliases=["color keying", "chroma key"],
             category="mask",
+            description="Creates a mask from an image where pixels matching a specified RGB color value become white.",
+            short_description="Creates a mask from pixels matching a color.",
             inputs=[
                 IO.Image.Input("image"),
                 IO.Int.Input("color", default=0, min=0, max=0xFFFFFF, step=1, display_mode=IO.NumberDisplay.number),
@@ -178,6 +187,8 @@ class SolidMask(IO.ComfyNode):
         return IO.Schema(
             node_id="SolidMask",
             category="mask",
+            description="Creates a uniform solid mask filled with a single value at the specified dimensions.",
+            short_description="Creates a solid mask with a uniform value.",
             inputs=[
                 IO.Float.Input("value", default=1.0, min=0.0, max=1.0, step=0.01),
                 IO.Int.Input("width", default=512, min=1, max=nodes.MAX_RESOLUTION, step=1),
@@ -201,6 +212,8 @@ class InvertMask(IO.ComfyNode):
             node_id="InvertMask",
             search_aliases=["reverse mask", "flip mask"],
             category="mask",
+            description="Inverts a mask so white becomes black and vice versa.",
+            short_description=None,
             inputs=[
                 IO.Mask.Input("mask"),
             ],
@@ -222,6 +235,8 @@ class CropMask(IO.ComfyNode):
             node_id="CropMask",
             search_aliases=["cut mask", "extract mask region", "mask slice"],
             category="mask",
+            description="Crops a rectangular region from a mask at the specified position and dimensions.",
+            short_description="Crops a rectangular region from a mask.",
             inputs=[
                 IO.Mask.Input("mask"),
                 IO.Int.Input("x", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
@@ -248,6 +263,8 @@ class MaskComposite(IO.ComfyNode):
             node_id="MaskComposite",
             search_aliases=["combine masks", "blend masks", "layer masks"],
             category="mask",
+            description="Composites a source mask onto a destination mask at a specified position using selectable blend operations.",
+            short_description="Composites masks with selectable blend operations.",
             inputs=[
                 IO.Mask.Input("destination"),
                 IO.Mask.Input("source"),
@@ -297,6 +314,8 @@ class FeatherMask(IO.ComfyNode):
             node_id="FeatherMask",
             search_aliases=["soft edge mask", "blur mask edges", "gradient mask edge"],
             category="mask",
+            description="Applies a soft gradient feather to the edges of a mask with independent control for each side.",
+            short_description="Feathers mask edges with per-side control.",
             inputs=[
                 IO.Mask.Input("mask"),
                 IO.Int.Input("left", default=0, min=0, max=nodes.MAX_RESOLUTION, step=1),
@@ -345,6 +364,8 @@ class GrowMask(IO.ComfyNode):
             search_aliases=["expand mask", "shrink mask"],
             display_name="Grow Mask",
             category="mask",
+            description="Expands or shrinks a mask by a specified number of pixels using morphological dilation or erosion with optional tapered corners.",
+            short_description="Expands or shrinks a mask by pixel amount.",
             inputs=[
                 IO.Mask.Input("mask"),
                 IO.Int.Input("expand", default=0, min=-nodes.MAX_RESOLUTION, max=nodes.MAX_RESOLUTION, step=1),
@@ -382,6 +403,8 @@ class ThresholdMask(IO.ComfyNode):
             node_id="ThresholdMask",
             search_aliases=["binary mask"],
             category="mask",
+            description="Converts a mask to binary by setting pixels above a threshold to white and below to black.",
+            short_description="Converts a mask to binary using a threshold.",
             inputs=[
                 IO.Mask.Input("mask"),
                 IO.Float.Input("value", default=0.5, min=0.0, max=1.0, step=0.01),
@@ -408,7 +431,8 @@ class MaskPreview(IO.ComfyNode):
             search_aliases=["show mask", "view mask", "inspect mask", "debug mask"],
             display_name="Preview Mask",
             category="mask",
-            description="Saves the input images to your ComfyUI output directory.",
+            description="Previews a mask in the UI by rendering it as a grayscale image.",
+            short_description="Previews a mask as a grayscale image.",
             inputs=[
                 IO.Mask.Input("mask"),
             ],

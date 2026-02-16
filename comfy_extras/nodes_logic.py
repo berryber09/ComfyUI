@@ -16,6 +16,8 @@ class SwitchNode(io.ComfyNode):
             node_id="ComfySwitchNode",
             display_name="Switch",
             category="logic",
+            description="Routes one of two inputs to the output based on a boolean switch value, evaluating only the selected branch lazily.",
+            short_description="Route one of two inputs based on a boolean.",
             is_experimental=True,
             inputs=[
                 io.Boolean.Input("switch"),
@@ -47,6 +49,8 @@ class SoftSwitchNode(io.ComfyNode):
             node_id="ComfySoftSwitchNode",
             display_name="Soft Switch",
             category="logic",
+            description="Routes one of two optional inputs to the output based on a boolean, falling back to whichever input is connected if only one is provided.",
+            short_description="Switch with optional fallback to connected input.",
             is_experimental=True,
             inputs=[
                 io.Boolean.Input("switch"),
@@ -102,6 +106,8 @@ class CustomComboNode(io.ComfyNode):
             node_id="CustomCombo",
             display_name="Custom Combo",
             category="utils",
+            description="Provides a user-defined dropdown combo box where options are written by the user, outputting the selected string and its index.",
+            short_description="User-defined dropdown outputting string and index.",
             is_experimental=True,
             inputs=[io.Combo.Input("choice", options=[])],
             outputs=[
@@ -137,6 +143,8 @@ class DCTestNode(io.ComfyNode):
             node_id="DCTestNode",
             display_name="DCTest",
             category="logic",
+            description="Test node demonstrating DynamicCombo inputs with nested sub-options that conditionally show different input types.",
+            short_description="Test node for DynamicCombo nested inputs.",
             is_output_node=True,
             inputs=[io.DynamicCombo.Input("combo", options=[
                 io.DynamicCombo.Option("option1", [io.String.Input("string")]),
@@ -175,6 +183,8 @@ class AutogrowNamesTestNode(io.ComfyNode):
             node_id="AutogrowNamesTestNode",
             display_name="AutogrowNamesTest",
             category="logic",
+            description="Test node demonstrating Autogrow inputs with named template slots that dynamically add float inputs.",
+            short_description="Test node for Autogrow named template inputs.",
             inputs=[
                 _io.Autogrow.Input("autogrow", template=template)
             ],
@@ -195,6 +205,8 @@ class AutogrowPrefixTestNode(io.ComfyNode):
             node_id="AutogrowPrefixTestNode",
             display_name="AutogrowPrefixTest",
             category="logic",
+            description="Test node demonstrating Autogrow inputs with prefix-based template slots that dynamically add numbered float inputs.",
+            short_description="Test node for Autogrow prefix template inputs.",
             inputs=[
                 _io.Autogrow.Input("autogrow", template=template)
             ],
@@ -214,6 +226,8 @@ class ComboOutputTestNode(io.ComfyNode):
             node_id="ComboOptionTestNode",
             display_name="ComboOptionTest",
             category="logic",
+            description="Test node demonstrating combo output types by passing two selected combo values through as outputs.",
+            short_description="Test node for combo output passthrough.",
             inputs=[io.Combo.Input("combo", options=["option1", "option2", "option3"]),
                     io.Combo.Input("combo2", options=["option4", "option5", "option6"])],
             outputs=[io.Combo.Output(), io.Combo.Output()],
@@ -231,6 +245,8 @@ class ConvertStringToComboNode(io.ComfyNode):
             search_aliases=["string to dropdown", "text to combo"],
             display_name="Convert String to Combo",
             category="logic",
+            description="Converts a string value into a combo type output so it can be used as a dropdown selection in downstream nodes.",
+            short_description="Convert a string to a combo type output.",
             inputs=[io.String.Input("string")],
             outputs=[io.Combo.Output()],
         )
@@ -247,6 +263,8 @@ class InvertBooleanNode(io.ComfyNode):
             search_aliases=["not", "toggle", "negate", "flip boolean"],
             display_name="Invert Boolean",
             category="logic",
+            description="Inverts a boolean value, outputting true when input is false and vice versa.",
+            short_description="Invert a boolean value.",
             inputs=[io.Boolean.Input("boolean")],
             outputs=[io.Boolean.Output()],
         )

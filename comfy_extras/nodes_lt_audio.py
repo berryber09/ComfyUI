@@ -14,6 +14,8 @@ class LTXVAudioVAELoader(io.ComfyNode):
             node_id="LTXVAudioVAELoader",
             display_name="LTXV Audio VAE Loader",
             category="audio",
+            description="Loads an LTXV Audio VAE model from a checkpoint file for audio encoding and decoding.",
+            short_description="Loads an LTXV Audio VAE model checkpoint.",
             inputs=[
                 io.Combo.Input(
                     "ckpt_name",
@@ -38,6 +40,7 @@ class LTXVAudioVAEEncode(io.ComfyNode):
             node_id="LTXVAudioVAEEncode",
             display_name="LTXV Audio VAE Encode",
             category="audio",
+            description="Encodes audio into latent representations using the LTXV Audio VAE model.",
             inputs=[
                 io.Audio.Input("audio", tooltip="The audio to be encoded."),
                 io.Vae.Input(
@@ -68,6 +71,8 @@ class LTXVAudioVAEDecode(io.ComfyNode):
             node_id="LTXVAudioVAEDecode",
             display_name="LTXV Audio VAE Decode",
             category="audio",
+            description="Decodes latent representations back into audio using the LTXV Audio VAE model.",
+            short_description="Decodes latents back to audio via LTXV Audio VAE.",
             inputs=[
                 io.Latent.Input("samples", tooltip="The latent to be decoded."),
                 io.Vae.Input(
@@ -101,6 +106,8 @@ class LTXVEmptyLatentAudio(io.ComfyNode):
             node_id="LTXVEmptyLatentAudio",
             display_name="LTXV Empty Latent Audio",
             category="latent/audio",
+            description="Creates an empty LTXV audio latent tensor sized according to the frame count, frame rate, and Audio VAE configuration.",
+            short_description="Creates an empty LTXV audio latent tensor.",
             inputs=[
                 io.Int.Input(
                     "frames_number",
@@ -177,6 +184,7 @@ class LTXAVTextEncoderLoader(io.ComfyNode):
             display_name="LTXV Audio Text Encoder Loader",
             category="advanced/loaders",
             description="[Recipes]\n\nltxav: gemma 3 12B",
+            short_description=None,
             inputs=[
                 io.Combo.Input(
                     "text_encoder",

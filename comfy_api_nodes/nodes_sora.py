@@ -36,6 +36,7 @@ class OpenAIVideoSora2(IO.ComfyNode):
             display_name="OpenAI Sora - Video",
             category="api node/video/Sora",
             description="OpenAI video and audio generation.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "model",

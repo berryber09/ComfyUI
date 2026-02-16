@@ -26,6 +26,8 @@ class PerpNeg(io.ComfyNode):
             node_id="PerpNeg",
             display_name="Perp-Neg (DEPRECATED by PerpNegGuider)",
             category="_for_testing",
+            description="Applies perpendicular negative guidance by projecting out the component of negative conditioning parallel to positive conditioning. Deprecated in favor of PerpNegGuider.",
+            short_description="Perpendicular negative guidance (deprecated).",
             inputs=[
                 io.Model.Input("model"),
                 io.Conditioning.Input("empty_conditioning"),
@@ -128,6 +130,8 @@ class PerpNegGuider(io.ComfyNode):
         return io.Schema(
             node_id="PerpNegGuider",
             category="_for_testing",
+            description="Creates a guider that applies perpendicular negative guidance, computing positive, negative, and empty conditioning in a single batch for efficient sampling.",
+            short_description="Guider with perpendicular negative guidance.",
             inputs=[
                 io.Model.Input("model"),
                 io.Conditioning.Input("positive"),

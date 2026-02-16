@@ -10,6 +10,8 @@ class InstructPixToPixConditioning(io.ComfyNode):
         return io.Schema(
             node_id="InstructPixToPixConditioning",
             category="conditioning/instructpix2pix",
+            description="Prepares conditioning for InstructPix2Pix image editing by encoding the input image through a VAE and attaching it as concat latent to both positive and negative conditioning.",
+            short_description="Prepare conditioning for InstructPix2Pix editing.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),

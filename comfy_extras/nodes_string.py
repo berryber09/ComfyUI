@@ -11,6 +11,8 @@ class StringConcatenate(io.ComfyNode):
             node_id="StringConcatenate",
             display_name="Concatenate",
             category="utils/string",
+            description="Joins two strings together with an optional delimiter between them.",
+            short_description="Joins two strings with an optional delimiter.",
             search_aliases=["text concat", "join text", "merge text", "combine strings", "concat", "concatenate", "append text", "combine text", "string"],
             inputs=[
                 io.String.Input("string_a", multiline=True),
@@ -35,6 +37,8 @@ class StringSubstring(io.ComfyNode):
             search_aliases=["extract text", "text portion"],
             display_name="Substring",
             category="utils/string",
+            description="Extracts a portion of a string between the specified start and end indices.",
+            short_description="Extracts a portion of a string by index.",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.Int.Input("start"),
@@ -58,6 +62,8 @@ class StringLength(io.ComfyNode):
             search_aliases=["character count", "text size"],
             display_name="Length",
             category="utils/string",
+            description="Returns the number of characters in a string.",
+            short_description=None,
             inputs=[
                 io.String.Input("string", multiline=True),
             ],
@@ -79,6 +85,8 @@ class CaseConverter(io.ComfyNode):
             search_aliases=["text case", "uppercase", "lowercase", "capitalize"],
             display_name="Case Converter",
             category="utils/string",
+            description="Converts a string to a selected letter case.",
+            short_description="",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.Combo.Input("mode", options=["UPPERCASE", "lowercase", "Capitalize", "Title Case"]),
@@ -112,6 +120,8 @@ class StringTrim(io.ComfyNode):
             search_aliases=["clean whitespace", "remove whitespace"],
             display_name="Trim",
             category="utils/string",
+            description="Removes leading and/or trailing whitespace from a string.",
+            short_description="Removes whitespace from string edges.",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.Combo.Input("mode", options=["Both", "Left", "Right"]),
@@ -143,6 +153,8 @@ class StringReplace(io.ComfyNode):
             search_aliases=["find and replace", "substitute", "swap text"],
             display_name="Replace",
             category="utils/string",
+            description="Replaces all occurrences of a search string with a replacement string.",
+            short_description="Replaces all occurrences of a substring.",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.String.Input("find", multiline=True),
@@ -166,6 +178,8 @@ class StringContains(io.ComfyNode):
             search_aliases=["text includes", "string includes"],
             display_name="Contains",
             category="utils/string",
+            description="Checks whether a string contains a given substring, with optional case sensitivity.",
+            short_description="Checks if a string contains a substring.",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.String.Input("substring", multiline=True),
@@ -194,6 +208,8 @@ class StringCompare(io.ComfyNode):
             search_aliases=["text match", "string equals", "starts with", "ends with"],
             display_name="Compare",
             category="utils/string",
+            description="Compares two strings for equality, or checks if one starts with or ends with the other.",
+            short_description="Compares two strings using various modes.",
             inputs=[
                 io.String.Input("string_a", multiline=True),
                 io.String.Input("string_b", multiline=True),
@@ -230,6 +246,8 @@ class RegexMatch(io.ComfyNode):
             search_aliases=["pattern match", "text contains", "string match"],
             display_name="Regex Match",
             category="utils/string",
+            description="Tests whether a string matches a regular expression pattern, with configurable flags for case sensitivity, multiline, and dotall modes.",
+            short_description="Tests if a string matches a regex pattern.",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.String.Input("regex_pattern", multiline=True),
@@ -271,6 +289,8 @@ class RegexExtract(io.ComfyNode):
             search_aliases=["pattern extract", "text parser", "parse text"],
             display_name="Regex Extract",
             category="utils/string",
+            description="Extracts text from a string using a regular expression pattern, supporting first match, all matches, and capture group extraction.",
+            short_description="Extracts text using a regex pattern.",
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.String.Input("regex_pattern", multiline=True),
@@ -347,6 +367,7 @@ class RegexReplace(io.ComfyNode):
             display_name="Regex Replace",
             category="utils/string",
             description="Find and replace text using regex patterns.",
+            short_description=None,
             inputs=[
                 io.String.Input("string", multiline=True),
                 io.String.Input("regex_pattern", multiline=True),

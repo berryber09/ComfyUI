@@ -154,6 +154,8 @@ class WanCameraEmbedding(io.ComfyNode):
         return io.Schema(
             node_id="WanCameraEmbedding",
             category="camera",
+            description="Generates Plucker camera embeddings from a selected camera motion trajectory for Wan video generation.",
+            short_description="Generates camera embeddings for Wan video generation.",
             inputs=[
                 io.Combo.Input(
                     "camera_pose",

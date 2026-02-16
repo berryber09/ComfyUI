@@ -33,6 +33,7 @@ class BriaImageEditNode(IO.ComfyNode):
             display_name="Bria FIBO Image Edit",
             category="api node/image/Bria",
             description="Edit images using Bria latest model",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["FIBO"]),
                 IO.Image.Input("image"),

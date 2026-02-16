@@ -14,6 +14,8 @@ class DifferentialDiffusion(io.ComfyNode):
             search_aliases=["inpaint gradient", "variable denoise strength"],
             display_name="Differential Diffusion",
             category="_for_testing",
+            description="Enables per-pixel variable denoise strength using a mask, where mask intensity controls how much each region is denoised during sampling.",
+            short_description="Per-pixel variable denoise strength via mask.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input(

@@ -60,6 +60,8 @@ class ModelSamplingDiscrete:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Override the model's sampling method to use a discrete noise schedule with a selectable prediction type."
+    SHORT_DESCRIPTION = "Override model sampling to a discrete noise schedule."
 
     def patch(self, model, sampling, zsnr):
         m = model.clone()
@@ -96,6 +98,8 @@ class ModelSamplingStableCascade:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Override the model's sampling to use Stable Cascade noise scheduling with an adjustable shift parameter."
+    SHORT_DESCRIPTION = "Override sampling to Stable Cascade noise scheduling."
 
     def patch(self, model, shift):
         m = model.clone()
@@ -122,6 +126,8 @@ class ModelSamplingSD3:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Override the model's sampling to use the SD3 discrete flow noise schedule with an adjustable shift parameter."
+    SHORT_DESCRIPTION = "Override sampling to SD3 discrete flow schedule."
 
     def patch(self, model, shift, multiplier=1000):
         m = model.clone()
@@ -144,6 +150,8 @@ class ModelSamplingAuraFlow(ModelSamplingSD3):
                               "shift": ("FLOAT", {"default": 1.73, "min": 0.0, "max": 100.0, "step":0.01}),
                               }}
 
+    DESCRIPTION = "Override the model's sampling to use the AuraFlow discrete flow noise schedule with an adjustable shift."
+    SHORT_DESCRIPTION = "Override sampling to AuraFlow discrete flow schedule."
     FUNCTION = "patch_aura"
 
     def patch_aura(self, model, shift):
@@ -163,6 +171,8 @@ class ModelSamplingFlux:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Override the model's sampling to use the Flux flow schedule with resolution-dependent shift computed from base and max shift values."
+    SHORT_DESCRIPTION = "Override sampling to Flux flow schedule with resolution shift."
 
     def patch(self, model, max_shift, base_shift, width, height):
         m = model.clone()
@@ -198,6 +208,8 @@ class ModelSamplingContinuousEDM:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Override the model's sampling to use a continuous EDM noise schedule with configurable sigma range and prediction type."
+    SHORT_DESCRIPTION = "Override sampling to continuous EDM noise schedule."
 
     def patch(self, model, sampling, sigma_max, sigma_min):
         m = model.clone()
@@ -243,6 +255,8 @@ class ModelSamplingContinuousV:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Override the model's sampling to use a continuous V-prediction noise schedule with configurable sigma range."
+    SHORT_DESCRIPTION = "Override sampling to continuous V-prediction schedule."
 
     def patch(self, model, sampling, sigma_max, sigma_min):
         m = model.clone()
@@ -269,6 +283,8 @@ class RescaleCFG:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/model"
+    DESCRIPTION = "Apply Rescale CFG to the model, which normalizes the CFG output to match the standard deviation of the positive conditioning prediction."
+    SHORT_DESCRIPTION = "Normalize CFG output to match positive conditioning std."
 
     def patch(self, model, multiplier):
         def rescale_cfg(args):
@@ -310,6 +326,7 @@ class ModelComputeDtype:
     FUNCTION = "patch"
 
     CATEGORY = "advanced/debug/model"
+    DESCRIPTION = "Override the compute dtype used by the model during inference."
 
     def patch(self, model, dtype):
         m = model.clone()

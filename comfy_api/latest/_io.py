@@ -1300,6 +1300,7 @@ class NodeInfoV1:
     name: str=None
     display_name: str=None
     description: str=None
+    short_description: str=None
     python_module: Any=None
     category: str=None
     output_node: bool=None
@@ -1390,6 +1391,8 @@ class Schema:
     hidden: list[Hidden] = field(default_factory=list)
     description: str=""
     """Node description, shown as a tooltip when hovering over the node."""
+    short_description: str=""
+    """Short node description, shown in the node list/search."""
     search_aliases: list[str] = field(default_factory=list)
     """Alternative names for search. Useful for synonyms, abbreviations, or old names after renaming."""
     is_input_list: bool = False
@@ -1528,6 +1531,7 @@ class Schema:
             display_name=self.display_name,
             category=self.category,
             description=self.description,
+            short_description=self.short_description,
             output_node=self.is_output_node,
             deprecated=self.is_deprecated,
             experimental=self.is_experimental,
@@ -1771,6 +1775,14 @@ class _ComfyNodeBaseInternal(_ComfyNodeInternal):
             cls.GET_SCHEMA()
         return cls._DESCRIPTION
 
+    _SHORT_DESCRIPTION = None
+    @final
+    @classproperty
+    def SHORT_DESCRIPTION(cls):  # noqa
+        if cls._SHORT_DESCRIPTION is None:
+            cls.GET_SCHEMA()
+        return cls._SHORT_DESCRIPTION
+
     _CATEGORY = None
     @final
     @classproperty
@@ -1899,6 +1911,8 @@ class _ComfyNodeBaseInternal(_ComfyNodeInternal):
         schema.validate()
         if cls._DESCRIPTION is None:
             cls._DESCRIPTION = schema.description
+        if cls._SHORT_DESCRIPTION is None:
+            cls._SHORT_DESCRIPTION = schema.short_description
         if cls._CATEGORY is None:
             cls._CATEGORY = schema.category
         if cls._EXPERIMENTAL is None:

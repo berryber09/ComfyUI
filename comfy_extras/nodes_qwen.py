@@ -13,6 +13,8 @@ class TextEncodeQwenImageEdit(io.ComfyNode):
         return io.Schema(
             node_id="TextEncodeQwenImageEdit",
             category="advanced/conditioning",
+            description="Encodes a text prompt with an optional reference image for Qwen-based image editing, producing conditioning with latent reference.",
+            short_description="Text and image encoding for Qwen image editing.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("prompt", multiline=True, dynamic_prompts=True),
@@ -56,6 +58,8 @@ class TextEncodeQwenImageEditPlus(io.ComfyNode):
         return io.Schema(
             node_id="TextEncodeQwenImageEditPlus",
             category="advanced/conditioning",
+            description="Encodes a text prompt with up to three reference images for Qwen-based multi-image editing, producing conditioning with latent references.",
+            short_description="Multi-image text encoding for Qwen image editing.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.String.Input("prompt", multiline=True, dynamic_prompts=True),
@@ -113,6 +117,8 @@ class EmptyQwenImageLayeredLatentImage(io.ComfyNode):
             node_id="EmptyQwenImageLayeredLatentImage",
             display_name="Empty Qwen Image Layered Latent",
             category="latent/qwen",
+            description="Creates an empty multi-layer latent tensor for Qwen image generation with a configurable number of layers.",
+            short_description="Empty multi-layer latent for Qwen image generation.",
             inputs=[
                 io.Int.Input("width", default=640, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input("height", default=640, min=16, max=nodes.MAX_RESOLUTION, step=16),

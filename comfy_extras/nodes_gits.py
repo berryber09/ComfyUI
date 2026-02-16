@@ -341,6 +341,8 @@ class GITSScheduler(io.ComfyNode):
         return io.Schema(
             node_id="GITSScheduler",
             category="sampling/custom_sampling/schedulers",
+            description="Generates a noise schedule using the GITS method with precomputed optimal sigma levels and configurable coefficient.",
+            short_description="Generates a GITS noise schedule with optimal sigma levels.",
             inputs=[
                 io.Float.Input("coeff", default=1.20, min=0.80, max=1.50, step=0.05),
                 io.Int.Input("steps", default=10, min=2, max=1000),

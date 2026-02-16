@@ -11,6 +11,8 @@ class EmptyMochiLatentVideo(io.ComfyNode):
         return io.Schema(
             node_id="EmptyMochiLatentVideo",
             category="latent/video",
+            description="Creates an empty latent tensor sized for Mochi video generation with configurable width, height, frame length, and batch size.",
+            short_description="Create empty latent for Mochi video generation.",
             inputs=[
                 io.Int.Input("width", default=848, min=16, max=nodes.MAX_RESOLUTION, step=16),
                 io.Int.Input("height", default=480, min=16, max=nodes.MAX_RESOLUTION, step=16),

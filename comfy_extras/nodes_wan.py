@@ -19,6 +19,8 @@ class WanImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanImageToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning and latent inputs for Wan image-to-video generation using a start image and CLIP vision.",
+            short_description="Prepare conditioning for Wan image-to-video generation.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -67,6 +69,8 @@ class WanFunControlToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanFunControlToVideo",
             category="conditioning/video_models",
+            description="Sets up conditioning for Wan Fun control-to-video generation with optional start image and control video inputs.",
+            short_description="Conditioning for Wan Fun control-to-video generation.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -120,6 +124,8 @@ class Wan22FunControlToVideo(io.ComfyNode):
         return io.Schema(
             node_id="Wan22FunControlToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan 2.2 Fun control-to-video generation with reference image and control video support.",
+            short_description="Conditioning for Wan 2.2 Fun control-to-video generation.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -185,6 +191,8 @@ class WanFirstLastFrameToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanFirstLastFrameToVideo",
             category="conditioning/video_models",
+            description="Generates video conditioning from first and last frame images with optional CLIP vision guidance for Wan models.",
+            short_description="Video conditioning from first and last frames.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -257,6 +265,8 @@ class WanFunInpaintToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanFunInpaintToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan Fun inpainting-based video generation using start and end images with CLIP vision output.",
+            short_description="Conditioning for Wan Fun inpainting video generation.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -289,6 +299,8 @@ class WanVaceToVideo(io.ComfyNode):
             node_id="WanVaceToVideo",
             search_aliases=["video conditioning", "video control"],
             category="conditioning/video_models",
+            description="Sets up Wan VACE video conditioning with control video, masks, and optional reference image for guided video generation.",
+            short_description="Wan VACE video conditioning with control and reference inputs.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -376,6 +388,8 @@ class TrimVideoLatent(io.ComfyNode):
         return io.Schema(
             node_id="TrimVideoLatent",
             category="latent/video",
+            description="Trims a specified number of frames from the beginning of a video latent tensor.",
+            short_description="Trim frames from the start of a video latent.",
             inputs=[
                 io.Latent.Input("samples"),
                 io.Int.Input("trim_amount", default=0, min=0, max=99999),
@@ -399,6 +413,8 @@ class WanCameraImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanCameraImageToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan camera-controlled image-to-video generation with camera motion embeddings and CLIP vision.",
+            short_description="Wan camera-controlled image-to-video conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -453,6 +469,8 @@ class WanPhantomSubjectToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanPhantomSubjectToVideo",
             category="conditioning/video_models",
+            description="Generates conditioning for Wan Phantom subject-driven video creation from reference subject images.",
+            short_description="Wan Phantom subject-driven video conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -708,6 +726,8 @@ class WanTrackToVideo(io.ComfyNode):
             node_id="WanTrackToVideo",
             search_aliases=["motion tracking", "trajectory video", "point tracking", "keypoint animation"],
             category="conditioning/video_models",
+            description="Creates video conditioning from motion track data, applying trajectory-based guidance to generate tracked object movement in video.",
+            short_description="Video conditioning from motion track trajectory data.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -952,6 +972,8 @@ class WanSoundImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanSoundImageToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan audio-driven video generation from a reference image, audio, control video, and motion reference.",
+            short_description="Wan audio-driven image-to-video conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -985,6 +1007,8 @@ class WanSoundImageToVideoExtend(io.ComfyNode):
         return io.Schema(
             node_id="WanSoundImageToVideoExtend",
             category="conditioning/video_models",
+            description="Extends a previously generated Wan audio-driven video by continuing from an existing video latent with new audio and control inputs.",
+            short_description="Extend Wan audio-driven video from existing latent.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -1047,6 +1071,8 @@ class WanHuMoImageToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanHuMoImageToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan HuMo human motion video generation driven by audio input and a reference image.",
+            short_description="Wan HuMo audio-driven human motion video conditioning.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -1113,6 +1139,8 @@ class WanAnimateToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanAnimateToVideo",
             category="conditioning/video_models",
+            description="Sets up conditioning for Wan character animation video generation with face, pose, and background video inputs and motion continuation support.",
+            short_description="Wan character animation video conditioning with multiple inputs.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
@@ -1253,6 +1281,8 @@ class Wan22ImageToVideoLatent(io.ComfyNode):
         return io.Schema(
             node_id="Wan22ImageToVideoLatent",
             category="conditioning/inpaint",
+            description="Creates an inpainting latent for Wan 2.2 image-to-video generation by encoding a start image with a noise mask.",
+            short_description="Inpainting latent for Wan 2.2 image-to-video generation.",
             inputs=[
                 io.Vae.Input("vae"),
                 io.Int.Input("width", default=1280, min=32, max=nodes.MAX_RESOLUTION, step=32),
@@ -1303,6 +1333,8 @@ class WanInfiniteTalkToVideo(io.ComfyNode):
         return io.Schema(
             node_id="WanInfiniteTalkToVideo",
             category="conditioning/video_models",
+            description="Prepares conditioning for Wan InfiniteTalk video generation with single or dual speaker audio, motion frames, and cross-attention patching.",
+            short_description="Wan InfiniteTalk audio-driven talking video conditioning.",
             inputs=[
                 io.DynamicCombo.Input("mode", options=[
                 io.DynamicCombo.Option("single_speaker", []),

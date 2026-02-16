@@ -62,6 +62,7 @@ class FreSca(io.ComfyNode):
             display_name="FreSca",
             category="_for_testing",
             description="Applies frequency-dependent scaling to the guidance",
+            short_description=None,
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("scale_low", default=1.0, min=0, max=10, step=0.01,

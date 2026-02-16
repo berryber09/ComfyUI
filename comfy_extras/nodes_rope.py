@@ -9,6 +9,7 @@ class ScaleROPE(io.ComfyNode):
             node_id="ScaleROPE",
             category="advanced/model_patches",
             description="Scale and shift the ROPE of the model.",
+            short_description=None,
             is_experimental=True,
             inputs=[
                 io.Model.Input("model"),

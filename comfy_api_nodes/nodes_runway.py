@@ -145,6 +145,7 @@ class RunwayImageToVideoNodeGen3a(IO.ComfyNode):
             "Before diving in, review these best practices to ensure that "
             "your input selections will set your generation up for success: "
             "https://help.runwayml.com/hc/en-us/articles/33927968552339-Creating-with-Act-One-on-Gen-3-Alpha-and-Turbo.",
+            short_description="Generate video from a starting frame using Gen3a Turbo.",
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -239,6 +240,7 @@ class RunwayImageToVideoNodeGen4(IO.ComfyNode):
             "Before diving in, review these best practices to ensure that "
             "your input selections will set your generation up for success: "
             "https://help.runwayml.com/hc/en-us/articles/37327109429011-Creating-with-Gen-4-Video.",
+            short_description="Generate video from a starting frame using Gen4 Turbo.",
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -337,6 +339,7 @@ class RunwayFirstLastFrameNode(IO.ComfyNode):
             "Before diving in, review these best practices to ensure that your input selections "
             "will set your generation up for success: "
             "https://help.runwayml.com/hc/en-us/articles/34170748696595-Creating-with-Keyframes-on-Gen-3.",
+            short_description="Generate video from first and last keyframes with a prompt.",
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -443,6 +446,7 @@ class RunwayTextToImageNode(IO.ComfyNode):
             category="api node/image/Runway",
             description="Generate an image from a text prompt using Runway's Gen 4 model. "
             "You can also include reference image to guide the generation.",
+            short_description="Generate an image from text using Runway Gen 4.",
             inputs=[
                 IO.String.Input(
                     "prompt",

@@ -28,6 +28,8 @@ class HyperTile(io.ComfyNode):
         return io.Schema(
             node_id="HyperTile",
             category="model_patches/unet",
+            description="Patches the model to split self-attention into smaller tiles during inference, reducing memory usage and speeding up generation at higher resolutions.",
+            short_description="Tile self-attention for faster high-res generation.",
             inputs=[
                 io.Model.Input("model"),
                 io.Int.Input("tile_size", default=256, min=1, max=2048),

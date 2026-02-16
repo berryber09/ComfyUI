@@ -26,6 +26,8 @@ class UNetSelfAttentionMultiply(io.ComfyNode):
         return io.Schema(
             node_id="UNetSelfAttentionMultiply",
             category="_for_testing/attention_experiments",
+            description="Scales the query, key, value, and output weights of UNet self-attention layers by specified multipliers to experiment with attention behavior.",
+            short_description="Scale UNet self-attention Q/K/V/Out weights.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("q", default=1.0, min=0.0, max=10.0, step=0.01),
@@ -49,6 +51,8 @@ class UNetCrossAttentionMultiply(io.ComfyNode):
         return io.Schema(
             node_id="UNetCrossAttentionMultiply",
             category="_for_testing/attention_experiments",
+            description="Scales the query, key, value, and output weights of UNet cross-attention layers by specified multipliers to experiment with text-to-image attention.",
+            short_description="Scale UNet cross-attention Q/K/V/Out weights.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("q", default=1.0, min=0.0, max=10.0, step=0.01),
@@ -73,6 +77,8 @@ class CLIPAttentionMultiply(io.ComfyNode):
             node_id="CLIPAttentionMultiply",
             search_aliases=["clip attention scale", "text encoder attention"],
             category="_for_testing/attention_experiments",
+            description="Scales the query, key, value, and output projection weights of CLIP text encoder self-attention layers by specified multipliers.",
+            short_description="Scale CLIP text encoder attention weights.",
             inputs=[
                 io.Clip.Input("clip"),
                 io.Float.Input("q", default=1.0, min=0.0, max=10.0, step=0.01),
@@ -107,6 +113,8 @@ class UNetTemporalAttentionMultiply(io.ComfyNode):
         return io.Schema(
             node_id="UNetTemporalAttentionMultiply",
             category="_for_testing/attention_experiments",
+            description="Scales the output weights of UNet temporal and structural attention layers independently, allowing fine-grained control over video model attention behavior.",
+            short_description="Scale UNet temporal and structural attention weights.",
             inputs=[
                 io.Model.Input("model"),
                 io.Float.Input("self_structural", default=1.0, min=0.0, max=10.0, step=0.01),

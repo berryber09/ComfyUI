@@ -103,6 +103,7 @@ class MinimaxTextToVideoNode(IO.ComfyNode):
             display_name="MiniMax Text to Video",
             category="api node/video/MiniMax",
             description="Generates videos synchronously based on a prompt, and optional parameters.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt_text",
@@ -165,6 +166,7 @@ class MinimaxImageToVideoNode(IO.ComfyNode):
             display_name="MiniMax Image to Video",
             category="api node/video/MiniMax",
             description="Generates videos synchronously based on an image and prompt, and optional parameters.",
+            short_description="Generate videos from an image, prompt, and optional parameters.",
             inputs=[
                 IO.Image.Input(
                     "image",
@@ -232,6 +234,7 @@ class MinimaxSubjectToVideoNode(IO.ComfyNode):
             display_name="MiniMax Subject to Video",
             category="api node/video/MiniMax",
             description="Generates videos synchronously based on an image and prompt, and optional parameters.",
+            short_description="Subject-driven video generation from image and prompt.",
             inputs=[
                 IO.Image.Input(
                     "subject",
@@ -296,6 +299,7 @@ class MinimaxHailuoVideoNode(IO.ComfyNode):
             display_name="MiniMax Hailuo Video",
             category="api node/video/MiniMax",
             description="Generates videos from prompt, with optional start frame using the new MiniMax Hailuo-02 model.",
+            short_description="Generate videos with optional start frame using Hailuo-02.",
             inputs=[
                 IO.String.Input(
                     "prompt_text",

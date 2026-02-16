@@ -23,6 +23,8 @@ class LatentAdd(io.ComfyNode):
             node_id="LatentAdd",
             search_aliases=["combine latents", "sum latents"],
             category="latent/advanced",
+            description="Adds two latent tensors element-wise, automatically resizing the second to match the first.",
+            short_description="Add two latent tensors element-wise.",
             inputs=[
                 io.Latent.Input("samples1"),
                 io.Latent.Input("samples2"),
@@ -50,6 +52,8 @@ class LatentSubtract(io.ComfyNode):
             node_id="LatentSubtract",
             search_aliases=["difference latent", "remove features"],
             category="latent/advanced",
+            description="Subtracts one latent tensor from another element-wise, automatically resizing the second to match the first.",
+            short_description="Subtract one latent tensor from another.",
             inputs=[
                 io.Latent.Input("samples1"),
                 io.Latent.Input("samples2"),
@@ -77,6 +81,8 @@ class LatentMultiply(io.ComfyNode):
             node_id="LatentMultiply",
             search_aliases=["scale latent", "amplify latent", "latent gain"],
             category="latent/advanced",
+            description="Multiplies a latent tensor by a scalar value to scale its magnitude up or down.",
+            short_description="Scale a latent tensor by a multiplier.",
             inputs=[
                 io.Latent.Input("samples"),
                 io.Float.Input("multiplier", default=1.0, min=-10.0, max=10.0, step=0.01),
@@ -101,6 +107,8 @@ class LatentInterpolate(io.ComfyNode):
             node_id="LatentInterpolate",
             search_aliases=["blend latent", "mix latent", "lerp latent", "transition"],
             category="latent/advanced",
+            description="Interpolates between two latent tensors using a ratio, preserving magnitude for smoother blending than linear interpolation.",
+            short_description="Interpolate between two latent tensors.",
             inputs=[
                 io.Latent.Input("samples1"),
                 io.Latent.Input("samples2"),
@@ -140,6 +148,8 @@ class LatentConcat(io.ComfyNode):
             node_id="LatentConcat",
             search_aliases=["join latents", "stitch latents"],
             category="latent/advanced",
+            description="Concatenates two latent tensors along a chosen spatial or temporal dimension (x, y, or t) with optional reversal.",
+            short_description="Concatenate two latents along a chosen dimension.",
             inputs=[
                 io.Latent.Input("samples1"),
                 io.Latent.Input("samples2"),
@@ -180,6 +190,8 @@ class LatentCut(io.ComfyNode):
             node_id="LatentCut",
             search_aliases=["crop latent", "slice latent", "extract region"],
             category="latent/advanced",
+            description="Extracts a contiguous slice from a latent tensor along a chosen spatial or temporal dimension at a specified index and size.",
+            short_description="Extract a slice from a latent along a dimension.",
             inputs=[
                 io.Latent.Input("samples"),
                 io.Combo.Input("dim", options=["x", "y", "t"]),
@@ -221,6 +233,8 @@ class LatentCutToBatch(io.ComfyNode):
             node_id="LatentCutToBatch",
             search_aliases=["slice to batch", "split latent", "tile latent"],
             category="latent/advanced",
+            description="Slices a latent tensor along a chosen dimension into equal-sized chunks and reshapes them into the batch dimension.",
+            short_description="Slice latent along a dimension into batch chunks.",
             inputs=[
                 io.Latent.Input("samples"),
                 io.Combo.Input("dim", options=["t", "x", "y"]),
@@ -263,6 +277,8 @@ class LatentBatch(io.ComfyNode):
             node_id="LatentBatch",
             search_aliases=["combine latents", "merge latents", "join latents"],
             category="latent/batch",
+            description="Concatenates two latent tensors along the batch dimension, preserving batch index metadata.",
+            short_description="Concatenate two latents along the batch dimension.",
             is_deprecated=True,
             inputs=[
                 io.Latent.Input("samples1"),
@@ -291,6 +307,8 @@ class LatentBatchSeedBehavior(io.ComfyNode):
         return io.Schema(
             node_id="LatentBatchSeedBehavior",
             category="latent/advanced",
+            description="Controls whether each item in a latent batch receives a random or fixed noise seed during sampling.",
+            short_description="Set random or fixed seed behavior for batches.",
             inputs=[
                 io.Latent.Input("samples"),
                 io.Combo.Input("seed_behavior", options=["random", "fixed"], default="fixed"),
@@ -320,6 +338,8 @@ class LatentApplyOperation(io.ComfyNode):
             node_id="LatentApplyOperation",
             search_aliases=["transform latent"],
             category="latent/advanced/operations",
+            description="Applies a latent operation (such as tonemap or sharpen) directly to a latent tensor.",
+            short_description="Apply a latent operation to a latent tensor.",
             is_experimental=True,
             inputs=[
                 io.Latent.Input("samples"),
@@ -344,6 +364,8 @@ class LatentApplyOperationCFG(io.ComfyNode):
         return io.Schema(
             node_id="LatentApplyOperationCFG",
             category="latent/advanced/operations",
+            description="Applies a latent operation during the CFG pre-processing stage of sampling, modifying the model's prediction before guidance is applied.",
+            short_description="Apply a latent operation during CFG pre-processing.",
             is_experimental=True,
             inputs=[
                 io.Model.Input("model"),
@@ -376,6 +398,8 @@ class LatentOperationTonemapReinhard(io.ComfyNode):
             node_id="LatentOperationTonemapReinhard",
             search_aliases=["hdr latent"],
             category="latent/advanced/operations",
+            description="Creates a Reinhard tonemapping operation that compresses high-magnitude latent values to reduce blown-out artifacts.",
+            short_description="Create a Reinhard tonemapping latent operation.",
             is_experimental=True,
             inputs=[
                 io.Float.Input("multiplier", default=1.0, min=0.0, max=100.0, step=0.01),
@@ -411,6 +435,8 @@ class LatentOperationSharpen(io.ComfyNode):
         return io.Schema(
             node_id="LatentOperationSharpen",
             category="latent/advanced/operations",
+            description="Creates a sharpening operation that enhances detail in latent space using a Gaussian-based unsharp mask with configurable radius, sigma, and strength.",
+            short_description="Create a Gaussian-based latent sharpening operation.",
             is_experimental=True,
             inputs=[
                 io.Int.Input("sharpen_radius", default=9, min=1, max=31, step=1),
@@ -448,6 +474,8 @@ class ReplaceVideoLatentFrames(io.ComfyNode):
         return io.Schema(
             node_id="ReplaceVideoLatentFrames",
             category="latent/batch",
+            description="Replaces a range of frames in a destination video latent with frames from a source latent at a specified index.",
+            short_description="Replace video latent frames at a given index.",
             inputs=[
                 io.Latent.Input("destination", tooltip="The destination latent where frames will be replaced."),
                 io.Latent.Input("source", optional=True, tooltip="The source latent providing frames to insert into the destination latent. If not provided, the destination latent is returned unchanged."),

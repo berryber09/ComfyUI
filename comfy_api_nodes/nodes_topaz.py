@@ -49,6 +49,7 @@ class TopazImageEnhance(IO.ComfyNode):
             display_name="Topaz Image Enhance",
             category="api node/image/Topaz",
             description="Industry-standard upscaling and image enhancement.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["Reimagine"]),
                 IO.Image.Input("image"),
@@ -223,6 +224,7 @@ class TopazVideoEnhance(IO.ComfyNode):
             display_name="Topaz Video Enhance",
             category="api node/video/Topaz",
             description="Breathe new life into video with powerful upscaling and recovery technology.",
+            short_description=None,
             inputs=[
                 IO.Video.Input("video"),
                 IO.Boolean.Input("upscaler_enabled", default=True),

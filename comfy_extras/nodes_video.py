@@ -18,6 +18,8 @@ class SaveWEBM(io.ComfyNode):
             node_id="SaveWEBM",
             search_aliases=["export webm"],
             category="image/video",
+            description="Saves a sequence of images as a WEBM video file with selectable codec and configurable quality.",
+            short_description="Saves images as a WEBM video file.",
             is_experimental=True,
             inputs=[
                 io.Image.Input("images"),
@@ -73,7 +75,8 @@ class SaveVideo(io.ComfyNode):
             search_aliases=["export video"],
             display_name="Save Video",
             category="image/video",
-            description="Saves the input images to your ComfyUI output directory.",
+            description="Saves a video to your ComfyUI output directory.",
+            short_description=None,
             inputs=[
                 io.Video.Input("video", tooltip="The video to save."),
                 io.String.Input("filename_prefix", default="video/ComfyUI", tooltip="The prefix for the file to save. This may include formatting information such as %date:yyyy-MM-dd% or %Empty Latent Image.width% to include values from nodes."),
@@ -122,6 +125,7 @@ class CreateVideo(io.ComfyNode):
             display_name="Create Video",
             category="image/video",
             description="Create a video from images.",
+            short_description=None,
             inputs=[
                 io.Image.Input("images", tooltip="The images to create a video from."),
                 io.Float.Input("fps", default=30.0, min=1.0, max=120.0, step=1.0),
@@ -147,6 +151,7 @@ class GetVideoComponents(io.ComfyNode):
             display_name="Get Video Components",
             category="image/video",
             description="Extracts all components from a video: frames, audio, and framerate.",
+            short_description=None,
             inputs=[
                 io.Video.Input("video", tooltip="The video to extract components from."),
             ],
@@ -174,6 +179,8 @@ class LoadVideo(io.ComfyNode):
             search_aliases=["import video", "open video", "video file"],
             display_name="Load Video",
             category="image/video",
+            description="Loads a video file from the input directory.",
+            short_description=None,
             inputs=[
                 io.Combo.Input("file", options=sorted(files), upload=io.UploadType.video),
             ],
@@ -215,6 +222,8 @@ class VideoSlice(io.ComfyNode):
                 "start time",
             ],
             category="image/video",
+            description="Slices a video to a specified start time and duration, with optional strict duration enforcement.",
+            short_description="Slices a video to a specified time range.",
             inputs=[
                 io.Video.Input("video"),
                 io.Float.Input(

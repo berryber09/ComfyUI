@@ -34,6 +34,8 @@ class MeshyTextToModelNode(IO.ComfyNode):
             node_id="MeshyTextToModelNode",
             display_name="Meshy: Text to Model",
             category="api node/3d/Meshy",
+            description="Generate a 3D model from a text prompt using the Meshy API.",
+            short_description="Generate a 3D model from a text prompt.",
             inputs=[
                 IO.Combo.Input("model", options=["latest"]),
                 IO.String.Input("prompt", multiline=True, default=""),
@@ -146,6 +148,7 @@ class MeshyRefineNode(IO.ComfyNode):
             display_name="Meshy: Refine Draft Model",
             category="api node/3d/Meshy",
             description="Refine a previously created draft model.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input("model", options=["latest"]),
                 IO.Custom("MESHY_TASK_ID").Input("meshy_task_id"),
@@ -239,6 +242,8 @@ class MeshyImageToModelNode(IO.ComfyNode):
             node_id="MeshyImageToModelNode",
             display_name="Meshy: Image to Model",
             category="api node/3d/Meshy",
+            description="Generate a 3D model from a single image using the Meshy API.",
+            short_description="Generate a 3D model from an image.",
             inputs=[
                 IO.Combo.Input("model", options=["latest"]),
                 IO.Image.Input("image"),
@@ -403,6 +408,7 @@ class MeshyMultiImageToModelNode(IO.ComfyNode):
             node_id="MeshyMultiImageToModelNode",
             display_name="Meshy: Multi-Image to Model",
             category="api node/3d/Meshy",
+            description="Generate a 3D model from multiple images using the Meshy API.",
             inputs=[
                 IO.Combo.Input("model", options=["latest"]),
                 IO.Autogrow.Input(
@@ -575,6 +581,7 @@ class MeshyRigModelNode(IO.ComfyNode):
             description="Provides a rigged character in standard formats. "
             "Auto-rigging is currently not suitable for untextured meshes, non-humanoid assets, "
             "or humanoid assets with unclear limb and body structure.",
+            short_description="Rig a character model for animation.",
             inputs=[
                 IO.Custom("MESHY_TASK_ID").Input("meshy_task_id"),
                 IO.Float.Input(
@@ -654,6 +661,7 @@ class MeshyAnimateModelNode(IO.ComfyNode):
             display_name="Meshy: Animate Model",
             category="api node/3d/Meshy",
             description="Apply a specific animation action to a previously rigged character.",
+            short_description=None,
             inputs=[
                 IO.Custom("MESHY_RIGGED_TASK_ID").Input("rig_task_id"),
                 IO.Int.Input(
@@ -719,6 +727,7 @@ class MeshyTextureNode(IO.ComfyNode):
             node_id="MeshyTextureNode",
             display_name="Meshy: Texture Model",
             category="api node/3d/Meshy",
+            description="Apply textures to an existing 3D model using the Meshy API.",
             inputs=[
                 IO.Combo.Input("model", options=["latest"]),
                 IO.Custom("MESHY_TASK_ID").Input("meshy_task_id"),

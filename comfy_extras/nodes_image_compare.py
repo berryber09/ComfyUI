@@ -13,6 +13,7 @@ class ImageCompare(IO.ComfyNode):
             node_id="ImageCompare",
             display_name="Image Compare",
             description="Compares two images side by side with a slider.",
+            short_description=None,
             category="image",
             is_experimental=True,
             is_output_node=True,

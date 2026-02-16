@@ -11,6 +11,8 @@ class LotusConditioning(io.ComfyNode):
         return io.Schema(
             node_id="LotusConditioning",
             category="conditioning/lotus",
+            description="Provides precomputed null conditioning embeddings for the Lotus depth/normal estimation model, avoiding the need for a separate text encoder.",
+            short_description="Precomputed null conditioning for Lotus model.",
             inputs=[],
             outputs=[io.Conditioning.Output(display_name="conditioning")],
         )

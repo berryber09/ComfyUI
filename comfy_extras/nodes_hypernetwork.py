@@ -103,6 +103,8 @@ class HypernetworkLoader(IO.ComfyNode):
         return IO.Schema(
             node_id="HypernetworkLoader",
             category="loaders",
+            description="Loads a hypernetwork and patches it onto a diffusion model's attention layers with adjustable strength.",
+            short_description="Loads and applies a hypernetwork to a model.",
             inputs=[
                 IO.Model.Input("model"),
                 IO.Combo.Input("hypernetwork_name", options=folder_paths.get_filename_list("hypernetworks")),

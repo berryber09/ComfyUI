@@ -236,6 +236,7 @@ class IdeogramV1(IO.ComfyNode):
             display_name="Ideogram V1",
             category="api node/image/Ideogram",
             description="Generates images using the Ideogram V1 model.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -361,6 +362,7 @@ class IdeogramV2(IO.ComfyNode):
             display_name="Ideogram V2",
             category="api node/image/Ideogram",
             description="Generates images using the Ideogram V2 model.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -526,6 +528,7 @@ class IdeogramV3(IO.ComfyNode):
             category="api node/image/Ideogram",
             description="Generates images using the Ideogram V3 model. "
                         "Supports both regular image generation from text prompts and image editing with mask.",
+            short_description="Generate and edit images with Ideogram V3.",
             inputs=[
                 IO.String.Input(
                     "prompt",

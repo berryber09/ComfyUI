@@ -30,6 +30,8 @@ class StableCascade_EmptyLatentImage(io.ComfyNode):
         return io.Schema(
             node_id="StableCascade_EmptyLatentImage",
             category="latent/stable_cascade",
+            description="Creates empty Stage C and Stage B latent tensors for Stable Cascade image generation with configurable compression.",
+            short_description="Empty Stage C and Stage B latents for Stable Cascade.",
             inputs=[
                 io.Int.Input("width", default=1024, min=256, max=nodes.MAX_RESOLUTION, step=8),
                 io.Int.Input("height", default=1024, min=256, max=nodes.MAX_RESOLUTION, step=8),
@@ -59,6 +61,8 @@ class StableCascade_StageC_VAEEncode(io.ComfyNode):
         return io.Schema(
             node_id="StableCascade_StageC_VAEEncode",
             category="latent/stable_cascade",
+            description="Encodes an image into Stable Cascade Stage C and Stage B latents using a VAE with configurable compression ratio.",
+            short_description="VAE encode image into Stable Cascade Stage C latent.",
             inputs=[
                 io.Image.Input("image"),
                 io.Vae.Input("vae"),
@@ -94,6 +98,8 @@ class StableCascade_StageB_Conditioning(io.ComfyNode):
         return io.Schema(
             node_id="StableCascade_StageB_Conditioning",
             category="conditioning/stable_cascade",
+            description="Applies Stage C prior latent to conditioning for use in Stable Cascade Stage B generation.",
+            short_description="Apply Stage C prior to Stage B conditioning.",
             inputs=[
                 io.Conditioning.Input("conditioning"),
                 io.Latent.Input("stage_c"),
@@ -120,6 +126,8 @@ class StableCascade_SuperResolutionControlnet(io.ComfyNode):
         return io.Schema(
             node_id="StableCascade_SuperResolutionControlnet",
             category="_for_testing/stable_cascade",
+            description="Encodes an image for Stable Cascade super-resolution ControlNet, producing controlnet input and empty Stage C and Stage B latents.",
+            short_description="Stable Cascade super-resolution ControlNet image encoding.",
             is_experimental=True,
             inputs=[
                 io.Image.Input("image"),

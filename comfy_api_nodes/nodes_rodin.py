@@ -238,6 +238,7 @@ class Rodin3D_Regular(IO.ComfyNode):
             display_name="Rodin 3D Generate - Regular Generate",
             category="api node/3d/Rodin",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("Images"),
                 *COMMON_PARAMETERS,
@@ -297,6 +298,7 @@ class Rodin3D_Detail(IO.ComfyNode):
             display_name="Rodin 3D Generate - Detail Generate",
             category="api node/3d/Rodin",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("Images"),
                 *COMMON_PARAMETERS,
@@ -356,6 +358,7 @@ class Rodin3D_Smooth(IO.ComfyNode):
             display_name="Rodin 3D Generate - Smooth Generate",
             category="api node/3d/Rodin",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("Images"),
                 *COMMON_PARAMETERS,
@@ -414,6 +417,7 @@ class Rodin3D_Sketch(IO.ComfyNode):
             display_name="Rodin 3D Generate - Sketch Generate",
             category="api node/3d/Rodin",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("Images"),
                 IO.Int.Input(
@@ -476,6 +480,7 @@ class Rodin3D_Gen2(IO.ComfyNode):
             display_name="Rodin 3D Generate - Gen-2 Generate",
             category="api node/3d/Rodin",
             description=cleandoc(cls.__doc__ or ""),
+            short_description=None,
             inputs=[
                 IO.Image.Input("Images"),
                 IO.Int.Input(

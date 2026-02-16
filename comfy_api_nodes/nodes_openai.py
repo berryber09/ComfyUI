@@ -98,6 +98,7 @@ class OpenAIDalle2(IO.ComfyNode):
             display_name="OpenAI DALL·E 2",
             category="api node/image/OpenAI",
             description="Generates images synchronously via OpenAI's DALL·E 2 endpoint.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -248,6 +249,7 @@ class OpenAIDalle3(IO.ComfyNode):
             display_name="OpenAI DALL·E 3",
             category="api node/image/OpenAI",
             description="Generates images synchronously via OpenAI's DALL·E 3 endpoint.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -366,6 +368,7 @@ class OpenAIGPTImage1(IO.ComfyNode):
             display_name="OpenAI GPT Image 1.5",
             category="api node/image/OpenAI",
             description="Generates images synchronously via OpenAI's GPT Image endpoint.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -576,6 +579,7 @@ class OpenAIChatNode(IO.ComfyNode):
             display_name="OpenAI ChatGPT",
             category="api node/text/OpenAI",
             description="Generate text responses from an OpenAI model.",
+            short_description=None,
             inputs=[
                 IO.String.Input(
                     "prompt",
@@ -803,6 +807,7 @@ class OpenAIInputFiles(IO.ComfyNode):
             display_name="OpenAI ChatGPT Input Files",
             category="api node/text/OpenAI",
             description="Loads and prepares input files (text, pdf, etc.) to include as inputs for the OpenAI Chat Node. The files will be read by the OpenAI model when generating a response. 🛈 TIP: Can be chained together with other OpenAI Input File nodes.",
+            short_description="Load and prepare input files for OpenAI Chat.",
             inputs=[
                 IO.Combo.Input(
                     "file",
@@ -850,6 +855,7 @@ class OpenAIChatConfig(IO.ComfyNode):
             display_name="OpenAI ChatGPT Advanced Options",
             category="api node/text/OpenAI",
             description="Allows specifying advanced configuration options for the OpenAI Chat Nodes.",
+            short_description=None,
             inputs=[
                 IO.Combo.Input(
                     "truncation",

@@ -10,6 +10,8 @@ class SetUnionControlNetType(io.ComfyNode):
         return io.Schema(
             node_id="SetUnionControlNetType",
             category="conditioning/controlnet",
+            description="Sets the control type for a Union ControlNet, selecting which conditioning mode to use.",
+            short_description="Select control mode for Union ControlNet.",
             inputs=[
                 io.ControlNet.Input("control_net"),
                 io.Combo.Input("type", options=["auto"] + list(UNION_CONTROLNET_TYPES.keys())),
@@ -40,6 +42,8 @@ class ControlNetInpaintingAliMamaApply(io.ComfyNode):
             node_id="ControlNetInpaintingAliMamaApply",
             search_aliases=["masked controlnet"],
             category="conditioning/controlnet",
+            description="Applies an AliMama inpainting ControlNet to positive and negative conditioning using an image and mask with VAE encoding.",
+            short_description="Applies AliMama inpainting ControlNet with mask.",
             inputs=[
                 io.Conditioning.Input("positive"),
                 io.Conditioning.Input("negative"),
