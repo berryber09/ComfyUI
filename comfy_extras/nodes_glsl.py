@@ -759,8 +759,8 @@ class GLSLShader(io.ComfyNode):
             display_name="GLSL Shader",
             category="image/shader",
             description=(
-                f"Apply GLSL ES fragment shaders to images. "
-                f"u_resolution (vec2) is always available."
+                "Apply GLSL ES fragment shaders to images. "
+                "u_resolution (vec2) is always available."
             ),
             inputs=[
                 io.String.Input(
