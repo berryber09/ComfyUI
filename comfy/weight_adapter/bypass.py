@@ -106,9 +106,11 @@ def get_module_type_info(module: nn.Module) -> dict:
 
 class BypassForwardHook:
     """
-    Hook that wraps a layer's forward to apply adapter in bypass mode.
+    Hook that wraps a layer's forward to apply one or more adapters in bypass mode.
 
     Stores the original forward and replaces it with bypass version.
+    Multiple adapters on the same module each contribute h(x) independently:
+        output = f(x) + h1(x) + h2(x) + ...
 
     Supports both:
         - WeightAdapterBase: Inference adapters (uses self.weights tuple)
@@ -118,64 +120,77 @@ class BypassForwardHook:
     def __init__(
         self,
         module: nn.Module,
-        adapter: BypassAdapter,
-        multiplier: float = 1.0,
+        adapter_entries: list[tuple[BypassAdapter, float, Optional[tuple]]],
     ):
         self.module = module
-        self.adapter = adapter
-        self.multiplier = multiplier
+        self.adapter_entries = adapter_entries
         self.original_forward = None
 
         # Determine layer type and conv params from module class (works for quantized layers)
         module_info = get_module_type_info(module)
 
-        # Set multiplier and layer type info on adapter for use in h()
-        adapter.multiplier = multiplier
-        adapter.is_conv = module_info["is_conv"]
-        adapter.conv_dim = module_info["conv_dim"]
-        adapter.kernel_size = module_info["kernel_size"]
-        adapter.in_channels = module_info["in_channels"]
-        adapter.out_channels = module_info["out_channels"]
-        # Store kw_dict for conv operations (like LyCORIS extra_args)
-        if module_info["is_conv"]:
-            adapter.kw_dict = {
-                "stride": module_info["stride"],
-                "padding": module_info["padding"],
-                "dilation": module_info["dilation"],
-                "groups": module_info["groups"],
-            }
-        else:
-            adapter.kw_dict = {}
+        # Set multiplier and layer type info on each adapter for use in h()
+        for adapter, strength, _offset in adapter_entries:
+            adapter.multiplier = strength
+            adapter.is_conv = module_info["is_conv"]
+            adapter.conv_dim = module_info["conv_dim"]
+            adapter.kernel_size = module_info["kernel_size"]
+            adapter.in_channels = module_info["in_channels"]
+            adapter.out_channels = module_info["out_channels"]
+            if module_info["is_conv"]:
+                adapter.kw_dict = {
+                    "stride": module_info["stride"],
+                    "padding": module_info["padding"],
+                    "dilation": module_info["dilation"],
+                    "groups": module_info["groups"],
+                }
+            else:
+                adapter.kw_dict = {}
 
     def _bypass_forward(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        """Bypass forward: applies adapter to base forward output.
+        """Bypass forward: applies all adapters to base forward output.
 
         Adapter weights are moved to GPU for this call only, then back to CPU.
         This mirrors --normalvram behavior: only one layer's adapter weights
         on GPU at a time, keeping peak VRAM low.
         """
-        # Move adapter weights to GPU for this forward call
-        self._move_adapter_weights_to_device(x.device, x.dtype)
+        # Move all adapter weights to GPU for this forward call
+        for adapter, _, _offset in self.adapter_entries:
+            self._move_adapter_weights_to_device(adapter, x.device, x.dtype)
 
         try:
-            # Check if adapter has custom bypass_forward (e.g., GLoRA)
-            adapter_bypass = getattr(self.adapter, "bypass_forward", None)
-            if adapter_bypass is not None:
-                adapter_type = type(self.adapter)
-                is_default_bypass = (
-                    adapter_type.bypass_forward is WeightAdapterBase.bypass_forward
-                    or adapter_type.bypass_forward is WeightAdapterTrainBase.bypass_forward
-                )
-                if not is_default_bypass:
-                    return adapter_bypass(self.original_forward, x, *args, **kwargs)
-
-            # Default bypass: g(f(x) + h(x, f(x)))
+            # Compute base forward once
             base_out = self.original_forward(x, *args, **kwargs)
-            h_out = self.adapter.h(x, base_out)
-            return self.adapter.g(base_out + h_out)
+
+            # Accumulate h(x) from all adapters
+            for adapter, _, offset in self.adapter_entries:
+                # Check if adapter has custom bypass_forward (e.g., GLoRA)
+                adapter_bypass = getattr(adapter, "bypass_forward", None)
+                if adapter_bypass is not None:
+                    adapter_type = type(adapter)
+                    is_default_bypass = (
+                        adapter_type.bypass_forward is WeightAdapterBase.bypass_forward
+                        or adapter_type.bypass_forward is WeightAdapterTrainBase.bypass_forward
+                    )
+                    if not is_default_bypass:
+                        base_out = adapter_bypass(lambda x, *a, **kw: base_out, x, *args, **kwargs)
+                        continue
+
+                h_out = adapter.h(x, base_out)
+
+                if offset is not None:
+                    # Offset-based: place h_out at the correct slice of base_out
+                    # offset = (dim, start, length)
+                    _dim, start, length = offset
+                    base_out.narrow(-1, start, length).add_(adapter.g(h_out))
+                else:
+                    base_out = adapter.g(base_out + h_out)
+
+            return base_out
         finally:
-            # Move adapter weights back to CPU to free VRAM for next layers
-            self._move_adapter_weights_to_device(torch.device("cpu"))
+            # Move all adapter weights back to CPU to free VRAM
+            for adapter, _, _offset in self.adapter_entries:
+                self._move_adapter_weights_to_device(adapter, torch.device("cpu"))
 
     def inject(self):
         """Replace module forward with bypass version."""
@@ -187,26 +202,22 @@ class BypassForwardHook:
 
         self.original_forward = self.module.forward
         self.module.forward = self._bypass_forward
+        adapter_types = [type(a).__name__ for a, *_ in self.adapter_entries]
         logging.debug(
-            f"[BypassHook] Injected bypass forward for {type(self.module).__name__} (adapter={type(self.adapter).__name__})"
+            f"[BypassHook] Injected bypass forward for {type(self.module).__name__} ({len(self.adapter_entries)} adapters: {adapter_types})"
         )
 
-    def _move_adapter_weights_to_device(self, device, dtype=None):
-        """Move adapter weights to specified device to avoid per-forward transfers.
+    @staticmethod
+    def _move_adapter_weights_to_device(adapter, device, dtype=None):
+        """Move adapter weights to specified device.
 
         Handles both:
             - WeightAdapterBase: has self.weights tuple of tensors
             - WeightAdapterTrainBase: nn.Module with parameters, uses .to() method
         """
-        adapter = self.adapter
-
         # Check if adapter is an nn.Module (WeightAdapterTrainBase)
         if isinstance(adapter, nn.Module):
-            # In training mode we don't touch dtype as trainer will handle it
             adapter.to(device=device)
-            logging.debug(
-                f"[BypassHook] Moved training adapter (nn.Module) to {device}"
-            )
             return
 
         # WeightAdapterBase: handle self.weights tuple
@@ -232,8 +243,6 @@ class BypassForwardHook:
                 adapter.weights = weights.to(device=device, dtype=dtype)
             else:
                 adapter.weights = weights.to(device=device)
-
-        logging.debug(f"[BypassHook] Moved adapter weights to {device}")
 
     def eject(self):
         """Restore original module forward."""
@@ -267,7 +276,7 @@ class BypassInjectionManager:
     """
 
     def __init__(self):
-        self.adapters: dict[str, tuple[BypassAdapter, float]] = {}
+        self.adapters: dict[str, list[tuple[BypassAdapter, float, Optional[tuple]]]] = {}
         self.hooks: list[BypassForwardHook] = []
 
     def add_adapter(
@@ -275,14 +284,19 @@ class BypassInjectionManager:
         key: str,
         adapter: BypassAdapter,
         strength: float = 1.0,
+        offset: tuple = None,
     ):
         """
         Add an adapter for a specific weight key.
+
+        Multiple adapters can target the same key — they accumulate as a list
+        and all contribute h(x) during the forward pass.
 
         Args:
             key: Weight key (e.g., "model.layers.0.self_attn.q_proj.weight")
             adapter: The weight adapter (LoRAAdapter, LoKrAdapter, etc.)
             strength: Multiplier for adapter effect
+            offset: Optional tuple (dim, start, length) for fused QKV layers
         """
         # Remove .weight suffix if present for module lookup
         module_key = key
@@ -292,9 +306,11 @@ class BypassInjectionManager:
                 f"[BypassManager] Stripped .weight suffix: {key} -> {module_key}"
             )
 
-        self.adapters[module_key] = (adapter, strength)
+        if module_key not in self.adapters:
+            self.adapters[module_key] = []
+        self.adapters[module_key].append((adapter, strength, offset))
         logging.debug(
-            f"[BypassManager] Added adapter: {module_key} (type={type(adapter).__name__}, strength={strength})"
+            f"[BypassManager] Added adapter: {module_key} (type={type(adapter).__name__}, strength={strength}, offset={offset}, total={len(self.adapters[module_key])})"
         )
 
     def clear_adapters(self):
@@ -339,7 +355,7 @@ class BypassInjectionManager:
         )
         logging.debug(f"[BypassManager] Model type: {type(model).__name__}")
 
-        for key, (adapter, strength) in self.adapters.items():
+        for key, adapter_list in self.adapters.items():
             logging.debug(f"[BypassManager] Looking for module: {key}")
             module = self._get_module_by_key(model, key)
 
@@ -354,9 +370,9 @@ class BypassInjectionManager:
                 continue
 
             logging.debug(
-                f"[BypassManager] Creating hook for {key} (module type={type(module).__name__}, weight shape={module.weight.shape})"
+                f"[BypassManager] Creating hook for {key} with {len(adapter_list)} adapter(s) (module type={type(module).__name__}, weight shape={module.weight.shape})"
             )
-            hook = BypassForwardHook(module, adapter, multiplier=strength)
+            hook = BypassForwardHook(module, adapter_list)
             self.hooks.append(hook)
 
         logging.debug(f"[BypassManager] Created {len(self.hooks)} hooks")
