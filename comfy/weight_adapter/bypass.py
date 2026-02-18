@@ -148,31 +148,34 @@ class BypassForwardHook:
             adapter.kw_dict = {}
 
     def _bypass_forward(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
-        """Bypass forward: uses adapter's bypass_forward or default g(f(x) + h(x))
+        """Bypass forward: applies adapter to base forward output.
 
-        Note:
-            Bypass mode does NOT access original model weights (org_weight).
-            This is intentional - bypass mode is designed for quantized models
-            where weights may not be in a usable format. All necessary shape
-            information is provided via adapter attributes set during inject().
+        Adapter weights are moved to GPU for this call only, then back to CPU.
+        This mirrors --normalvram behavior: only one layer's adapter weights
+        on GPU at a time, keeping peak VRAM low.
         """
-        # Check if adapter has custom bypass_forward (e.g., GLoRA)
-        adapter_bypass = getattr(self.adapter, "bypass_forward", None)
-        if adapter_bypass is not None:
-            # Check if it's overridden (not the base class default)
-            # Need to check both base classes since adapter could be either type
-            adapter_type = type(self.adapter)
-            is_default_bypass = (
-                adapter_type.bypass_forward is WeightAdapterBase.bypass_forward
-                or adapter_type.bypass_forward is WeightAdapterTrainBase.bypass_forward
-            )
-            if not is_default_bypass:
-                return adapter_bypass(self.original_forward, x, *args, **kwargs)
+        # Move adapter weights to GPU for this forward call
+        self._move_adapter_weights_to_device(x.device, x.dtype)
 
-        # Default bypass: g(f(x) + h(x, f(x)))
-        base_out = self.original_forward(x, *args, **kwargs)
-        h_out = self.adapter.h(x, base_out)
-        return self.adapter.g(base_out + h_out)
+        try:
+            # Check if adapter has custom bypass_forward (e.g., GLoRA)
+            adapter_bypass = getattr(self.adapter, "bypass_forward", None)
+            if adapter_bypass is not None:
+                adapter_type = type(self.adapter)
+                is_default_bypass = (
+                    adapter_type.bypass_forward is WeightAdapterBase.bypass_forward
+                    or adapter_type.bypass_forward is WeightAdapterTrainBase.bypass_forward
+                )
+                if not is_default_bypass:
+                    return adapter_bypass(self.original_forward, x, *args, **kwargs)
+
+            # Default bypass: g(f(x) + h(x, f(x)))
+            base_out = self.original_forward(x, *args, **kwargs)
+            h_out = self.adapter.h(x, base_out)
+            return self.adapter.g(base_out + h_out)
+        finally:
+            # Move adapter weights back to CPU to free VRAM for next layers
+            self._move_adapter_weights_to_device(torch.device("cpu"))
 
     def inject(self):
         """Replace module forward with bypass version."""
@@ -181,22 +184,6 @@ class BypassForwardHook:
                 f"[BypassHook] Already injected for {type(self.module).__name__}"
             )
             return  # Already injected
-
-        # Move adapter weights to compute device (GPU)
-        # Use get_torch_device() instead of module.weight.device because
-        # with offloading, module weights may be on CPU while compute happens on GPU
-        device = comfy.model_management.get_torch_device()
-
-        # Get dtype from module weight if available
-        dtype = None
-        if hasattr(self.module, "weight") and self.module.weight is not None:
-            dtype = self.module.weight.dtype
-
-        # Only use dtype if it's a standard float type, not quantized
-        if dtype is not None and dtype not in (torch.float32, torch.float16, torch.bfloat16):
-            dtype = None
-
-        self._move_adapter_weights_to_device(device, dtype)
 
         self.original_forward = self.module.forward
         self.module.forward = self._bypass_forward
