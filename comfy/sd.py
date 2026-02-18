@@ -112,7 +112,10 @@ def load_bypass_lora_for_models(model, clip, lora, strength_model, strength_clip
 
     Non-adapter patches (bias diff, weight diff, etc.) are applied as regular patches.
 
-    This is useful for training and when model weights are offloaded.
+    Uses a single injection key ("bypass_lora") and stores the BypassInjectionManager
+    as a model attachment. When multiple bypass LoRAs are chained, adapters accumulate
+    in the shared manager, avoiding the inject/eject ordering bug that causes infinite
+    recursion with unique keys.
     """
     key_map = {}
     if model is not None:
@@ -125,7 +128,7 @@ def load_bypass_lora_for_models(model, clip, lora, strength_model, strength_clip
     lora = comfy.lora_convert.convert_lora(lora)
     loaded = comfy.lora.load_lora(lora, key_map)
 
-    logging.debug(f"[BypassLoRA] loaded has {len(loaded)} entries")
+    logging.info(f"[BypassLoRA] loaded {len(loaded)} entries from LoRA, key_map had {len(key_map)} entries")
 
     # Separate adapters (for bypass) from other patches (for regular patching)
     bypass_patches = {}  # WeightAdapterBase instances -> bypass mode
@@ -137,7 +140,7 @@ def load_bypass_lora_for_models(model, clip, lora, strength_model, strength_clip
         else:
             regular_patches[key] = patch_data
 
-    logging.debug(f"[BypassLoRA] {len(bypass_patches)} bypass adapters, {len(regular_patches)} regular patches")
+    logging.info(f"[BypassLoRA] {len(bypass_patches)} bypass adapters, {len(regular_patches)} regular patches")
 
     k = set()
     k1 = set()
@@ -150,20 +153,33 @@ def load_bypass_lora_for_models(model, clip, lora, strength_model, strength_clip
             patched_keys = new_modelpatcher.add_patches(regular_patches, strength_model)
             k.update(patched_keys)
 
-        # Apply adapter patches via bypass injection
-        manager = comfy.weight_adapter.BypassInjectionManager()
+        # Get or create shared bypass manager from attachment
+        manager = new_modelpatcher.get_attachment("bypass_lora_manager")
+        if manager is None:
+            manager = comfy.weight_adapter.BypassInjectionManager()
+
         model_sd_keys = set(new_modelpatcher.model.state_dict().keys())
 
         for key, adapter in bypass_patches.items():
-            if key in model_sd_keys:
+            if isinstance(key, tuple):
+                weight_key = key[0]
+                offset = key[1] if len(key) > 1 else None
+                if weight_key in model_sd_keys:
+                    manager.add_adapter(weight_key, adapter, strength=strength_model, offset=offset)
+                    k.add(key)
+                else:
+                    logging.warning(f"[BypassLoRA] Adapter key not in model state_dict: {weight_key}")
+            elif key in model_sd_keys:
                 manager.add_adapter(key, adapter, strength=strength_model)
                 k.add(key)
             else:
                 logging.warning(f"[BypassLoRA] Adapter key not in model state_dict: {key}")
 
+        # Rebuild injections from ALL accumulated adapters
         injections = manager.create_injections(new_modelpatcher.model)
 
         if manager.get_hook_count() > 0:
+            new_modelpatcher.set_attachments("bypass_lora_manager", manager)
             new_modelpatcher.set_injections("bypass_lora", injections)
     else:
         new_modelpatcher = None
@@ -176,17 +192,28 @@ def load_bypass_lora_for_models(model, clip, lora, strength_model, strength_clip
             patched_keys = new_clip.add_patches(regular_patches, strength_clip)
             k1.update(patched_keys)
 
-        # Apply adapter patches via bypass injection
-        clip_manager = comfy.weight_adapter.BypassInjectionManager()
+        # Get or create shared bypass manager for clip
+        clip_manager = new_clip.patcher.get_attachment("bypass_lora_manager")
+        if clip_manager is None:
+            clip_manager = comfy.weight_adapter.BypassInjectionManager()
+
         clip_sd_keys = set(new_clip.cond_stage_model.state_dict().keys())
 
         for key, adapter in bypass_patches.items():
-            if key in clip_sd_keys:
+            if isinstance(key, tuple):
+                weight_key = key[0]
+                offset = key[1] if len(key) > 1 else None
+                if weight_key in clip_sd_keys:
+                    clip_manager.add_adapter(weight_key, adapter, strength=strength_clip, offset=offset)
+                    k1.add(key)
+            elif key in clip_sd_keys:
                 clip_manager.add_adapter(key, adapter, strength=strength_clip)
                 k1.add(key)
 
+        # Rebuild injections from ALL accumulated adapters
         clip_injections = clip_manager.create_injections(new_clip.cond_stage_model)
         if clip_manager.get_hook_count() > 0:
+            new_clip.patcher.set_attachments("bypass_lora_manager", clip_manager)
             new_clip.patcher.set_injections("bypass_lora", clip_injections)
     else:
         new_clip = None
